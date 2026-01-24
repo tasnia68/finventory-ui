@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
@@ -9,9 +9,21 @@ import Users from './pages/Users';
 import UserDetails from './pages/Users/UserDetails';
 import Profile from './pages/Profile';
 import Roles from './pages/Roles';
+import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, permission }) => {
+  const { hasPermission } = useAuth();
+
+  // If permission is required check it
+  if (permission && !hasPermission(permission)) {
+    return (
+      <MainLayout>
+        <NotAuthorized />
+      </MainLayout>
+    );
+  }
+
   return <MainLayout>{children}</MainLayout>;
 };
 
@@ -28,19 +40,19 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_DASHBOARD}>
               <Dashboard />
             </ProtectedRoute>
           } />
 
           <Route path="/users" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_USER_MANAGEMENT}>
               <Users />
             </ProtectedRoute>
           } />
 
           <Route path="/users/:id" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_USER_MANAGEMENT}>
               <UserDetails />
             </ProtectedRoute>
           } />
@@ -52,43 +64,57 @@ function App() {
           } />
 
           <Route path="/roles" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_USER_MANAGEMENT}>
               <Roles />
             </ProtectedRoute>
           } />
 
           {/* Placeholder for other routes */}
           <Route path="/inventory" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}>
               <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Inventory Page</h1></div>
             </ProtectedRoute>
           } />
           <Route path="/orders" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
               <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Orders Page</h1></div>
             </ProtectedRoute>
           } />
           <Route path="/analytics" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Analytics Page</h1></div>
             </ProtectedRoute>
           } />
           <Route path="/settings" element={
-            <ProtectedRoute>
+            <ProtectedRoute permission={PERMISSIONS.MENU_SETTINGS}>
               <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Settings Page</h1></div>
             </ProtectedRoute>
           } />
 
-          {/* New Module Placeholders */}
-          {['/products', '/categories', '/attributes', '/templates', '/warehouses', '/transactions', '/batches', '/serials', '/reservations', '/replenishment', '/cycle-counts', '/valuation', '/suppliers', '/purchase-orders', '/pos'].map(path => (
-            <Route key={path} path={path} element={
-              <ProtectedRoute>
-                <div className="p-8">
-                  <h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '').replace('-', ' ')}</h1>
-                  <p className="mt-2 text-slate-500">Module coming soon...</p>
-                </div>
-              </ProtectedRoute>
-            } />
+          {/* New Module Placeholders with Permissions */}
+          {/* Catalog */}
+          {['/products', '/categories', '/attributes', '/templates'].map(path => (
+            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
+          ))}
+
+          {/* Inventory Core */}
+          {['/warehouses', '/transactions'].map(path => (
+            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
+          ))}
+
+          {/* Advanced Inventory */}
+          {['/batches', '/serials', '/reservations', '/replenishment', '/cycle-counts', '/valuation'].map(path => (
+            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
+          ))}
+
+          {/* Procurement */}
+          {['/suppliers', '/purchase-orders'].map(path => (
+            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
+          ))}
+
+          {/* Sales */}
+          {['/pos'].map(path => (
+            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_SALES}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
           ))}
 
         </Routes>
@@ -96,5 +122,20 @@ function App() {
     </BrowserRouter>
   );
 }
+
+// Not Authorized Component
+const NotAuthorized = () => (
+  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+    <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4">
+      gpp_bad
+    </span>
+    <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+      Access Denied
+    </h1>
+    <p className="text-slate-500 dark:text-slate-400 max-w-md">
+      You do not have permission to access this page. Please contact your administrator if you believe this is an error.
+    </p>
+  </div>
+);
 
 export default App;

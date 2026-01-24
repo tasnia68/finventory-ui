@@ -62,13 +62,33 @@ export const AuthProvider = ({ children }) => {
         return updatedUser;
     }
 
+    // Check user permissions (from backend user profile)
+    const hasPermission = (permission) => {
+        if (!user || !permission) return false;
+
+        // 1. If backend provides permissions, use them
+        if (user.permissions && Array.isArray(user.permissions)) {
+            return user.permissions.includes(permission);
+        }
+
+        // 2. Fallback: ADMIN always has access (safety net)
+        const userRoles = user.roles || [];
+        if (userRoles.some(r => r === 'ROLE_ADMIN' || r.name === 'ROLE_ADMIN')) return true;
+
+        // 3. Last valid fallback: Dashboard is always open
+        if (permission === 'MENU:DASHBOARD') return true;
+
+        return false;
+    };
+
     const value = {
         user,
         loading,
         isAuthenticated,
         login,
         logout,
-        updateProfile
+        updateProfile,
+        hasPermission
     };
 
     return (

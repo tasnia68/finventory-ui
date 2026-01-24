@@ -72,6 +72,54 @@
 | Method | Endpoint | Auth | Access | Description |
 |--------|----------|------|--------|-------------|
 | GET | `/` | ✅ Yes | Admin/Manager | List all roles |
+| POST | `/` | ✅ Yes | Admin | Create new role |
+| PUT | `/{id}` | ✅ Yes | Admin | Update role |
+
+### 4.4 Permission Controller (New)
+**Base URL:** `/api/v1/permissions`
+
+| Method | Endpoint | Auth | Access | Description |
+|--------|----------|------|--------|-------------|
+| GET | `/` | ✅ Yes | Admin/Manager | List all available system permissions |
+
+### 4.5 Updated Curl Examples
+
+**Get All Permissions:**
+```bash
+curl http://localhost:8080/api/v1/permissions \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-ID: default-tenant"
+```
+
+**Create Role with Permissions:**
+```bash
+curl -X POST http://localhost:8080/api/v1/roles \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-ID: default-tenant" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ROLE_SALES",
+    "description": "Sales Team",
+    "permissions": ["MENU:DASHBOARD", "MENU:SALES", "MENU:CATALOG"]
+  }'
+```
+
+**Get User Profile (with Permissions):**
+```bash
+curl http://localhost:8080/api/v1/users/me \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Tenant-ID: default-tenant"
+```
+
+**Response:**
+```json
+{
+  "id": "...",
+  "email": "user@test.com",
+  "roles": ["ROLE_SALES"],
+  "permissions": ["MENU:DASHBOARD", "MENU:SALES", "MENU:CATALOG"]
+}
+```
 
 ---
 

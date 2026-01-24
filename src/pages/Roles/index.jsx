@@ -1,49 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import * as roleService from '../../services/roleService';
 import { Card, DataTable, Badge, Button, Input, Alert } from '../../components/common';
+import { PERMISSION_LABELS } from '../../constants/permissions';
 
 const Roles = () => {
     const [roles, setRoles] = useState([]);
+    const [availablePermissions, setAvailablePermissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchRoles = async () => {
+        const fetchData = async () => {
             try {
-                const data = await roleService.getRoles();
-                const roleList = Array.isArray(data) ? data : (data.content || []);
-                // Transform purely string roles to objects if needed, though they usually come as objects with permissions
-                // Assuming simple response for now based on context
+                const [rolesData, permissionsData] = await Promise.all([
+                    roleService.getRoles(),
+                    roleService.getPermissions()
+                ]);
+
+                // Handle roles
+                const roleList = Array.isArray(rolesData) ? rolesData : (rolesData.content || []);
                 setRoles(roleList.map(r => typeof r === 'string' ? { name: r } : r));
+
+                // Handle permissions
+                // Assuming backend returns array of strings ["MENU:SALES", ...] or objects
+                const permList = Array.isArray(permissionsData) ? permissionsData : (permissionsData.content || []);
+                setAvailablePermissions(permList);
+
             } catch (err) {
-                setError('Failed to load roles');
+                setError('Failed to load data');
+                console.error(err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchRoles();
+        fetchData();
     }, []);
 
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [creating, setCreating] = useState(false);
-    const [newRole, setNewRole] = useState({ name: '', description: '' });
+    const [showModal, setShowModal] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [editingRole, setEditingRole] = useState(null);
+    const [formData, setFormData] = useState({ name: '', description: '', permissions: [] });
 
-    const handleCreateRole = async (e) => {
+    const openCreateModal = () => {
+        setEditingRole(null);
+        setFormData({ name: '', description: '', permissions: [] });
+        setShowModal(true);
+    };
+
+    const openEditModal = (role) => {
+        setEditingRole(role);
+        // Extract permission names if they are objects
+        const currentPermissions = (role.permissions || []).map(p =>
+            typeof p === 'string' ? p : p.name
+        );
+
+        setFormData({
+            name: role.name,
+            description: role.description || '',
+            permissions: currentPermissions
+        });
+        setShowModal(true);
+    };
+
+    const handleSaveRole = async (e) => {
         e.preventDefault();
-        setCreating(true);
+        setSaving(true);
         setError('');
         try {
-            await roleService.createRole(newRole);
-            setShowCreateModal(false);
-            setNewRole({ name: '', description: '' });
+            if (editingRole) {
+                await roleService.updateRole(editingRole.id || editingRole.name, formData);
+            } else {
+                await roleService.createRole(formData);
+            }
+
+            setShowModal(false);
+            setFormData({ name: '', description: '', permissions: [] });
+            setEditingRole(null);
+
             // Refresh roles
             const data = await roleService.getRoles();
             const roleList = Array.isArray(data) ? data : (data.content || []);
             setRoles(roleList.map(r => typeof r === 'string' ? { name: r } : r));
         } catch (err) {
-            setError(err.message || 'Failed to create role');
+            setError(err.message || `Failed to ${editingRole ? 'update' : 'create'} role`);
         } finally {
-            setCreating(false);
+            setSaving(false);
         }
     };
 
@@ -67,6 +108,22 @@ const Roles = () => {
                 if (name.includes('MANAGER')) return 'Operational access to manage users and view reports';
                 return 'Basic access to view data and perform assigned tasks';
             }
+        },
+        {
+            key: 'actions',
+            header: '',
+            render: (_, row) => (
+                <div className="flex justify-end">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        icon="edit"
+                        onClick={() => openEditModal(row)}
+                    >
+                        Edit
+                    </Button>
+                </div>
+            )
         }
     ];
 
@@ -83,7 +140,7 @@ const Roles = () => {
                             View and manage system roles
                         </p>
                     </div>
-                    <Button icon="add" onClick={() => setShowCreateModal(true)}>
+                    <Button icon="add" onClick={openCreateModal}>
                         Create Role
                     </Button>
                 </div>
@@ -99,31 +156,70 @@ const Roles = () => {
                     />
                 </Card>
 
-                {/* Create Role Modal */}
-                {showCreateModal && (
+                {/* Create/Edit Role Modal */}
+                {showModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <Card className="w-full max-w-md animate-in fade-in zoom-in duration-200" title="Create New Role">
-                            <form onSubmit={handleCreateRole} className="space-y-4">
+                        <Card className="w-full max-w-md animate-in fade-in zoom-in duration-200" title={editingRole ? 'Edit Role' : 'Create New Role'}>
+                            <form onSubmit={handleSaveRole} className="space-y-4">
                                 <Input
                                     label="Role Name"
                                     placeholder="e.g. ROLE_MANAGER"
-                                    value={newRole.name}
-                                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value.toUpperCase() })}
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                                     required
-                                    helperText="Must start with ROLE_"
+                                    disabled={!!editingRole} // Disable name editing for existing roles
+                                    helperText={editingRole ? "Role name cannot be changed" : "Must start with ROLE_"}
                                 />
                                 <Input
                                     label="Description"
                                     placeholder="Brief description of the role capabilities"
-                                    value={newRole.description}
-                                    onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 />
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Permissions
+                                    </label>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto p-2 border border-slate-200 dark:border-slate-700 rounded-md">
+                                        {availablePermissions.map((perm) => {
+                                            const key = typeof perm === 'string' ? perm : perm.name;
+                                            const label = (typeof perm === 'object' && perm.description) ? perm.description : (PERMISSION_LABELS[key] || key);
+
+                                            return (
+                                                <div key={key} className="flex items-center gap-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={key}
+                                                        checked={formData.permissions?.includes(key)}
+                                                        onChange={(e) => {
+                                                            const current = formData.permissions || [];
+                                                            if (e.target.checked) {
+                                                                setFormData({ ...formData, permissions: [...current, key] });
+                                                            } else {
+                                                                setFormData({ ...formData, permissions: current.filter(p => p !== key) });
+                                                            }
+                                                        }}
+                                                        className="size-4 text-primary focus:ring-primary border-slate-300 rounded"
+                                                    />
+                                                    <label htmlFor={key} className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+                                                        {label}
+                                                    </label>
+                                                </div>
+                                            );
+                                        })}
+                                        {availablePermissions.length === 0 && (
+                                            <p className="text-sm text-slate-500 italic px-2">No permissions found from server.</p>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="flex justify-end gap-3 pt-2">
-                                    <Button variant="secondary" onClick={() => setShowCreateModal(false)} disabled={creating}>
+                                    <Button variant="secondary" onClick={() => setShowModal(false)} disabled={saving}>
                                         Cancel
                                     </Button>
-                                    <Button type="submit" loading={creating}>
-                                        Create Role
+                                    <Button type="submit" loading={saving}>
+                                        {editingRole ? 'Save Changes' : 'Create Role'}
                                     </Button>
                                 </div>
                             </form>

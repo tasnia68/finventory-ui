@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { PERMISSIONS } from '../../constants/permissions';
 
 const MENU_ITEMS = [
   {
     title: 'Dashboard',
     path: '/dashboard',
     icon: 'dashboard',
+    permission: PERMISSIONS.MENU_DASHBOARD,
   },
   {
     title: 'User Management',
     icon: 'group',
+    permission: PERMISSIONS.MENU_USER_MANAGEMENT,
     submenu: [
       { title: 'Users', path: '/users' },
       { title: 'Roles', path: '/roles' },
@@ -19,6 +22,7 @@ const MENU_ITEMS = [
   {
     title: 'Product Catalog',
     icon: 'category',
+    permission: PERMISSIONS.MENU_CATALOG,
     submenu: [
       { title: 'Products', path: '/products' },
       { title: 'Categories', path: '/categories' },
@@ -29,6 +33,7 @@ const MENU_ITEMS = [
   {
     title: 'Inventory Core',
     icon: 'inventory_2',
+    permission: PERMISSIONS.MENU_INVENTORY_CORE,
     submenu: [
       { title: 'Stock Levels', path: '/inventory' }, // Mapped old /inventory here
       { title: 'Warehouses', path: '/warehouses' },
@@ -38,6 +43,7 @@ const MENU_ITEMS = [
   {
     title: 'Advanced Inventory',
     icon: 'domain_verification',
+    permission: PERMISSIONS.MENU_ADVANCED_INVENTORY,
     submenu: [
       { title: 'Batches & Lots', path: '/batches' },
       { title: 'Serial Numbers', path: '/serials' },
@@ -50,6 +56,7 @@ const MENU_ITEMS = [
   {
     title: 'Procurement',
     icon: 'local_shipping',
+    permission: PERMISSIONS.MENU_PROCUREMENT,
     submenu: [
       { title: 'Suppliers', path: '/suppliers' },
       { title: 'Purchase Orders', path: '/purchase-orders' },
@@ -58,6 +65,7 @@ const MENU_ITEMS = [
   {
     title: 'Sales & POS',
     icon: 'point_of_sale',
+    permission: PERMISSIONS.MENU_SALES,
     submenu: [
       { title: 'POS Terminal', path: '/pos' },
       { title: 'Sales Orders', path: '/orders' }, // Mapped old /orders here
@@ -67,16 +75,24 @@ const MENU_ITEMS = [
     title: 'Analytics',
     path: '/analytics',
     icon: 'bar_chart',
+    permission: PERMISSIONS.MENU_ANALYTICS,
   },
   {
     title: 'Settings',
     path: '/settings',
     icon: 'settings',
+    permission: PERMISSIONS.MENU_SETTINGS,
   }
 ];
 
-const SidebarItem = ({ item, isExpanded, onToggle }) => {
+const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
   const location = useLocation();
+
+  // If item requests permission and user doesn't have it, don't render
+  if (item.permission && !hasPermission(item.permission)) {
+    return null;
+  }
+
   const isActive = item.path ? location.pathname.startsWith(item.path) : item.submenu?.some(sub => location.pathname.startsWith(sub.path));
 
   // Auto-expand if child is active, but respect manual toggle if provided (optional refinement)
@@ -149,7 +165,7 @@ const SidebarItem = ({ item, isExpanded, onToggle }) => {
 };
 
 const Sidebar = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   // State to track expanded menus. Keyed by item title.
   const [expandedMenus, setExpandedMenus] = useState({});
 
@@ -180,6 +196,7 @@ const Sidebar = () => {
               item={item}
               isExpanded={expandedMenus[item.title]}
               onToggle={() => toggleMenu(item.title)}
+              hasPermission={hasPermission}
             />
           ))}
         </nav>
