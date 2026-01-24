@@ -1,3 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --color-primary: #135bec;
+    --color-background-light: #f6f6f8;
+    --color-background-dark: #101622;
+
+    --font-family-display: Inter, sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
