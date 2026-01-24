@@ -79,6 +79,18 @@ function App() {
             </ProtectedRoute>
           } />
 
+          {/* New Module Placeholders */}
+          {['/products', '/categories', '/attributes', '/templates', '/warehouses', '/transactions', '/batches', '/serials', '/reservations', '/replenishment', '/cycle-counts', '/valuation', '/suppliers', '/purchase-orders', '/pos'].map(path => (
+            <Route key={path} path={path} element={
+              <ProtectedRoute>
+                <div className="p-8">
+                  <h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '').replace('-', ' ')}</h1>
+                  <p className="mt-2 text-slate-500">Module coming soon...</p>
+                </div>
+              </ProtectedRoute>
+            } />
+          ))}
+
         </Routes>
       </AuthProvider>
     </BrowserRouter>
