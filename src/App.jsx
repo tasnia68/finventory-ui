@@ -1,12 +1,87 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import AcceptInvitation from './pages/AcceptInvitation';
+import Users from './pages/Users';
+import UserDetails from './pages/Users/UserDetails';
+import Profile from './pages/Profile';
+import Roles from './pages/Roles';
+
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  return <MainLayout>{children}</MainLayout>;
+};
 
 function App() {
   return (
-    <MainLayout>
-      <Dashboard />
-    </MainLayout>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/accept-invitation" element={<AcceptInvitation />} />
+
+          {/* Protected Routes */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/users/:id" element={
+            <ProtectedRoute>
+              <UserDetails />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/roles" element={
+            <ProtectedRoute>
+              <Roles />
+            </ProtectedRoute>
+          } />
+
+          {/* Placeholder for other routes */}
+          <Route path="/inventory" element={
+            <ProtectedRoute>
+              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Inventory Page</h1></div>
+            </ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Orders Page</h1></div>
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Analytics Page</h1></div>
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Settings Page</h1></div>
+            </ProtectedRoute>
+          } />
+
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

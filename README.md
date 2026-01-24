@@ -1,16 +1,64 @@
-# React + Vite
+# Mint & Slate Inventory Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive inventory management dashboard built with React, Vite, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Authentication & User Management**
+  - Secure Login with JWT
+  - Role-Based Access Control (RBAC)
+  - User Invitation Flow
+  - Profile Management
+  - User Administration (List, Create, Edit, Delete)
+- **Dashboard Overview** with key metrics
+- **Dark Mode** support
+- **Responsive Design** for all devices
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React, Vite
+- **Styling:** Tailwind CSS (v4)
+- **Routing:** React Router DOM
+- **State Management:** React Context (Auth, Theme)
+- **Icons:** Material Symbols Outlined
 
-## Expanding the ESLint configuration
+## 📦 Reusable Components
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Located in `src/components/common/`:
+
+| Component | Description |
+|-----------|-------------|
+| `Button` | Primary, secondary, danger, ghost variants with loading state |
+| `Input` | Form input with validation and icons |
+| `Select` | Dropdown selection component |
+| `Card` | Content container with title and actions |
+| `Badge` | Status indicators (success, warning, error, info) |
+| `Modal` | Dialog overlays with backdrop |
+| `DataTable` | Sorting, mapping, and listing data |
+| `Alert` | Feedback messages (success, error, info) |
+
+## 🚀 Getting Started
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Run development server:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## 🔐 Authentication Module
+
+The application implements a full authentication flow as defined in `MODULE_01_AUTH_USER.md`.
+
+- **Login:** `/login`
+- **Accept Invitation:** `/accept-invitation?token=...`
+- **Protected Routes:** All other routes require authentication.
+- **API Configuration:** Base URL defaults to `http://localhost:8080/api/v1` (configurable via `VITE_API_URL`).
