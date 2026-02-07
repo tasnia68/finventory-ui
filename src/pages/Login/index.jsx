@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
 import { Button, Input, Alert, Card } from '../../components/common';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -10,6 +11,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
 
     const { login } = useAuth();
+    const { theme } = useContext(ThemeContext);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -36,16 +38,18 @@ const Login = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="flex justify-center mb-6">
-                    <div className="bg-primary p-3 rounded-xl">
-                        <span className="material-symbols-outlined text-white text-[32px]">inventory_2</span>
-                    </div>
+                <div className="flex justify-center mb-8">
+                    <img 
+                        src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
+                        alt="Logistra" 
+                        className="h-32"
+                    />
                 </div>
                 <h2 className="text-center text-3xl font-extrabold text-slate-900 dark:text-white">
                     Sign in to your account
                 </h2>
                 <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
-                    Welcome back to Mint & Slate Inventory
+                    Streamline your inventory management with Logistra
                 </p>
             </div>
 
@@ -118,6 +122,10 @@ const Login = () => {
                         </div>
                     </div>
                 </Card>
+                
+                <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                    © 2026 Logistra. All rights reserved.
+                </p>
             </div>
         </div>
     );

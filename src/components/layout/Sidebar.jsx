@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
 import { PERMISSIONS } from '../../constants/permissions';
 
 const MENU_ITEMS = [
@@ -26,7 +27,9 @@ const MENU_ITEMS = [
     submenu: [
       { title: 'Products', path: '/products' },
       { title: 'Categories', path: '/categories' },
+      { title: 'Units of Measure', path: '/uoms' },
       { title: 'Attributes', path: '/attributes' },
+      { title: 'Attribute Groups', path: '/attribute-groups' },
       { title: 'Templates', path: '/templates' },
     ]
   },
@@ -166,6 +169,7 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
 
 const Sidebar = () => {
   const { user, hasPermission } = useAuth();
+  const { theme } = useContext(ThemeContext);
   // State to track expanded menus. Keyed by item title.
   const [expandedMenus, setExpandedMenus] = useState({});
 
@@ -180,12 +184,16 @@ const Sidebar = () => {
     <aside className="w-72 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto h-screen sticky top-0">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-primary dark:to-blue-600 rounded-xl size-10 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-slate-900/10 dark:shadow-primary/20">
-            M
+          <div className="h-10 flex items-center">
+            <img 
+              src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
+              alt="Logistra" 
+              className="h-8"
+            />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-slate-900 dark:text-white text-base font-bold leading-tight">Mint & Slate</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Enterprise</p>
+            <h1 className="text-slate-900 dark:text-white text-base font-bold leading-tight">Logistra</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Inventory</p>
           </div>
         </div>
 

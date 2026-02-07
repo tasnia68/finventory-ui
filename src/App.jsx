@@ -9,6 +9,14 @@ import Users from './pages/Users';
 import UserDetails from './pages/Users/UserDetails';
 import Profile from './pages/Profile';
 import Roles from './pages/Roles';
+import Categories from './pages/Categories';
+import UnitsOfMeasure from './pages/UnitsOfMeasure';
+import Products from './pages/Products';
+import CreateProduct from './pages/Products/CreateProduct';
+import CreateSimpleProduct from './pages/Products/CreateSimpleProduct';
+import ProductDetails from './pages/Products/ProductDetails';
+import Attributes from './pages/Attributes';
+import AttributeGroups from './pages/AttributeGroups';
 import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
@@ -91,9 +99,63 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* New Module Placeholders with Permissions */}
-          {/* Catalog */}
-          {['/products', '/categories', '/attributes', '/templates'].map(path => (
+          {/* Product & Catalog Management (Module 03) */}
+          <Route path="/categories" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <Categories />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/uoms" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <UnitsOfMeasure />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/products" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <Products />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/products/create" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <CreateProduct />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/products/create/simple" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <CreateSimpleProduct />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/products/:id" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <ProductDetails />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/products/:id/edit" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <CreateProduct />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/attributes" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <Attributes />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/attribute-groups" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <AttributeGroups />
+            </ProtectedRoute>
+          } />
+
+          {/* Other Catalog Placeholders */}
+          {['/templates'].map(path => (
             <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
           ))}
 
