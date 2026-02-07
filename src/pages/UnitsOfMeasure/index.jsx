@@ -116,54 +116,54 @@ const UnitsOfMeasure = () => {
   const columns = [
     {
       key: 'name',
-      label: 'Name',
-      render: (uom) => (
+      header: 'Name',
+      render: (value, row) => (
         <div>
-          <div className="font-medium text-slate-900 dark:text-white">{uom.name}</div>
-          <div className="text-sm text-slate-500 dark:text-slate-400">Code: {uom.code}</div>
+          <div className="font-medium text-slate-900 dark:text-white">{row.name}</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">Code: {row.code}</div>
         </div>
       ),
     },
     {
       key: 'category',
-      label: 'Category',
-      render: (uom) => (
+      header: 'Category',
+      render: (value) => (
         <Badge variant="info">
-          {UOM_CATEGORIES.find(c => c.value === uom.category)?.label || uom.category}
+          {UOM_CATEGORIES.find(c => c.value === value)?.label || value}
         </Badge>
       ),
     },
     {
       key: 'isBase',
-      label: 'Type',
-      render: (uom) => (
-        <Badge variant={uom.isBase ? 'success' : 'default'}>
-          {uom.isBase ? 'Base Unit' : 'Derived Unit'}
+      header: 'Type',
+      render: (value) => (
+        <Badge variant={value ? 'success' : 'default'}>
+          {value ? 'Base Unit' : 'Derived Unit'}
         </Badge>
       ),
     },
     {
       key: 'conversionFactor',
-      label: 'Conversion Factor',
-      render: (uom) => (
+      header: 'Conversion Factor',
+      render: (value) => (
         <span className="text-slate-900 dark:text-white">
-          {uom.conversionFactor}
+          {value}
         </span>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
-      render: (uom) => (
+      header: 'Actions',
+      render: (value, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleEdit(uom)}
+            onClick={() => handleEdit(row)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">edit</span>
           </button>
           <button
-            onClick={() => handleDelete(uom.id)}
+            onClick={() => handleDelete(row.id)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">delete</span>

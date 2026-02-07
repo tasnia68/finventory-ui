@@ -25,12 +25,11 @@ const MENU_ITEMS = [
     icon: 'category',
     permission: PERMISSIONS.MENU_CATALOG,
     submenu: [
-      { title: 'Products', path: '/products' },
+      { title: 'Templates', path: '/products' },
       { title: 'Categories', path: '/categories' },
       { title: 'Units of Measure', path: '/uoms' },
       { title: 'Attributes', path: '/attributes' },
       { title: 'Attribute Groups', path: '/attribute-groups' },
-      { title: 'Templates', path: '/templates' },
     ]
   },
   {

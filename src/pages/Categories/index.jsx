@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCategories, createCategory, updateCategory, deleteCategory } from '../../services/categoryService';
+import { getCategories, getCategoryTree, createCategory, updateCategory, deleteCategory } from '../../services/categoryService';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
@@ -8,6 +8,7 @@ import Card from '../../components/common/Card';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
+  const [flatCategories, setFlatCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -25,8 +26,12 @@ const Categories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const data = await getCategories();
-      setCategories(data);
+      const [treeData, flatData] = await Promise.all([
+        getCategoryTree(),
+        getCategories(),
+      ]);
+      setCategories(Array.isArray(treeData) ? treeData : []);
+      setFlatCategories(Array.isArray(flatData) ? flatData : []);
     } catch (error) {
       showAlert('error', 'Failed to load categories');
     } finally {
@@ -89,15 +94,6 @@ const Categories = () => {
     resetForm();
   };
 
-  const buildCategoryTree = (categories, parentId = null) => {
-    return categories
-      .filter(cat => cat.parentId === parentId)
-      .map(cat => ({
-        ...cat,
-        children: buildCategoryTree(categories, cat.id),
-      }));
-  };
-
   const renderCategoryTree = (categoryTree, level = 0) => {
     return categoryTree.map(category => (
       <div key={category.id} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0">
@@ -146,7 +142,7 @@ const Categories = () => {
     ));
   };
 
-  const categoryTree = buildCategoryTree(categories);
+  const categoryTree = categories;
 
   return (
     <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
@@ -228,7 +224,7 @@ const Categories = () => {
                 className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None (Top Level)</option>
-                {categories
+                {flatCategories
                   .filter(cat => !editingCategory || cat.id !== editingCategory.id)
                   .map(cat => (
                     <option key={cat.id} value={cat.id}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProductTemplates, deleteProductTemplate } from '../../services/productService';
 import { getCategories } from '../../services/categoryService';
@@ -8,50 +8,32 @@ import Alert from '../../components/common/Alert';
 import DataTable from '../../components/common/DataTable';
 import Badge from '../../components/common/Badge';
 
-const Products = () => {
-  const [products, setProducts] = useState([]);
+const Templates = () => {
+  const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [uoms, setUoms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const menuRef = useRef(null);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowCreateMenu(false);
-      }
-    };
-
-    if (showCreateMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showCreateMenu]);
-
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [productsData, categoriesData, uomsData] = await Promise.all([
+      const [templatesData, categoriesData, uomsData] = await Promise.all([
         getProductTemplates(),
         getCategories(),
         getUOMs(),
       ]);
-      setProducts(Array.isArray(productsData) ? productsData : []);
+      setTemplates(Array.isArray(templatesData) ? templatesData : []);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       setUoms(Array.isArray(uomsData) ? uomsData : []);
     } catch (error) {
-      showAlert('error', 'Failed to load products');
+      showAlert('error', 'Failed to load templates');
     } finally {
       setLoading(false);
     }
@@ -63,14 +45,14 @@ const Products = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this product? This will also delete all variants.')) return;
-    
+    if (!window.confirm('Are you sure you want to delete this template? This will also delete all variants.')) return;
+
     try {
       await deleteProductTemplate(id);
-      showAlert('success', 'Product deleted successfully');
+      showAlert('success', 'Template deleted successfully');
       fetchData();
     } catch (error) {
-      showAlert('error', error.message || 'Failed to delete product');
+      showAlert('error', error.message || 'Failed to delete template');
     }
   };
 
@@ -84,17 +66,17 @@ const Products = () => {
     return uom ? uom.name : 'N/A';
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = !categoryFilter || product.categoryId === categoryFilter;
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (template.description && template.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = !categoryFilter || template.categoryId === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
   const columns = [
     {
       key: 'name',
-      header: 'Product',
+      header: 'Template',
       render: (value, row) => (
         <div>
           <div className="flex items-center gap-2">
@@ -151,20 +133,23 @@ const Products = () => {
       render: (value, row) => (
         <div className="flex items-center gap-2">
           <Link
-            to={`/products/${row.id}`}
+            to={`/attributes?templateId=${row.id}`}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
+            title="Manage attributes"
           >
-            <span className="material-symbols-outlined text-[20px]">visibility</span>
+            <span className="material-symbols-outlined text-[20px]">tune</span>
           </Link>
           <Link
             to={`/products/${row.id}/edit`}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
+            title="Edit template"
           >
             <span className="material-symbols-outlined text-[20px]">edit</span>
           </Link>
           <button
             onClick={() => handleDelete(row.id)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
+            title="Delete template"
           >
             <span className="material-symbols-outlined text-[20px]">delete</span>
           </button>
@@ -183,56 +168,12 @@ const Products = () => {
               Templates
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Manage product templates and variants
+              Manage product templates for variants and attributes
             </p>
           </div>
-          <div className="relative">
-            <Button
-              onClick={() => setShowCreateMenu(!showCreateMenu)}
-              icon="add"
-            >
-              Create Template
-              <span className="material-symbols-outlined text-[16px] ml-1">
-                {showCreateMenu ? 'expand_less' : 'expand_more'}
-              </span>
-            </Button>
-            {showCreateMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-10">
-                <div className="p-2">
-                  <Link
-                    to="/products/create/simple"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <div className="mt-1">
-                      <span className="material-symbols-outlined text-primary text-[24px]">inventory</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-slate-900 dark:text-white">Simple Product</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        For unique items without variants (laptops, furniture, etc.)
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/products/create"
-                    onClick={() => setShowCreateMenu(false)}
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <div className="mt-1">
-                      <span className="material-symbols-outlined text-primary text-[24px]">category</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-slate-900 dark:text-white">Product with Variants</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        For items with color, size, or other variations (clothing, accessories, etc.)
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
+          <Link to="/products/create">
+            <Button icon="add">Create Template</Button>
+          </Link>
         </div>
 
         {/* Alert */}
@@ -250,7 +191,7 @@ const Products = () => {
             </div>
             <input
               className="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg leading-5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
-              placeholder="Search products..."
+              placeholder="Search templates..."
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -270,17 +211,17 @@ const Products = () => {
           </select>
         </div>
 
-        {/* Products Table */}
+        {/* Templates Table */}
         <DataTable
           columns={columns}
-          data={filteredProducts}
+          data={filteredTemplates}
           loading={loading}
-          emptyMessage="No products found. Create your first product to get started."
-          emptyIcon="inventory_2"
+          emptyMessage="No templates found. Create your first template to get started."
+          emptyIcon="category"
         />
       </div>
     </div>
   );
 };
 
-export default Products;
+export default Templates;

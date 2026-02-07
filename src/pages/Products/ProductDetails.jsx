@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   getProductTemplate, 
   getProductImages, 
+  getProductImageFile,
   getProductVariants,
   deleteProductVariant 
 } from '../../services/productService';
@@ -25,6 +26,7 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [imageUrls, setImageUrls] = useState({});
 
   useEffect(() => {
     fetchProductDetails();
@@ -41,19 +43,58 @@ const ProductDetails = () => {
         getUOMs(),
       ]);
       setProduct(productData);
-      setImages(imagesData);
-      setVariants(variantsData);
+      setImages(Array.isArray(imagesData) ? imagesData : []);
+      const normalizedVariants = Array.isArray(variantsData) ? variantsData : [];
+      const filteredVariants = normalizedVariants.filter(variant => variant.templateId === id);
+      setVariants(filteredVariants);
       setCategories(categoriesData);
       setUoms(uomsData);
+
+      const normalizedImages = Array.isArray(imagesData) ? imagesData : [];
+      await loadImageFiles(normalizedImages);
       
       // Set main image as selected
-      const mainImage = imagesData.find(img => img.isMain) || imagesData[0];
+      const mainImage = normalizedImages.find(img => img.isMain) || normalizedImages[0];
       setSelectedImage(mainImage);
     } catch (error) {
       showAlert('error', 'Failed to load product details');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadImageFiles = async (imagesData) => {
+    if (!imagesData.length) {
+      if (Object.keys(imageUrls).length > 0) {
+        Object.values(imageUrls).forEach((url) => {
+          if (url) URL.revokeObjectURL(url);
+        });
+        setImageUrls({});
+      }
+      return;
+    }
+
+    const entries = await Promise.all(
+      imagesData.map(async (img) => {
+        try {
+          const blob = await getProductImageFile(img.id);
+          const url = URL.createObjectURL(blob);
+          return [img.id, url];
+        } catch (error) {
+          return [img.id, null];
+        }
+      })
+    );
+
+    setImageUrls((prev) => {
+      Object.values(prev).forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+      return entries.reduce((acc, [id, url]) => {
+        if (url) acc[id] = url;
+        return acc;
+      }, {});
+    });
   };
 
   const showAlert = (type, message) => {
@@ -86,13 +127,16 @@ const ProductDetails = () => {
   const variantColumns = [
     {
       key: 'sku',
-      label: 'SKU',
-      render: (variant) => (
+      header: 'SKU',
+      render: (value, row) => (
         <div>
-          <div className="font-medium text-slate-900 dark:text-white">{variant.sku}</div>
-          {variant.barcode && (
+          <div className="font-medium text-slate-900 dark:text-white">{row.sku}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            Variant ID: {row.id}
+          </div>
+          {row.barcode && (
             <div className="text-sm text-slate-500 dark:text-slate-400">
-              Barcode: {variant.barcode}
+              Barcode: {row.barcode}
             </div>
           )}
         </div>
@@ -100,14 +144,14 @@ const ProductDetails = () => {
     },
     {
       key: 'attributes',
-      label: 'Attributes',
-      render: (variant) => {
-        if (!variant.attributeValues || variant.attributeValues.length === 0) {
+      header: 'Attributes',
+      render: (value, row) => {
+        if (!row.attributeValues || row.attributeValues.length === 0) {
           return <span className="text-slate-500 dark:text-slate-400">Default</span>;
         }
         return (
           <div className="flex flex-wrap gap-1">
-            {variant.attributeValues.map((attrVal) => (
+            {row.attributeValues.map((attrVal) => (
               <Badge key={attrVal.id} variant="default">
                 {attrVal.attributeName}: {attrVal.value}
               </Badge>
@@ -118,29 +162,29 @@ const ProductDetails = () => {
     },
     {
       key: 'price',
-      label: 'Price',
-      render: (variant) => (
+      header: 'Price',
+      render: (value) => (
         <span className="font-medium text-slate-900 dark:text-white">
-          ${variant.price ? variant.price.toFixed(2) : '0.00'}
+          ${value ? value.toFixed(2) : '0.00'}
         </span>
       ),
     },
     {
       key: 'cost',
-      label: 'Cost',
-      render: (variant) => (
+      header: 'Cost',
+      render: (value) => (
         <span className="text-slate-600 dark:text-slate-400">
-          ${variant.cost ? variant.cost.toFixed(2) : '0.00'}
+          ${value ? value.toFixed(2) : '0.00'}
         </span>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
-      render: (variant) => (
+      header: 'Actions',
+      render: (value, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleDeleteVariant(variant.id)}
+            onClick={() => handleDeleteVariant(row.id)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -219,7 +263,7 @@ const ProductDetails = () => {
                   {selectedImage && (
                     <div className="aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                       <img
-                        src={selectedImage.url}
+                        src={imageUrls[selectedImage.id] || selectedImage.url}
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />
@@ -238,7 +282,7 @@ const ProductDetails = () => {
                           }`}
                         >
                           <img
-                            src={img.url}
+                            src={imageUrls[img.id] || img.url}
                             alt={`${product.name} ${img.id}`}
                             className="w-full h-full object-cover"
                           />

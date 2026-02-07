@@ -9,6 +9,10 @@ export const getCategories = () => {
     return unwrap(request('/categories'));
 };
 
+export const getCategoryTree = () => {
+    return unwrap(request('/categories/tree'));
+};
+
 export const getCategory = (id) => {
     return unwrap(request(`/categories/${id}`));
 };

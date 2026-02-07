@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createProductTemplate, updateProductTemplate, getProductTemplate, uploadProductImage, createProductVariant } from '../../services/productService';
+import { createProductTemplate, updateProductTemplate, getProductTemplate, uploadProductImage, createProductVariant, getProductImages, getProductImageFile, getProductVariants, updateProductVariant } from '../../services/productService';
 import { getCategories } from '../../services/categoryService';
 import { getUOMs } from '../../services/uomService';
-import { createProductAttribute } from '../../services/attributeService';
+import { createProductAttribute, getProductAttributes } from '../../services/attributeService';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Alert from '../../components/common/Alert';
@@ -47,6 +47,8 @@ const CreateProduct = () => {
 
   // Step 4: Variants
   const [variants, setVariants] = useState([]);
+  const [bulkPrice, setBulkPrice] = useState('');
+  const [skuTemplate, setSkuTemplate] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -54,6 +56,12 @@ const CreateProduct = () => {
       loadProductData();
     }
   }, []);
+
+  useEffect(() => {
+    if (isEditMode && currentStep === 4) {
+      refreshVariants();
+    }
+  }, [isEditMode, currentStep]);
 
   const fetchData = async () => {
     try {
@@ -71,7 +79,12 @@ const CreateProduct = () => {
   const loadProductData = async () => {
     try {
       setLoading(true);
-      const product = await getProductTemplate(productId);
+      const [product, imagesData, variantsData, attributesData] = await Promise.all([
+        getProductTemplate(productId),
+        getProductImages(productId),
+        getProductVariants(productId),
+        getProductAttributes(productId),
+      ]);
       setTemplateData({
         name: product.name,
         description: product.description || '',
@@ -80,11 +93,67 @@ const CreateProduct = () => {
         isActive: product.isActive,
       });
       setCreatedTemplate(product);
+
+      const normalizedImages = Array.isArray(imagesData) ? imagesData : [];
+      const imageEntries = await Promise.all(
+        normalizedImages.map(async (img) => {
+          try {
+            const blob = await getProductImageFile(img.id);
+            const url = URL.createObjectURL(blob);
+            return { id: img.id, url, isMain: img.isMain };
+          } catch (error) {
+            return null;
+          }
+        })
+      );
+      const loadedImages = imageEntries.filter(Boolean);
+      setImages(loadedImages);
+      const mainIndex = loadedImages.findIndex((img) => img.isMain);
+      setMainImageIndex(mainIndex >= 0 ? mainIndex : 0);
+
+      const normalizedAttributes = Array.isArray(attributesData) ? attributesData : [];
+      setAttributes(
+        normalizedAttributes.map((attr) => ({
+          ...attr,
+          values: attr.options ? attr.options.split(',').map((v) => v.trim()).filter(Boolean) : [],
+        }))
+      );
+
+      const normalizedVariants = Array.isArray(variantsData) ? variantsData : [];
+      const filteredVariants = normalizedVariants.filter((variant) => variant.templateId === productId);
+      setVariants(
+        filteredVariants.map((variant) => ({
+          ...variant,
+          templateId: productId,
+          displayName: variant.attributeValues && variant.attributeValues.length > 0
+            ? variant.attributeValues.map((val) => val.value).join('-')
+            : 'Default Variant',
+        }))
+      );
       showAlert('info', 'Loaded product for editing');
     } catch (error) {
       showAlert('error', 'Failed to load product data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshVariants = async () => {
+    try {
+      const variantsData = await getProductVariants(productId);
+      const normalizedVariants = Array.isArray(variantsData) ? variantsData : [];
+      const filteredVariants = normalizedVariants.filter((variant) => variant.templateId === productId);
+      setVariants(
+        filteredVariants.map((variant) => ({
+          ...variant,
+          templateId: productId,
+          displayName: variant.attributeValues && variant.attributeValues.length > 0
+            ? variant.attributeValues.map((val) => val.value).join('-')
+            : 'Default Variant',
+        }))
+      );
+    } catch (error) {
+      showAlert('error', 'Failed to refresh variants');
     }
   };
 
@@ -187,6 +256,10 @@ const CreateProduct = () => {
   };
 
   const handleStep3Next = () => {
+    if (isEditMode && variants.length > 0) {
+      setCurrentStep(4);
+      return;
+    }
     if (attributes.length === 0) {
       // No attributes - create single variant
       const defaultVariant = {
@@ -248,6 +321,35 @@ const CreateProduct = () => {
     setVariants(updated);
   };
 
+  const handleRemoveVariant = (index) => {
+    setVariants(variants.filter((_, i) => i !== index));
+  };
+
+  const applyBulkPrice = () => {
+    if (bulkPrice === '') return;
+    const priceValue = parseFloat(bulkPrice);
+    if (Number.isNaN(priceValue)) {
+      showAlert('error', 'Bulk price must be a valid number');
+      return;
+    }
+    setVariants(prev => prev.map(v => ({ ...v, price: priceValue })));
+  };
+
+  const applySkuTemplate = () => {
+    if (!skuTemplate.trim()) return;
+    const baseName = createdTemplate?.name || templateData.name || 'PRODUCT';
+    setVariants(prev => prev.map(v => {
+      const attrs = v.attributeValues || [];
+      let sku = skuTemplate;
+      sku = sku.replace('{Product}', baseName.toUpperCase().replace(/\s/g, '-'));
+      attrs.forEach(attr => {
+        const key = `{${attr.attributeName || attr.attributeId}}`;
+        sku = sku.replace(key, String(attr.value).toUpperCase().replace(/\s/g, '-'));
+      });
+      return { ...v, sku };
+    }));
+  };
+
   const handleStep4Submit = async () => {
     try {
       setLoading(true);
@@ -267,10 +369,14 @@ const CreateProduct = () => {
           price: parseFloat(variant.price),
           cost: variant.cost ? parseFloat(variant.cost) : 0,
         };
-        await createProductVariant(data);
+        if (isEditMode && variant.id) {
+          await updateProductVariant(variant.id, data);
+        } else {
+          await createProductVariant(data);
+        }
       }
 
-      showAlert('success', 'Product created successfully with all variants');
+      showAlert('success', isEditMode ? 'Product updated successfully' : 'Product created successfully with all variants');
       setTimeout(() => {
         navigate(`/products/${createdTemplate.id}`);
       }, 1500);
@@ -531,8 +637,11 @@ const CreateProduct = () => {
                 <Button variant="ghost" onClick={() => setCurrentStep(2)}>
                   Back
                 </Button>
-                <Button onClick={handleStep3Next}>
-                  Next: Create Variants
+                <Button onClick={handleStep3Next} icon="auto_awesome">
+                  Generate Variants
+                </Button>
+                <Button onClick={() => setCurrentStep(4)}>
+                  Next: Review Variants
                 </Button>
               </div>
             </div>
@@ -544,6 +653,63 @@ const CreateProduct = () => {
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
                 Product Variants
               </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-end gap-2">
+                  <Input
+                    label="Bulk Price"
+                    type="number"
+                    step="0.01"
+                    value={bulkPrice}
+                    onChange={(e) => setBulkPrice(e.target.value)}
+                    placeholder="e.g., 29.99"
+                  />
+                  <Button variant="ghost" onClick={applyBulkPrice}>
+                    Apply
+                  </Button>
+                </div>
+                <div className="flex items-end gap-2">
+                  <Input
+                    label="SKU Template"
+                    value={skuTemplate}
+                    onChange={(e) => setSkuTemplate(e.target.value)}
+                    placeholder="e.g., {Product}-{Color}-{Size}"
+                  />
+                  <Button variant="ghost" onClick={applySkuTemplate}>
+                    Apply
+                  </Button>
+                </div>
+              </div>
+              {isEditMode && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Existing variants are loaded automatically. Use refresh if you added variants elsewhere.
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" onClick={refreshVariants}>
+                      Refresh
+                    </Button>
+                    <Button
+                      onClick={() =>
+                        setVariants((prev) => [
+                          ...prev,
+                          {
+                            sku: '',
+                            barcode: '',
+                            price: 0,
+                            cost: 0,
+                            templateId: createdTemplate?.id || productId,
+                            attributeValues: [],
+                            displayName: 'New Variant',
+                          },
+                        ])
+                      }
+                      icon="add"
+                    >
+                      Add Variant
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="space-y-3">
                 {variants.map((variant, index) => (
                   <div key={index} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg space-y-3">
@@ -578,6 +744,11 @@ const CreateProduct = () => {
                         onChange={(e) => handleVariantChange(index, 'cost', e.target.value)}
                       />
                     </div>
+                    <div className="flex justify-end">
+                      <Button variant="ghost" onClick={() => handleRemoveVariant(index)}>
+                        Remove Variant
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -586,7 +757,7 @@ const CreateProduct = () => {
                   Back
                 </Button>
                 <Button onClick={handleStep4Submit} loading={loading}>
-                  Create Product
+                  {isEditMode ? 'Save Changes' : 'Create Product'}
                 </Button>
               </div>
             </div>

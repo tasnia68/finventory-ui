@@ -17,6 +17,10 @@ import CreateSimpleProduct from './pages/Products/CreateSimpleProduct';
 import ProductDetails from './pages/Products/ProductDetails';
 import Attributes from './pages/Attributes';
 import AttributeGroups from './pages/AttributeGroups';
+import Templates from './pages/Templates';
+import Inventory from './pages/Inventory';
+import Warehouses from './pages/Warehouses';
+import Transactions from './pages/Transactions';
 import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
@@ -77,10 +81,20 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Placeholder for other routes */}
+          {/* Inventory Core */}
           <Route path="/inventory" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}>
-              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Inventory Page</h1></div>
+              <Inventory />
+            </ProtectedRoute>
+          } />
+          <Route path="/warehouses" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}>
+              <Warehouses />
+            </ProtectedRoute>
+          } />
+          <Route path="/transactions" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}>
+              <Transactions />
             </ProtectedRoute>
           } />
           <Route path="/orders" element={
@@ -154,15 +168,11 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Other Catalog Placeholders */}
-          {['/templates'].map(path => (
-            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
-          ))}
-
-          {/* Inventory Core */}
-          {['/warehouses', '/transactions'].map(path => (
-            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
-          ))}
+          <Route path="/templates" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <Templates />
+            </ProtectedRoute>
+          } />
 
           {/* Advanced Inventory */}
           {['/batches', '/serials', '/reservations', '/replenishment', '/cycle-counts', '/valuation'].map(path => (

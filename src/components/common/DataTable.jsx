@@ -18,7 +18,7 @@ const DataTable = ({
         );
     }
 
-    if (!data || data.length === 0) {
+    if (!Array.isArray(data) || data.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-slate-500 dark:text-slate-400">
                 <span className="material-symbols-outlined text-[48px] mb-2">inbox</span>

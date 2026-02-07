@@ -7,7 +7,12 @@ const unwrap = async (promise) => {
 
 // Product Templates
 export const getProductTemplates = () => {
-    return unwrap(request('/product-templates'));
+    return unwrap(request('/product-templates')).then((data) => {
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.content)) return data.content;
+        if (data && Array.isArray(data.items)) return data.items;
+        return [];
+    });
 };
 
 export const getProductTemplate = (id) => {
@@ -47,6 +52,31 @@ export const getProductImages = (templateId) => {
     return unwrap(request(`/product-templates/${templateId}/images`));
 };
 
+export const getProductImageFile = async (imageId) => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+    const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
+
+    const token = localStorage.getItem('accessToken');
+    const headers = {
+        'X-Tenant-ID': TENANT_ID,
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/product-images/${imageId}/file`, {
+        method: 'GET',
+        headers,
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to load product image');
+    }
+
+    return response.blob();
+};
+
 export const uploadProductImage = async (templateId, file, isMain = false) => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
     const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
@@ -83,42 +113,52 @@ export const uploadProductImage = async (templateId, file, isMain = false) => {
 };
 
 export const deleteProductImage = (templateId, imageId) => {
-    return request(`/product-templates/${templateId}/images/${imageId}`, {
+    return request(`/product-images/${imageId}`, {
         method: 'DELETE',
     });
 };
 
 export const setMainImage = (templateId, imageId) => {
-    return unwrap(request(`/product-templates/${templateId}/images/${imageId}/set-main`, {
+    return unwrap(request(`/product-images/${imageId}/main`, {
         method: 'PUT',
     }));
 };
 
 // Product Variants
 export const getProductVariants = (templateId) => {
-    return unwrap(request(`/product-variants?templateId=${templateId}`));
+    return unwrap(request(`/products?templateId=${templateId}`)).then((data) => {
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.content)) return data.content;
+        if (data && Array.isArray(data.items)) return data.items;
+        return [];
+    });
+};
+
+export const searchProductVariants = (query) => {
+    if (!query) return Promise.resolve({ content: [] });
+    return unwrap(request(`/product-variants?q=${encodeURIComponent(query)}`));
 };
 
 export const getProductVariant = (id) => {
-    return unwrap(request(`/product-variants/${id}`));
+    return unwrap(request(`/products/${id}`));
 };
 
 export const createProductVariant = (variantData) => {
-    return unwrap(request('/product-variants', {
+    return unwrap(request('/products', {
         method: 'POST',
         body: variantData,
     }));
 };
 
 export const updateProductVariant = (id, variantData) => {
-    return unwrap(request(`/product-variants/${id}`, {
+    return unwrap(request(`/products/${id}`, {
         method: 'PUT',
         body: variantData,
     }));
 };
 
 export const deleteProductVariant = (id) => {
-    return request(`/product-variants/${id}`, {
+    return request(`/products/${id}`, {
         method: 'DELETE',
     });
 };

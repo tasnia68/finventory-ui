@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getProductAttributes, createProductAttribute, updateProductAttribute, deleteProductAttribute } from '../../services/attributeService';
-import { getAttributeGroups } from '../../services/attributeService';
+import { useSearchParams } from 'react-router-dom';
+import { getProductAttributes, getProductAttribute, createProductAttribute, updateProductAttribute, deleteProductAttribute, getAttributeGroups } from '../../services/attributeService';
+import { getProductTemplates } from '../../services/productService';
+import { getCategories } from '../../services/categoryService';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
@@ -19,36 +21,106 @@ const ATTRIBUTE_TYPES = [
 const Attributes = () => {
   const [attributes, setAttributes] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [inheritedAttributes, setInheritedAttributes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingAttribute, setEditingAttribute] = useState(null);
   const [alert, setAlert] = useState(null);
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     name: '',
     type: 'TEXT',
     required: false,
     options: '',
-    validation: '',
+    validationRegex: '',
     groupId: null,
+    templateId: '',
   });
 
   useEffect(() => {
-    fetchData();
+    fetchTemplatesAndGroups();
   }, []);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const templateIdFromQuery = searchParams.get('templateId');
+    if (templateIdFromQuery) {
+      setSelectedTemplateId(templateIdFromQuery);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (selectedTemplateId) {
+      fetchAttributes(selectedTemplateId);
+      fetchInheritedAttributes(selectedTemplateId);
+    } else {
+      setAttributes([]);
+      setInheritedAttributes([]);
+    }
+  }, [selectedTemplateId]);
+
+  const fetchTemplatesAndGroups = async () => {
     try {
       setLoading(true);
-      const [attributesData, groupsData] = await Promise.all([
-        getProductAttributes(),
+      const [templatesData, groupsData, categoriesData] = await Promise.all([
+        getProductTemplates(),
         getAttributeGroups(),
+        getCategories(),
       ]);
-      setAttributes(Array.isArray(attributesData) ? attributesData : []);
+      const normalizedTemplates = Array.isArray(templatesData) ? templatesData : [];
+      setTemplates(normalizedTemplates);
       setGroups(Array.isArray(groupsData) ? groupsData : []);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+
+      if (!selectedTemplateId && normalizedTemplates.length > 0) {
+        setSelectedTemplateId(normalizedTemplates[0].id);
+      }
     } catch (error) {
       showAlert('error', 'Failed to load attributes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAttributes = async (templateId) => {
+    try {
+      setLoading(true);
+      const attributesData = await getProductAttributes(templateId);
+      setAttributes(Array.isArray(attributesData) ? attributesData : []);
+    } catch (error) {
+      showAlert('error', 'Failed to load attributes');
+      setAttributes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchInheritedAttributes = async (templateId) => {
+    const template = templates.find(t => t.id === templateId);
+    const category = categories.find(c => c.id === template?.categoryId);
+    const attributeIds = category?.attributeIds || [];
+
+    if (attributeIds.length === 0) {
+      setInheritedAttributes([]);
+      return;
+    }
+
+    try {
+      const items = await Promise.all(
+        attributeIds.map(async (attrId) => {
+          try {
+            const attr = await getProductAttribute(attrId);
+            return { id: attrId, name: attr?.name || attrId };
+          } catch (error) {
+            return { id: attrId, name: attrId };
+          }
+        })
+      );
+      setInheritedAttributes(items);
+    } catch (error) {
+      setInheritedAttributes(attributeIds.map((id) => ({ id, name: id })));
     }
   };
 
@@ -60,9 +132,20 @@ const Attributes = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (!selectedTemplateId) {
+        showAlert('error', 'Please select a template first');
+        return;
+      }
+
+      if ((formData.type === 'DROPDOWN' || formData.type === 'MULTI_SELECT') && !formData.options.trim()) {
+        showAlert('error', 'Options are required for dropdown or multi-select attributes');
+        return;
+      }
+
       const data = {
         ...formData,
         groupId: formData.groupId || null,
+        templateId: selectedTemplateId,
       };
 
       if (editingAttribute) {
@@ -74,21 +157,25 @@ const Attributes = () => {
       }
       setShowModal(false);
       resetForm();
-      fetchData();
+      fetchAttributes(selectedTemplateId);
     } catch (error) {
       showAlert('error', error.message || 'Failed to save attribute');
     }
   };
 
   const handleEdit = (attribute) => {
+    if (attribute.templateId && attribute.templateId !== selectedTemplateId) {
+      setSelectedTemplateId(attribute.templateId);
+    }
     setEditingAttribute(attribute);
     setFormData({
       name: attribute.name,
       type: attribute.type,
       required: attribute.required || false,
       options: attribute.options || '',
-      validation: attribute.validation || '',
+      validationRegex: attribute.validationRegex || '',
       groupId: attribute.groupId || null,
+      templateId: attribute.templateId || selectedTemplateId,
     });
     setShowModal(true);
   };
@@ -111,8 +198,9 @@ const Attributes = () => {
       type: 'TEXT',
       required: false,
       options: '',
-      validation: '',
+      validationRegex: '',
       groupId: null,
+      templateId: selectedTemplateId,
     });
     setEditingAttribute(null);
   };
@@ -127,16 +215,20 @@ const Attributes = () => {
     return group ? group.name : 'None';
   };
 
+  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+  const selectedCategory = categories.find(c => c.id === selectedTemplate?.categoryId);
+  const inheritedAttributeIds = selectedCategory?.attributeIds || [];
+
   const columns = [
     {
       key: 'name',
-      label: 'Attribute Name',
-      render: (attr) => (
+      header: 'Attribute Name',
+      render: (value, row) => (
         <div>
-          <div className="font-medium text-slate-900 dark:text-white">{attr.name}</div>
-          {attr.validation && (
+          <div className="font-medium text-slate-900 dark:text-white">{row.name}</div>
+          {row.validationRegex && (
             <div className="text-sm text-slate-500 dark:text-slate-400">
-              Pattern: {attr.validation}
+              Pattern: {row.validationRegex}
             </div>
           )}
         </div>
@@ -144,53 +236,53 @@ const Attributes = () => {
     },
     {
       key: 'type',
-      label: 'Type',
-      render: (attr) => (
+      header: 'Type',
+      render: (value) => (
         <Badge variant="info">
-          {ATTRIBUTE_TYPES.find(t => t.value === attr.type)?.label || attr.type}
+          {ATTRIBUTE_TYPES.find(t => t.value === value)?.label || value}
         </Badge>
       ),
     },
     {
       key: 'options',
-      label: 'Options',
-      render: (attr) => (
+      header: 'Options',
+      render: (value) => (
         <div className="text-sm text-slate-600 dark:text-slate-400 max-w-xs truncate">
-          {attr.options || 'N/A'}
+          {value || 'N/A'}
         </div>
       ),
     },
     {
       key: 'required',
-      label: 'Required',
-      render: (attr) => (
-        <Badge variant={attr.required ? 'warning' : 'default'}>
-          {attr.required ? 'Yes' : 'No'}
+      header: 'Required',
+      render: (value) => (
+        <Badge variant={value ? 'warning' : 'default'}>
+          {value ? 'Yes' : 'No'}
         </Badge>
       ),
     },
     {
       key: 'group',
-      label: 'Group',
-      render: (attr) => (
+      header: 'Group',
+      render: (value, row) => (
         <span className="text-slate-900 dark:text-white">
-          {getGroupName(attr.groupId)}
+          {getGroupName(row.groupId)}
         </span>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
-      render: (attr) => (
+      header: 'Actions',
+      render: (value, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleEdit(attr)}
+            onClick={() => handleEdit(row)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">edit</span>
           </button>
           <button
-            onClick={() => handleDelete(attr.id)}
+            onClick={() => handleDelete(row.id)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-500 transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -216,10 +308,72 @@ const Attributes = () => {
           <Button
             onClick={() => setShowModal(true)}
             icon="add"
+            disabled={!selectedTemplateId}
           >
             Add Attribute
           </Button>
         </div>
+
+        {/* Template Selector */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Template
+              </label>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Select template</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {!selectedTemplateId && (
+              <div className="text-sm text-slate-500 dark:text-slate-400">
+                Select a template to view and manage attributes.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Inherited Attributes */}
+        {selectedTemplateId && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Inherited Category Attributes
+              </h3>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Category: {selectedCategory?.name || 'N/A'}
+              </span>
+            </div>
+            {inheritedAttributeIds.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                No inherited attributes for this category.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {inheritedAttributes.length > 0
+                  ? inheritedAttributes.map((attr) => (
+                      <Badge key={attr.id} variant="default">
+                        {attr.name}
+                      </Badge>
+                    ))
+                  : inheritedAttributeIds.map((attrId) => (
+                      <Badge key={attrId} variant="default">
+                        {attrId}
+                      </Badge>
+                    ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Alert */}
         {alert && (
@@ -233,7 +387,7 @@ const Attributes = () => {
           columns={columns}
           data={attributes}
           loading={loading}
-          emptyMessage="No attributes yet. Create your first attribute to get started."
+          emptyMessage={selectedTemplateId ? 'No attributes yet. Create your first attribute to get started.' : 'Select a template to view attributes.'}
           emptyIcon="tune"
         />
 
@@ -280,8 +434,8 @@ const Attributes = () => {
             {(formData.type === 'TEXT' || formData.type === 'NUMBER') && (
               <Input
                 label="Validation Pattern (optional)"
-                value={formData.validation}
-                onChange={(e) => setFormData({ ...formData, validation: e.target.value })}
+                value={formData.validationRegex}
+                onChange={(e) => setFormData({ ...formData, validationRegex: e.target.value })}
                 placeholder="e.g., ^[A-Z]{2,}$ for uppercase letters"
               />
             )}
