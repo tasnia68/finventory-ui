@@ -36,27 +36,60 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="flex justify-center mb-8">
-                    <img 
-                        src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
-                        alt="Logistra" 
-                        className="h-32"
-                    />
-                </div>
-                <h2 className="text-center text-3xl font-extrabold text-slate-900 dark:text-white">
-                    Sign in to your account
-                </h2>
-                <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
-                    Streamline your inventory management with Logistra
-                </p>
-            </div>
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_32%),radial-gradient(circle_at_75%_20%,_rgba(249,115,22,0.16),_transparent_24%),linear-gradient(to_bottom,_transparent,_rgba(15,23,42,0.04))] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_32%),radial-gradient(circle_at_75%_20%,_rgba(249,115,22,0.12),_transparent_24%),linear-gradient(to_bottom,_transparent,_rgba(15,23,42,0.18))]" />
+            <div className="relative mx-auto grid min-h-screen max-w-6xl grid-cols-1 gap-8 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+                <div className="flex flex-col justify-center gap-8">
+                    <div className="max-w-xl">
+                        <div className="mb-6 flex items-center gap-3">
+                            <img 
+                                src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
+                                alt="Logistra" 
+                                className="h-10"
+                            />
+                            <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white dark:bg-white dark:text-slate-900">
+                                Inventory Control
+                            </span>
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                            The same operations theme now starts at sign-in.
+                        </h1>
+                        <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-400">
+                            Catalog, inventory, and transactional workspaces now share one visual system so users do not context-switch every time they move between modules.
+                        </p>
+                    </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <Card className="py-8 px-4 sm:px-10">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+                            <div className="text-3xl font-black text-slate-900 dark:text-white">Phase 3</div>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Catalog screens now match the Phase 4 operations styling.</p>
+                        </div>
+                        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+                            <div className="text-3xl font-black text-slate-900 dark:text-white">1 Theme</div>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Shared visual language across login, navigation, and module workspaces.</p>
+                        </div>
+                        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+                            <div className="text-3xl font-black text-slate-900 dark:text-white">Clearer</div>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Stronger hierarchy for operators moving quickly across daily tasks.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-center">
+                <Card className="w-full max-w-md px-4 py-8 sm:px-10">
+                    <div className="mb-6">
+                        <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white dark:bg-white dark:text-slate-900">
+                            Secure Access
+                        </span>
+                        <h2 className="mt-4 text-3xl font-extrabold text-slate-900 dark:text-white">
+                            Sign in to your account
+                        </h2>
+                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                            Streamline your inventory management with Logistra.
+                        </p>
+                    </div>
                     <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error && <Alert type="error" message={error} onDismiss={() => setError('')} />}
+                        {error ? <Alert type="error" message={error} onDismiss={() => setError('')} /> : null}
 
                         <Input
                             label="Email address"
@@ -115,18 +148,19 @@ const Login = () => {
                                 <div className="w-full border-t border-slate-300 dark:border-slate-700" />
                             </div>
                             <div className="relative flex justify-center text-sm">
-                                <span className="px-2 bg-white dark:bg-slate-800 text-slate-500">
+                                <span className="bg-white px-2 text-slate-500 dark:bg-slate-800">
                                     Protected by standard encryption
                                 </span>
                             </div>
                         </div>
                     </div>
                 </Card>
-                
-                <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                    © 2026 Logistra. All rights reserved.
-                </p>
+                </div>
             </div>
+
+            <p className="relative pb-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                © 2026 Logistra. All rights reserved.
+            </p>
         </div>
     );
 };

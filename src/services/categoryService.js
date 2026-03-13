@@ -36,3 +36,14 @@ export const deleteCategory = (id) => {
         method: 'DELETE',
     });
 };
+
+export const getCategoryPermissions = (id) => {
+    return unwrap(request(`/categories/${id}/permissions`));
+};
+
+export const updateCategoryPermissions = (id, permissions) => {
+    return unwrap(request(`/categories/${id}/permissions`, {
+        method: 'PUT',
+        body: { permissions },
+    }));
+};

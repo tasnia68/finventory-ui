@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { getCategories, getCategoryTree, createCategory, updateCategory, deleteCategory } from '../../services/categoryService';
+import {
+  getCategories,
+  getCategoryTree,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  getCategoryPermissions,
+  updateCategoryPermissions,
+} from '../../services/categoryService';
+import { getRoles } from '../../services/roleService';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import Alert from '../../components/common/Alert';
 import Card from '../../components/common/Card';
+import InfoTip from '../../components/common/InfoTip';
+import MetricCard from '../../components/common/MetricCard';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [flatCategories, setFlatCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [alert, setAlert] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [permissionsCategory, setPermissionsCategory] = useState(null);
+  const [permissionRows, setPermissionRows] = useState([]);
+  const [savingPermissions, setSavingPermissions] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -32,6 +49,9 @@ const Categories = () => {
       ]);
       setCategories(Array.isArray(treeData) ? treeData : []);
       setFlatCategories(Array.isArray(flatData) ? flatData : []);
+
+      const rolesData = await getRoles();
+      setRoles(Array.isArray(rolesData) ? rolesData : []);
     } catch (error) {
       showAlert('error', 'Failed to load categories');
     } finally {
@@ -84,6 +104,60 @@ const Categories = () => {
     }
   };
 
+  const openPermissionsModal = async (category) => {
+    try {
+      setPermissionsCategory(category);
+      setShowPermissionModal(true);
+
+      const existing = await getCategoryPermissions(category.id);
+      const existingByRole = (Array.isArray(existing) ? existing : []).reduce((acc, row) => {
+        acc[row.roleId] = row;
+        return acc;
+      }, {});
+
+      const rows = (roles || []).map((role) => {
+        const current = existingByRole[role.id];
+        return {
+          roleId: role.id,
+          roleName: role.name,
+          canView: current ? Boolean(current.canView) : true,
+          canEdit: current ? Boolean(current.canEdit) : false,
+        };
+      });
+
+      setPermissionRows(rows);
+    } catch (error) {
+      showAlert('error', error.message || 'Failed to load category permissions');
+    }
+  };
+
+  const updatePermissionCell = (roleId, field, value) => {
+    setPermissionRows((prev) => prev.map((row) => {
+      if (row.roleId !== roleId) return row;
+      const next = { ...row, [field]: value };
+      if (field === 'canEdit' && value) {
+        next.canView = true;
+      }
+      return next;
+    }));
+  };
+
+  const savePermissions = async () => {
+    if (!permissionsCategory) return;
+
+    try {
+      setSavingPermissions(true);
+      await updateCategoryPermissions(permissionsCategory.id, permissionRows);
+      showAlert('success', `Permissions saved for ${permissionsCategory.name}`);
+      setShowPermissionModal(false);
+      setPermissionsCategory(null);
+    } catch (error) {
+      showAlert('error', error.message || 'Failed to save permissions');
+    } finally {
+      setSavingPermissions(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({ name: '', description: '', parentId: null });
     setEditingCategory(null);
@@ -120,6 +194,13 @@ const Categories = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => openPermissionsModal(category)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
+              title="Category permissions"
+            >
+              <span className="material-symbols-outlined text-[20px]">shield_person</span>
+            </button>
+            <button
               onClick={() => handleEdit(category)}
               className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
             >
@@ -143,36 +224,31 @@ const Categories = () => {
   };
 
   const categoryTree = categories;
+  const topLevelCategoryCount = categoryTree.length;
+  const nestedCategoryCount = Math.max(flatCategories.length - topLevelCategoryCount, 0);
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Categories
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Organize your product catalog with categories
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowModal(true)}
-            icon="add"
-          >
-            Add Category
-          </Button>
+    <CatalogPageFrame>
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title="Keep the catalog hierarchy clean and governed."
+          description="Structure templates under clear category trees and define which roles can safely view or edit each branch."
+          info="Category permissions help separate catalog ownership between merchandising, operations, and regional teams."
+          actions={
+            <Button onClick={() => setShowModal(true)} icon="add">
+              Add Category
+            </Button>
+          }
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Total Categories" value={flatCategories.length} caption="Every category currently in the catalog tree" icon="category" tone="blue" />
+          <MetricCard title="Top-Level Branches" value={topLevelCategoryCount} caption="Primary catalog branches visible to planners" icon="account_tree" tone="emerald" />
+          <MetricCard title="Nested Categories" value={nestedCategoryCount} caption="Subcategories used for deeper assortment control" icon="subdirectory_arrow_right" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* Categories List */}
         <Card title="Category Tree">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -193,6 +269,18 @@ const Categories = () => {
             </div>
           )}
         </Card>
+
+          <Card title="Access Policy" subtitle="Assign category-level visibility and edit access without leaving the workspace">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                Define which roles can view or edit specific categories.
+                <InfoTip text="Category permissions are useful when procurement, warehouse, and retail teams should not edit each other's catalog segments." />
+              </p>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Configure from each category row
+              </span>
+            </div>
+          </Card>
 
         {/* Create/Edit Modal */}
         <Modal
@@ -243,8 +331,62 @@ const Categories = () => {
             </div>
           </form>
         </Modal>
-      </div>
-    </div>
+
+        <Modal
+          isOpen={showPermissionModal}
+          onClose={() => setShowPermissionModal(false)}
+          title={`Category Permissions${permissionsCategory ? `: ${permissionsCategory.name}` : ''}`}
+          size="xl"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Role-level access for this category.
+            </p>
+
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <thead className="bg-slate-50 dark:bg-slate-900">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Role</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Can View</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Can Edit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                  {permissionRows.map((row) => (
+                    <tr key={row.roleId}>
+                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">{row.roleName}</td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={row.canView}
+                          onChange={(e) => updatePermissionCell(row.roleId, 'canView', e.target.checked)}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={row.canEdit}
+                          onChange={(e) => updatePermissionCell(row.roleId, 'canEdit', e.target.checked)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowPermissionModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={savePermissions} loading={savingPermissions}>
+                Save Permissions
+              </Button>
+            </div>
+          </div>
+        </Modal>
+    </CatalogPageFrame>
   );
 };
 

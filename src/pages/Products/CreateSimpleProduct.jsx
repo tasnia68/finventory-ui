@@ -7,6 +7,9 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Alert from '../../components/common/Alert';
 import Card from '../../components/common/Card';
+import MetricCard from '../../components/common/MetricCard';
+import InfoTip from '../../components/common/InfoTip';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const CreateSimpleProduct = () => {
   const navigate = useNavigate();
@@ -77,33 +80,31 @@ const CreateSimpleProduct = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const enabledTrackingModes = Number(formData.isBatchTracked) + Number(formData.isSerialTracked);
+
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-3xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Create Simple Product
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
-            For unique products without variations (color, size, etc.)
-          </p>
-          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              💡 <strong>When to use:</strong> Laptops, furniture, machinery, or any product that doesn't have color/size variations.
-              For products with variants, use <a href="/products/create" className="underline hover:text-blue-600">Template-Variant flow</a>.
-            </p>
-          </div>
+    <CatalogPageFrame size="md">
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title="Create a single-SKU product without the variant overhead."
+          description="Use this streamlined flow for products that do not branch by size, color, material, or other sellable attributes."
+          info="Choose the full template flow when the same product family needs multiple sellable variants. This form is best for one-SKU items."
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Categories Loaded" value={categories.length} caption="Available category destinations for this product" icon="category" tone="blue" />
+          <MetricCard title="Units Loaded" value={uoms.length} caption="Measurement units available for this product" icon="straighten" tone="emerald" />
+          <MetricCard title="Tracking Modes" value={enabledTrackingModes} caption="Optional batch and serial tracking currently enabled" icon="qr_code_scanner" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* Form */}
+        <Card title="Flow Guidance" subtitle="Pick the simplest model that matches the product's sellable behavior" action={<InfoTip text="Single-SKU products work well for unique items like furniture, equipment, and fixed-spec electronics." />}>
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+            When this product later needs sellable options such as size or color, move to the template-and-variants flow so inventory, pricing, and barcode handling stay clean.
+          </p>
+        </Card>
+
         <Card>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Product Information Section */}
@@ -290,8 +291,7 @@ const CreateSimpleProduct = () => {
             </div>
           </form>
         </Card>
-      </div>
-    </div>
+    </CatalogPageFrame>
   );
 };
 

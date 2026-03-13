@@ -7,6 +7,10 @@ import Button from '../../components/common/Button';
 import Alert from '../../components/common/Alert';
 import DataTable from '../../components/common/DataTable';
 import Badge from '../../components/common/Badge';
+import Card from '../../components/common/Card';
+import InfoTip from '../../components/common/InfoTip';
+import MetricCard from '../../components/common/MetricCard';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
@@ -72,6 +76,9 @@ const Templates = () => {
     const matchesCategory = !categoryFilter || template.categoryId === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  const activeTemplateCount = templates.filter((template) => template.isActive).length;
+  const coveredCategoryCount = new Set(templates.map((template) => template.categoryId).filter(Boolean)).size;
 
   const columns = [
     {
@@ -159,31 +166,28 @@ const Templates = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Templates
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Manage product templates for variants and attributes
-            </p>
-          </div>
-          <Link to="/products/create">
-            <Button icon="add">Create Template</Button>
-          </Link>
+    <CatalogPageFrame>
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title="Manage reusable product blueprints."
+          description="Templates sit at the center of the catalog model, connecting categories, units, attributes, and variant generation rules."
+          info="Treat templates as product blueprints. Clean templates reduce downstream SKU cleanup and make variant generation more reliable."
+          actions={
+            <Link to="/products/create">
+              <Button icon="add">Create Template</Button>
+            </Link>
+          }
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Templates" value={templates.length} caption="Product blueprints currently defined in the catalog" icon="inventory_2" tone="blue" />
+          <MetricCard title="Active Templates" value={activeTemplateCount} caption="Blueprints available for ongoing catalog operations" icon="verified" tone="emerald" />
+          <MetricCard title="Covered Categories" value={coveredCategoryCount} caption="Catalog branches with at least one template definition" icon="dataset" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* Filters */}
+        <Card title="Template Filters" subtitle="Narrow the blueprint register before reviewing or editing" action={<InfoTip text="Use category filtering when auditing coverage gaps or narrowing template maintenance work to one branch of the catalog." />}>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -210,17 +214,18 @@ const Templates = () => {
             ))}
           </select>
         </div>
+        </Card>
 
-        {/* Templates Table */}
-        <DataTable
-          columns={columns}
-          data={filteredTemplates}
-          loading={loading}
-          emptyMessage="No templates found. Create your first template to get started."
-          emptyIcon="category"
-        />
-      </div>
-    </div>
+        <Card title="Template Register" subtitle="Blueprints and their catalog status" padding="none">
+          <DataTable
+            columns={columns}
+            data={filteredTemplates}
+            loading={loading}
+            emptyMessage="No templates found. Create your first template to get started."
+            emptyIcon="category"
+          />
+        </Card>
+    </CatalogPageFrame>
   );
 };
 

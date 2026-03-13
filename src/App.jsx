@@ -18,9 +18,17 @@ import ProductDetails from './pages/Products/ProductDetails';
 import Attributes from './pages/Attributes';
 import AttributeGroups from './pages/AttributeGroups';
 import Templates from './pages/Templates';
+import Batches from './pages/Batches';
+import Serials from './pages/Serials';
+import Reservations from './pages/Reservations';
+import Replenishment from './pages/Replenishment';
+import PurchaseRequisitions from './pages/PurchaseRequisitions';
+import CycleCounts from './pages/CycleCounts';
+import WarehouseTransfers from './pages/WarehouseTransfers';
 import Inventory from './pages/Inventory';
 import Warehouses from './pages/Warehouses';
 import Transactions from './pages/Transactions';
+import Valuation from './pages/Valuation';
 import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
@@ -175,9 +183,48 @@ function App() {
           } />
 
           {/* Advanced Inventory */}
-          {['/batches', '/serials', '/reservations', '/replenishment', '/cycle-counts', '/valuation'].map(path => (
-            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
-          ))}
+          <Route path="/batches" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <Batches />
+            </ProtectedRoute>
+          } />
+          <Route path="/serials" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <Serials />
+            </ProtectedRoute>
+          } />
+          <Route path="/reservations" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <Reservations />
+            </ProtectedRoute>
+          } />
+          <Route path="/replenishment" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <Replenishment />
+            </ProtectedRoute>
+          } />
+          <Route path="/cycle-counts" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <CycleCounts />
+            </ProtectedRoute>
+          } />
+          <Route path="/valuation" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <Valuation />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/purchase-requisitions" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}>
+              <PurchaseRequisitions />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/warehouse-transfers" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_INVENTORY_CORE}>
+              <WarehouseTransfers />
+            </ProtectedRoute>
+          } />
 
           {/* Procurement */}
           {['/suppliers', '/purchase-orders'].map(path => (

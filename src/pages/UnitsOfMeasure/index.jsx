@@ -6,6 +6,10 @@ import Modal from '../../components/common/Modal';
 import Alert from '../../components/common/Alert';
 import DataTable from '../../components/common/DataTable';
 import Badge from '../../components/common/Badge';
+import Card from '../../components/common/Card';
+import MetricCard from '../../components/common/MetricCard';
+import InfoTip from '../../components/common/InfoTip';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const UOM_CATEGORIES = [
   { value: 'QUANTITY', label: 'Quantity' },
@@ -173,42 +177,40 @@ const UnitsOfMeasure = () => {
     },
   ];
 
+  const baseUnitCount = uoms.filter((uom) => uom.isBase).length;
+  const coveredCategoryCount = new Set(uoms.map((uom) => uom.category).filter(Boolean)).size;
+
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Units of Measure
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Define measurement units for your products
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowModal(true)}
-            icon="add"
-          >
-            Add Unit
-          </Button>
+    <CatalogPageFrame>
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title="Standardize how the catalog measures stock."
+          description="Keep conversion logic predictable so purchasing, warehouse execution, and reporting all operate on the same unit definitions."
+          info="Base units anchor conversion logic. Derived units should only express clean multipliers of the base unit for their category."
+          actions={
+            <Button onClick={() => setShowModal(true)} icon="add">
+              Add Unit
+            </Button>
+          }
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Defined Units" value={uoms.length} caption="Measurement records available to templates and variants" icon="straighten" tone="blue" />
+          <MetricCard title="Base Units" value={baseUnitCount} caption="Reference units used as the anchor for conversions" icon="rule" tone="emerald" />
+          <MetricCard title="Covered Categories" value={coveredCategoryCount} caption="Measurement domains currently represented in the catalog" icon="dashboard_customize" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* UOMs Table */}
-        <DataTable
-          columns={columns}
-          data={uoms}
-          loading={loading}
-          emptyMessage="No units of measure yet. Create your first unit to get started."
-          emptyIcon="straighten"
-        />
+        <Card title="Measurement Register" subtitle="Audit unit definitions before they flow into product templates" action={<InfoTip text="Review base and derived units regularly to avoid duplicate codes or conflicting conversion factors." />} padding="none">
+          <DataTable
+            columns={columns}
+            data={uoms}
+            loading={loading}
+            emptyMessage="No units of measure yet. Create your first unit to get started."
+            emptyIcon="straighten"
+          />
+        </Card>
 
         {/* Create/Edit Modal */}
         <Modal
@@ -285,8 +287,7 @@ const UnitsOfMeasure = () => {
             </div>
           </form>
         </Modal>
-      </div>
-    </div>
+    </CatalogPageFrame>
   );
 };
 

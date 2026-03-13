@@ -14,6 +14,9 @@ import Alert from '../../components/common/Alert';
 import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
 import DataTable from '../../components/common/DataTable';
+import MetricCard from '../../components/common/MetricCard';
+import InfoTip from '../../components/common/InfoTip';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -219,39 +222,35 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex items-center gap-4">
-          <Link 
-            to="/products"
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">
-              arrow_back
-            </span>
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {product.name}
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              {product.description || 'No description'}
-            </p>
-          </div>
-          <Link to={`/products/${id}/edit`}>
-            <Button icon="edit" variant="secondary">
-              Edit Product
-            </Button>
-          </Link>
+    <CatalogPageFrame>
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title={product.name}
+          description={product.description || 'No description'}
+          info="Use the detail view to review blueprint metadata, imagery, and all sellable variants before editing or cleanup work."
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Link to="/products">
+                <Button icon="arrow_back" variant="secondary">
+                  Back to Products
+                </Button>
+              </Link>
+              <Link to={`/products/${id}/edit`}>
+                <Button icon="edit" variant="secondary">
+                  Edit Product
+                </Button>
+              </Link>
+            </div>
+          }
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Variants" value={variants.length} caption="Sellable records currently linked to this template" icon="inventory_2" tone="blue" />
+          <MetricCard title="Images" value={images.length} caption="Media assets currently attached to the template" icon="image" tone="emerald" />
+          <MetricCard title="Status" value={product.isActive ? 'Active' : 'Inactive'} caption="Commercial availability of the product blueprint" icon="verified" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
         {/* Product Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -346,7 +345,7 @@ const ProductDetails = () => {
             </Card>
 
             {/* Variants */}
-            <Card title="Product Variants">
+            <Card title="Product Variants" action={<InfoTip text="Review attribute combinations here to spot duplicate sellable variants, missing prices, or outdated barcodes." />}>
               <DataTable
                 columns={variantColumns}
                 data={variants}
@@ -357,8 +356,7 @@ const ProductDetails = () => {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+    </CatalogPageFrame>
   );
 };
 

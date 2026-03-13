@@ -5,6 +5,9 @@ import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import Alert from '../../components/common/Alert';
 import Card from '../../components/common/Card';
+import MetricCard from '../../components/common/MetricCard';
+import InfoTip from '../../components/common/InfoTip';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const AttributeGroups = () => {
   const [groups, setGroups] = useState([]);
@@ -87,35 +90,36 @@ const AttributeGroups = () => {
     resetForm();
   };
 
+  const describedGroupCount = groups.filter((group) => Boolean(group.description)).length;
+
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Attribute Groups
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Organize product attributes into logical groups
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowModal(true)}
-            icon="add"
-          >
-            Add Group
-          </Button>
+    <CatalogPageFrame>
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title="Organize attributes into reviewable groups."
+          description="Use groups to keep template design readable for merchandising, QA, and integration teams working across shared product definitions."
+          info="A good grouping scheme keeps technical specs, dimensions, compliance fields, and merchandising fields separate without duplicating attributes."
+          actions={
+            <Button onClick={() => setShowModal(true)} icon="add">
+              Add Group
+            </Button>
+          }
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Attribute Groups" value={groups.length} caption="Named groupings available for catalog configuration" icon="folder_special" tone="blue" />
+          <MetricCard title="Documented Groups" value={describedGroupCount} caption="Groups with descriptions to guide maintainers" icon="article" tone="emerald" />
+          <MetricCard title="Needs Description" value={Math.max(groups.length - describedGroupCount, 0)} caption="Groups that still rely on name-only context" icon="edit_note" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* Groups Grid */}
+        <Card title="Grouping Guidance" subtitle="Keep attribute organization consistent across templates" action={<InfoTip text="Prefer stable groups such as Dimensions, Commercial Data, Technical Specs, and Compliance rather than product-specific buckets." />}>
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Group labels should reflect how your teams review data, not how one product happens to be modeled today. Stable grouping makes templates easier to maintain as the catalog expands.
+          </p>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {loading ? (
             <div className="col-span-full flex items-center justify-center py-12">
@@ -205,8 +209,7 @@ const AttributeGroups = () => {
             </div>
           </form>
         </Modal>
-      </div>
-    </div>
+    </CatalogPageFrame>
   );
 };
 

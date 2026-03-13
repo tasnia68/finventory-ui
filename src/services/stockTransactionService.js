@@ -42,3 +42,27 @@ export const cancelStockTransaction = (id) => {
         method: 'POST',
     }));
 };
+
+export const submitStockTransactionForApproval = (id) => {
+    return unwrap(request(`/stock-transactions/${id}/submit-approval`, {
+        method: 'POST',
+    }));
+};
+
+export const approveStockTransaction = (id) => {
+    return unwrap(request(`/stock-transactions/${id}/approve`, {
+        method: 'POST',
+    }));
+};
+
+export const rejectStockTransaction = (id) => {
+    return unwrap(request(`/stock-transactions/${id}/reject`, {
+        method: 'POST',
+    }));
+};
+
+export const reverseStockTransaction = (id) => {
+    return unwrap(request(`/stock-transactions/${id}/reverse`, {
+        method: 'POST',
+    }));
+};

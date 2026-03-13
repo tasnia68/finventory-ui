@@ -9,6 +9,10 @@ import Modal from '../../components/common/Modal';
 import Alert from '../../components/common/Alert';
 import DataTable from '../../components/common/DataTable';
 import Badge from '../../components/common/Badge';
+import Card from '../../components/common/Card';
+import InfoTip from '../../components/common/InfoTip';
+import MetricCard from '../../components/common/MetricCard';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const ATTRIBUTE_TYPES = [
   { value: 'TEXT', label: 'Text' },
@@ -218,6 +222,7 @@ const Attributes = () => {
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
   const selectedCategory = categories.find(c => c.id === selectedTemplate?.categoryId);
   const inheritedAttributeIds = selectedCategory?.attributeIds || [];
+  const groupedAttributeCount = attributes.filter((attribute) => attribute.groupId).length;
 
   const columns = [
     {
@@ -293,33 +298,31 @@ const Attributes = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Product Attributes
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Define reusable attributes for product variants
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowModal(true)}
-            icon="add"
-            disabled={!selectedTemplateId}
-          >
-            Add Attribute
-          </Button>
+    <CatalogPageFrame>
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title="Define variant logic once and reuse it safely."
+          description="Manage template attributes with enough context to keep category inheritance, option design, and validation rules aligned."
+          info="Use template-level attributes for variant behavior and category-level attributes for common metadata inherited across multiple templates."
+          actions={
+            <Button onClick={() => setShowModal(true)} icon="add" disabled={!selectedTemplateId}>
+              Add Attribute
+            </Button>
+          }
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Template Attributes" value={attributes.length} caption="Attributes directly managed on the selected template" icon="tune" tone="blue" />
+          <MetricCard title="Inherited Attributes" value={inheritedAttributeIds.length} caption="Category attributes inherited into the current template context" icon="move_down" tone="emerald" />
+          <MetricCard title="Grouped Attributes" value={groupedAttributeCount} caption="Attributes currently organized into attribute groups" icon="folder_supervised" tone="amber" />
         </div>
 
-        {/* Template Selector */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+        <Card title="Template Context" subtitle="Pick the template you want to configure before creating or editing attributes">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
                 Template
+                <InfoTip text="Attributes are scoped to a product template. Selecting a different template swaps the attribute workspace." />
               </label>
               <select
                 value={selectedTemplateId}
@@ -340,15 +343,11 @@ const Attributes = () => {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
-        {/* Inherited Attributes */}
         {selectedTemplateId && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <Card title="Inherited Category Attributes" subtitle="These attributes come from the selected template's category and remain visible for context">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                Inherited Category Attributes
-              </h3>
               <span className="text-xs text-slate-500 dark:text-slate-400">
                 Category: {selectedCategory?.name || 'N/A'}
               </span>
@@ -372,24 +371,20 @@ const Attributes = () => {
                     ))}
               </div>
             )}
-          </div>
+          </Card>
         )}
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* Attributes Table */}
-        <DataTable
-          columns={columns}
-          data={attributes}
-          loading={loading}
-          emptyMessage={selectedTemplateId ? 'No attributes yet. Create your first attribute to get started.' : 'Select a template to view attributes.'}
-          emptyIcon="tune"
-        />
+        <Card title="Attribute Register" subtitle="Attribute definitions for the active template" action={<InfoTip text="Keep option labels concise and validation rules focused on actual data quality checks." />} padding="none">
+          <DataTable
+            columns={columns}
+            data={attributes}
+            loading={loading}
+            emptyMessage={selectedTemplateId ? 'No attributes yet. Create your first attribute to get started.' : 'Select a template to view attributes.'}
+            emptyIcon="tune"
+          />
+        </Card>
 
         {/* Create/Edit Modal */}
         <Modal
@@ -478,8 +473,7 @@ const Attributes = () => {
             </div>
           </form>
         </Modal>
-      </div>
-    </div>
+    </CatalogPageFrame>
   );
 };
 

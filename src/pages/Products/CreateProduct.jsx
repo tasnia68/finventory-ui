@@ -8,6 +8,9 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Alert from '../../components/common/Alert';
 import Card from '../../components/common/Card';
+import MetricCard from '../../components/common/MetricCard';
+import InfoTip from '../../components/common/InfoTip';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const STEPS = [
   { id: 1, name: 'Basic Info', icon: 'info' },
@@ -418,29 +421,26 @@ const CreateProduct = () => {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-4xl mx-auto flex flex-col gap-8">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            {isEditMode ? 'Edit Product' : 'Create New Product'}
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
-            {isEditMode ? 'Update product information and variants' : 'Follow the steps to create a complete product'}
-          </p>
+    <CatalogPageFrame size="md">
+        <CatalogHero
+          eyebrow="Phase 3 Catalog"
+          title={isEditMode ? 'Refine the full product blueprint and its variants.' : 'Build a product blueprint step by step.'}
+          description={isEditMode ? 'Adjust the template, media, attribute model, and sellable variants in one controlled flow.' : 'Move from template basics to images, attributes, and final variant review without losing context.'}
+          info="This is the complete template workflow for products that need multiple sellable variants or richer merchandising structure."
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <MetricCard title="Current Step" value={`${currentStep}/${STEPS.length}`} caption="Progress through the template workflow" icon="conversion_path" tone="blue" />
+          <MetricCard title="Images Staged" value={images.length} caption="Product images currently attached to this template" icon="image" tone="emerald" />
+          <MetricCard title="Variants Drafted" value={variants.length} caption="Sellable variants currently staged or loaded" icon="inventory" tone="amber" />
         </div>
 
-        {/* Alert */}
-        {alert && (
-          <Alert type={alert.type} onClose={() => setAlert(null)}>
-            {alert.message}
-          </Alert>
-        )}
+        {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-        {/* Step Indicator */}
-        {renderStepIndicator()}
+        <Card title="Workflow Progress" subtitle="Each step adds another layer of product definition" action={<InfoTip text="Save the template foundation first, then upload media, define attributes, and finish with sellable variants." />}>
+          {renderStepIndicator()}
+        </Card>
 
-        {/* Step Content */}
         <Card>
           {/* Step 1: Basic Info */}
           {currentStep === 1 && (
@@ -763,8 +763,7 @@ const CreateProduct = () => {
             </div>
           )}
         </Card>
-      </div>
-    </div>
+    </CatalogPageFrame>
   );
 };
 

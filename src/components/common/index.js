@@ -6,3 +6,5 @@ export { default as Modal } from './Modal';
 export { default as DataTable } from './DataTable';
 export { default as Alert } from './Alert';
 export { default as Select } from './Select';
+export { default as InfoTip } from './InfoTip';
+export { default as MetricCard } from './MetricCard';

@@ -134,9 +134,35 @@ export const getProductVariants = (templateId) => {
     });
 };
 
+export const getProducts = (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.templateId) query.set('templateId', params.templateId);
+    if (params.categoryId) query.set('categoryId', params.categoryId);
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+    if (params.sort) query.set('sort', params.sort);
+
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    return unwrap(request(`/products${suffix}`));
+};
+
 export const searchProductVariants = (query) => {
     if (!query) return Promise.resolve({ content: [] });
-    return unwrap(request(`/product-variants?q=${encodeURIComponent(query)}`));
+    return unwrap(request(`/products/search?q=${encodeURIComponent(query)}`));
+};
+
+export const searchProducts = (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.categoryId) query.set('categoryId', params.categoryId);
+    if (params.templateId) query.set('templateId', params.templateId);
+    if (params.attributeId) query.set('attributeId', params.attributeId);
+    if (params.attributeValue) query.set('attributeValue', params.attributeValue);
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+    if (params.sort) query.set('sort', params.sort);
+
+    return unwrap(request(`/products/search?${query.toString()}`));
 };
 
 export const getProductVariant = (id) => {
@@ -161,4 +187,67 @@ export const deleteProductVariant = (id) => {
     return request(`/products/${id}`, {
         method: 'DELETE',
     });
+};
+
+export const bulkUpdateProducts = (payload) => {
+    return unwrap(request('/products/bulk', {
+        method: 'POST',
+        body: payload,
+    }));
+};
+
+export const getProductHistory = (variantId, params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page !== undefined) query.set('page', String(params.page));
+    if (params.size !== undefined) query.set('size', String(params.size));
+    if (params.sort) query.set('sort', params.sort);
+    const suffix = query.toString() ? `?${query.toString()}` : '';
+    return unwrap(request(`/products/${variantId}/history${suffix}`));
+};
+
+const getAuthHeaders = () => {
+    const headers = {
+        'X-Tenant-ID': import.meta.env.VITE_TENANT_ID || 'default-tenant',
+    };
+
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+};
+
+export const importProductsCsv = async (file) => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/products/import`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to import products');
+    }
+
+    return data.data !== undefined ? data.data : data;
+};
+
+export const exportProductsCsv = async () => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+
+    const response = await fetch(`${API_BASE_URL}/products/export`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to export products');
+    }
+
+    return response.text();
 };
