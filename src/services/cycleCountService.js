@@ -23,9 +23,10 @@ export const createCycleCount = (payload) => {
     }));
 };
 
-export const scheduleCycleCount = (id) => {
+export const scheduleCycleCount = (id, payload = {}) => {
     return unwrap(request(`/cycle-counts/${id}/schedule`, {
         method: 'POST',
+        body: payload,
     }));
 };
 

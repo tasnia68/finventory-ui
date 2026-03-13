@@ -38,3 +38,7 @@ export const updateBatchExpiry = (id, payload) => {
         body: payload,
     }));
 };
+
+export const getBatchHistory = (id) => {
+    return unwrap(request(`/batches/${id}/history`));
+};

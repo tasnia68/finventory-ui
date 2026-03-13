@@ -23,3 +23,10 @@ export const getSerialNumbers = (params = {}) => {
 export const getSerialHistory = (serial) => {
     return unwrap(request(`/serial-numbers/${serial}/history`));
 };
+
+export const updateSerialWarranty = (id, payload) => {
+    return unwrap(request(`/serial-numbers/${id}/warranty`, {
+        method: 'PUT',
+        body: payload,
+    }));
+};

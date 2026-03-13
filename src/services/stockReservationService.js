@@ -29,6 +29,12 @@ export const releaseStockReservation = (id) => {
     }));
 };
 
+export const releaseReservationsByReference = (referenceId) => {
+    return unwrap(request(`/stock-reservations/release-by-reference${buildQuery({ referenceId })}`, {
+        method: 'PUT',
+    }));
+};
+
 export const getStockReservations = (params = {}) => {
     return unwrap(request(`/stock-reservations${buildQuery(params)}`));
 };

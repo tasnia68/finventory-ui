@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { getBatches, getExpiringBatches, getExpiredBatches, updateBatchExpiry } from '../../services/batchService';
-import Button from '../../components/common/Button';
-import Input from '../../components/common/Input';
-import Select from '../../components/common/Select';
-import Modal from '../../components/common/Modal';
-import Alert from '../../components/common/Alert';
-import DataTable from '../../components/common/DataTable';
-import Badge from '../../components/common/Badge';
-import Card from '../../components/common/Card';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getBatches, getBatchHistory, getExpiringBatches, getExpiredBatches, updateBatchExpiry } from '../../services/batchService';
+import { Alert, Badge, Button, Card, DataTable, InfoTip, Input, MetricCard, Modal, ProductVariantLookup, Select } from '../../components/common';
+import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
-const STATUS_OPTIONS = [
-    { value: 'ALL', label: 'All' },
-    { value: 'EXPIRING', label: 'Expiring' },
-    { value: 'EXPIRED', label: 'Expired' },
+const VIEW_OPTIONS = [
+    { value: 'RISK_WINDOW', label: 'Expiry risk window' },
+    { value: 'EXPIRED', label: 'Expired only' },
+    { value: 'VARIANT_REGISTER', label: 'Single variant register' },
 ];
 
 const toList = (data) => {
@@ -31,38 +25,114 @@ const formatDate = (value) => {
     return date.toLocaleDateString();
 };
 
+const formatDateTime = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+};
+
+const formatNumber = (value) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(value || 0));
+
+const mergeUniqueById = (...groups) => {
+    const items = groups.flat();
+    return Array.from(new Map(items.map((item) => [item.id, item])).values());
+};
+
+const getBatchHealth = (expiryDate) => {
+    if (!expiryDate) {
+        return { label: 'No expiry', variant: 'default', daysRemaining: null };
+    }
+
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return { label: 'Expired', variant: 'danger', daysRemaining: diffDays };
+    }
+    if (diffDays <= 30) {
+        return { label: 'Expiring', variant: 'warning', daysRemaining: diffDays };
+    }
+    return { label: 'Healthy', variant: 'success', daysRemaining: diffDays };
+};
+
 const Batches = () => {
     const [batches, setBatches] = useState([]);
+    const [expiringBatches, setExpiringBatches] = useState([]);
+    const [expiredBatches, setExpiredBatches] = useState([]);
+    const [selectedVariant, setSelectedVariant] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const [alert, setAlert] = useState(null);
     const [filters, setFilters] = useState({
-        productVariantId: '',
-        status: 'ALL',
+        view: 'RISK_WINDOW',
         days: 30,
     });
-    const [showModal, setShowModal] = useState(false);
+    const [showExpiryModal, setShowExpiryModal] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState(null);
+    const [historyRows, setHistoryRows] = useState([]);
     const [expiryForm, setExpiryForm] = useState({
         manufacturingDate: '',
         expiryDate: '',
     });
 
     useEffect(() => {
-        fetchBatches();
+        loadOverview();
     }, []);
 
-    const fetchBatches = async () => {
+    useEffect(() => {
+        loadBatchRegister();
+    }, [filters.view, filters.days, selectedVariant]);
+
+    const showAlert = (type, message) => {
+        setAlert({ type, message });
+        window.setTimeout(() => setAlert(null), 5000);
+    };
+
+    const loadOverview = async (days = filters.days) => {
+        try {
+            const [expiringData, expiredData] = await Promise.all([
+                getExpiringBatches(days),
+                getExpiredBatches(),
+            ]);
+            setExpiringBatches(toList(expiringData));
+            setExpiredBatches(toList(expiredData));
+        } catch (error) {
+            showAlert('error', error.message || 'Failed to load batch overview');
+        }
+    };
+
+    const loadBatchRegister = async () => {
         try {
             setLoading(true);
-            let data;
-            if (filters.status === 'EXPIRING') {
-                data = await getExpiringBatches(filters.days || 30);
-            } else if (filters.status === 'EXPIRED') {
-                data = await getExpiredBatches();
-            } else {
-                data = await getBatches({ productVariantId: filters.productVariantId || undefined });
+
+            if (filters.view === 'VARIANT_REGISTER') {
+                if (!selectedVariant?.id) {
+                    setBatches([]);
+                    return;
+                }
+                const data = await getBatches({ productVariantId: selectedVariant.id });
+                setBatches(toList(data));
+                return;
             }
-            setBatches(toList(data));
+
+            if (filters.view === 'EXPIRED') {
+                const data = await getExpiredBatches();
+                setBatches(toList(data));
+                return;
+            }
+
+            const [expiringData, expiredData] = await Promise.all([
+                getExpiringBatches(filters.days || 30),
+                getExpiredBatches(),
+            ]);
+            const expiringList = toList(expiringData);
+            const expiredList = toList(expiredData);
+            setExpiringBatches(expiringList);
+            setExpiredBatches(expiredList);
+            setBatches(mergeUniqueById(expiringList, expiredList));
         } catch (error) {
             showAlert('error', error.message || 'Failed to load batches');
         } finally {
@@ -70,9 +140,9 @@ const Batches = () => {
         }
     };
 
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-        setTimeout(() => setAlert(null), 5000);
+    const handleRefresh = async () => {
+        await loadOverview(filters.days);
+        await loadBatchRegister();
     };
 
     const openExpiryModal = (batch) => {
@@ -81,21 +151,47 @@ const Batches = () => {
             manufacturingDate: batch.manufacturingDate || '',
             expiryDate: batch.expiryDate || '',
         });
-        setShowModal(true);
+        setShowExpiryModal(true);
     };
 
-    const handleUpdateExpiry = async (e) => {
-        e.preventDefault();
+    const openHistoryModal = async (batch) => {
         try {
-            await updateBatchExpiry(selectedBatch.id, expiryForm);
-            showAlert('success', 'Batch expiry updated');
-            setShowModal(false);
-            setSelectedBatch(null);
-            fetchBatches();
+            setSelectedBatch(batch);
+            setShowHistoryModal(true);
+            setHistoryLoading(true);
+            const data = await getBatchHistory(batch.id);
+            setHistoryRows(toList(data));
         } catch (error) {
-            showAlert('error', error.message || 'Failed to update expiry');
+            showAlert('error', error.message || 'Failed to load batch history');
+        } finally {
+            setHistoryLoading(false);
         }
     };
+
+    const handleUpdateExpiry = async (event) => {
+        event.preventDefault();
+        if (!selectedBatch?.id) return;
+
+        try {
+            await updateBatchExpiry(selectedBatch.id, expiryForm);
+            showAlert('success', 'Batch dating updated successfully');
+            setShowExpiryModal(false);
+            await handleRefresh();
+        } catch (error) {
+            showAlert('error', error.message || 'Failed to update expiry details');
+        }
+    };
+
+    const summary = useMemo(() => {
+        const visible = batches.length;
+        const expired = batches.filter((batch) => getBatchHealth(batch.expiryDate).label === 'Expired').length;
+        const expiring = batches.filter((batch) => getBatchHealth(batch.expiryDate).label === 'Expiring').length;
+        const nextToExpire = [...batches]
+            .filter((batch) => batch.expiryDate)
+            .sort((left, right) => new Date(left.expiryDate).getTime() - new Date(right.expiryDate).getTime())[0];
+
+        return { visible, expired, expiring, nextToExpire };
+    }, [batches]);
 
     const columns = [
         {
@@ -104,31 +200,33 @@ const Batches = () => {
             render: (value, row) => (
                 <div>
                     <div className="font-semibold text-slate-900 dark:text-white">{value || row.id}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">Variant: {row.productVariantId}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Variant: {selectedVariant?.sku || row.productVariantId}</div>
                 </div>
             ),
         },
         {
             key: 'manufacturingDate',
-            header: 'MFG Date',
+            header: 'Manufactured',
             render: (value) => formatDate(value),
         },
         {
             key: 'expiryDate',
-            header: 'Expiry Date',
+            header: 'Expiry',
             render: (value) => formatDate(value),
         },
         {
             key: 'status',
-            header: 'Status',
+            header: 'Health',
             render: (value, row) => {
-                const today = new Date();
-                const expiry = row.expiryDate ? new Date(row.expiryDate) : null;
-                if (!expiry) return <Badge variant="default">Unknown</Badge>;
-                if (expiry < today) return <Badge variant="danger">Expired</Badge>;
-                const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                if (diffDays <= 30) return <Badge variant="warning">Expiring</Badge>;
-                return <Badge variant="success">Valid</Badge>;
+                const health = getBatchHealth(row.expiryDate);
+                return (
+                    <div className="space-y-1">
+                        <Badge variant={health.variant}>{health.label}</Badge>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                            {health.daysRemaining === null ? 'No shelf-life rule recorded' : `${health.daysRemaining} day(s)`}
+                        </div>
+                    </div>
+                );
             },
         },
         {
@@ -136,105 +234,138 @@ const Batches = () => {
             header: 'Actions',
             render: (value, row) => (
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => openExpiryModal(row)}
-                        className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
+                    <Button variant="ghost" size="sm" icon="history" onClick={() => openHistoryModal(row)}>
+                        History
+                    </Button>
+                    <Button variant="secondary" size="sm" icon="edit" onClick={() => openExpiryModal(row)}>
+                        Update
+                    </Button>
                 </div>
             ),
         },
     ];
 
-    return (
-        <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-            <div className="max-w-7xl mx-auto flex flex-col gap-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            Batches
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1">
-                            Track batch expiry and manufacturing dates
-                        </p>
-                    </div>
-                    <Button variant="secondary" onClick={fetchBatches}>
-                        Refresh
-                    </Button>
+    const historyColumns = [
+        {
+            key: 'type',
+            header: 'Movement',
+            render: (value, row) => (
+                <div>
+                    <div className="font-semibold text-slate-900 dark:text-white">{value || 'Movement'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{row.reason || row.referenceId || 'No reference'}</div>
                 </div>
+            ),
+        },
+        { key: 'quantity', header: 'Quantity', render: (value) => formatNumber(value) },
+        { key: 'warehouseName', header: 'Warehouse', render: (value) => value || '-' },
+        { key: 'createdBy', header: 'Recorded By', render: (value) => value || '-' },
+        { key: 'createdAt', header: 'Timestamp', render: (value) => formatDateTime(value) },
+    ];
 
-                {alert && (
-                    <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} />
-                )}
+    return (
+        <CatalogPageFrame>
+            <CatalogHero
+                eyebrow="Advanced Inventory"
+                title="Batch control with expiry risk visibility."
+                description="Monitor near-expiry lots, review traceability history, and correct shelf-life data without jumping between screens."
+                info="Use the risk window for expiry surveillance and switch to a variant register when QA or recall workflows need one SKU at a time."
+                actions={<Button icon="sync" onClick={handleRefresh}>Refresh</Button>}
+                badgeTone="amber"
+            />
 
-                <Card title="Filters">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Input
-                            label="Product Variant ID"
-                            value={filters.productVariantId}
-                            onChange={(e) => setFilters({ ...filters, productVariantId: e.target.value })}
-                            placeholder="Variant ID"
-                        />
-                        <Select
-                            label="Status"
-                            value={filters.status}
-                            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                            options={STATUS_OPTIONS}
-                        />
-                        <Input
-                            label="Expiring in (days)"
-                            type="number"
-                            value={filters.days}
-                            onChange={(e) => setFilters({ ...filters, days: e.target.value })}
-                            disabled={filters.status !== 'EXPIRING'}
-                        />
-                        <div className="flex items-end gap-3">
-                            <Button variant="secondary" onClick={() => setFilters({ productVariantId: '', status: 'ALL', days: 30 })}>
-                                Reset
-                            </Button>
-                            <Button onClick={fetchBatches}>Apply</Button>
-                        </div>
-                    </div>
-                </Card>
+            {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-                <Card padding="none" className="overflow-hidden">
-                    <DataTable
-                        columns={columns}
-                        data={batches}
-                        loading={loading}
-                        emptyMessage="No batches found."
-                    />
-                </Card>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <MetricCard title="Visible Batches" value={formatNumber(summary.visible)} caption="Lots in the active workspace" icon="inventory_2" tone="blue" />
+                <MetricCard title="Expiring Soon" value={formatNumber(summary.expiring)} caption={`Within the next ${filters.days} day(s)`} icon="schedule" tone="amber" />
+                <MetricCard title="Expired Lots" value={formatNumber(summary.expired)} caption="Requires review, quarantine, or disposal" icon="warning" tone="rose" />
+                <MetricCard title="Next Expiry" value={summary.nextToExpire?.batchNumber || 'None'} caption={summary.nextToExpire ? formatDate(summary.nextToExpire.expiryDate) : 'No dated batches in scope'} icon="event_upcoming" tone="violet" />
             </div>
 
-            <Modal
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                title="Update Batch Expiry"
+            <Card
+                title="Batch Workspace"
+                subtitle="Choose whether you are reviewing expiry risk or drilling into one variant register."
+                action={<InfoTip text="The backend only exposes full register lookup by variant. Risk views use dedicated expiring and expired endpoints." />}
             >
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+                    <Select
+                        label="Workspace"
+                        value={filters.view}
+                        onChange={(event) => setFilters((current) => ({ ...current, view: event.target.value }))}
+                        options={VIEW_OPTIONS}
+                    />
+                    <Input
+                        label="Risk horizon (days)"
+                        type="number"
+                        value={filters.days}
+                        onChange={(event) => setFilters((current) => ({ ...current, days: event.target.value }))}
+                        disabled={filters.view !== 'RISK_WINDOW'}
+                    />
+                    <ProductVariantLookup
+                        label="Variant register"
+                        selectedVariant={selectedVariant}
+                        onSelect={setSelectedVariant}
+                        className="lg:col-span-2"
+                    />
+                </div>
+            </Card>
+
+            <Card
+                padding="none"
+                className="overflow-hidden"
+                title="Batch Register"
+                subtitle={filters.view === 'VARIANT_REGISTER' && !selectedVariant ? 'Select a product variant to load its batch register.' : 'Batch dating and risk review'}
+            >
+                <DataTable
+                    columns={columns}
+                    data={batches}
+                    loading={loading}
+                    emptyMessage={filters.view === 'VARIANT_REGISTER' && !selectedVariant ? 'Choose a product variant to load batch records.' : 'No batches found for the current workspace.'}
+                />
+            </Card>
+
+            <Card title="Operational Notes" subtitle="Use the risk view for proactive review and the variant register for traceability work.">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">Risk window</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">Shows expiring and expired lots together so planners can act before customer allocations are affected.</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">Variant register</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">Best for investigations, QA holds, and recall prep because it isolates one SKU's full lot history.</div>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">History review</div>
+                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">Use movement history before changing dates so operational records remain defensible for audit and traceability.</div>
+                    </div>
+                </div>
+            </Card>
+
+            <Modal isOpen={showExpiryModal} onClose={() => setShowExpiryModal(false)} title={`Update Batch Dating${selectedBatch ? ` - ${selectedBatch.batchNumber}` : ''}`}>
                 <form className="space-y-4" onSubmit={handleUpdateExpiry}>
                     <Input
                         label="Manufacturing Date"
                         type="date"
                         value={expiryForm.manufacturingDate}
-                        onChange={(e) => setExpiryForm({ ...expiryForm, manufacturingDate: e.target.value })}
+                        onChange={(event) => setExpiryForm((current) => ({ ...current, manufacturingDate: event.target.value }))}
                     />
                     <Input
                         label="Expiry Date"
                         type="date"
                         value={expiryForm.expiryDate}
-                        onChange={(e) => setExpiryForm({ ...expiryForm, expiryDate: e.target.value })}
+                        onChange={(event) => setExpiryForm((current) => ({ ...current, expiryDate: event.target.value }))}
                     />
                     <div className="flex justify-end gap-3">
-                        <Button variant="secondary" type="button" onClick={() => setShowModal(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit">Save</Button>
+                        <Button variant="secondary" type="button" onClick={() => setShowExpiryModal(false)}>Cancel</Button>
+                        <Button type="submit">Save Dating</Button>
                     </div>
                 </form>
             </Modal>
-        </div>
+
+            <Modal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} title={`Batch History${selectedBatch ? ` - ${selectedBatch.batchNumber}` : ''}`} size="xl">
+                <DataTable columns={historyColumns} data={historyRows} loading={historyLoading} emptyMessage="No movement history found for this batch." />
+            </Modal>
+        </CatalogPageFrame>
     );
 };
 
