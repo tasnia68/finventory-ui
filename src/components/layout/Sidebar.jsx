@@ -63,6 +63,7 @@ const MENU_ITEMS = [
     submenu: [
       { title: 'Suppliers', path: '/suppliers' },
       { title: 'Purchase Orders', path: '/purchase-orders' },
+      { title: 'Goods Receipts', path: '/goods-receipts' },
       { title: 'Purchase Requisitions', path: '/purchase-requisitions' },
     ]
   },

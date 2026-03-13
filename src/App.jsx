@@ -23,6 +23,9 @@ import Serials from './pages/Serials';
 import Reservations from './pages/Reservations';
 import Replenishment from './pages/Replenishment';
 import PurchaseRequisitions from './pages/PurchaseRequisitions';
+import Suppliers from './pages/Suppliers';
+import PurchaseOrders from './pages/PurchaseOrders';
+import GoodsReceipts from './pages/GoodsReceipts';
 import CycleCounts from './pages/CycleCounts';
 import WarehouseTransfers from './pages/WarehouseTransfers';
 import Inventory from './pages/Inventory';
@@ -227,9 +230,21 @@ function App() {
           } />
 
           {/* Procurement */}
-          {['/suppliers', '/purchase-orders'].map(path => (
-            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
-          ))}
+          <Route path="/suppliers" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}>
+              <Suppliers />
+            </ProtectedRoute>
+          } />
+          <Route path="/purchase-orders" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}>
+              <PurchaseOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/goods-receipts" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}>
+              <GoodsReceipts />
+            </ProtectedRoute>
+          } />
 
           {/* Sales */}
           {['/pos'].map(path => (
