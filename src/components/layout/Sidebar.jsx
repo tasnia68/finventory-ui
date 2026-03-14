@@ -88,6 +88,7 @@ const MENU_ITEMS = [
     submenu: [
       { titleKey: 'navigation.sellScreen', path: '/pos' },
       { titleKey: 'navigation.registerControl', path: '/pos/register' },
+      { titleKey: 'navigation.posSettlement', path: '/pos/settlement' },
       { titleKey: 'navigation.soldHistory', path: '/pos/sales' },
       { titleKey: 'navigation.counterSetup', path: '/pos/counters' },
     ]

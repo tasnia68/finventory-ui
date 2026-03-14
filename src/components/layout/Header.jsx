@@ -37,6 +37,7 @@ const ROUTE_META = [
   { match: '/promotions-pricing', titleKey: 'routes.promotionsPricing', sectionKey: 'sections.salesFulfillment' },
   { match: '/fulfillment', titleKey: 'routes.fulfillmentControl', sectionKey: 'sections.salesFulfillment' },
   { match: '/pos/register', titleKey: 'routes.posRegisterControl', sectionKey: 'sections.pointOfSale' },
+  { match: '/pos/settlement', titleKey: 'routes.posSettlement', sectionKey: 'sections.pointOfSale' },
   { match: '/pos/sales', titleKey: 'routes.posSoldHistory', sectionKey: 'sections.pointOfSale' },
   { match: '/pos/counters', titleKey: 'routes.posCounterSetup', sectionKey: 'sections.pointOfSale' },
   { match: '/pos', titleKey: 'routes.posTerminal', sectionKey: 'sections.pointOfSale' },

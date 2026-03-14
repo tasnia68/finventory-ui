@@ -106,6 +106,18 @@ const filterCachedCatalog = (query) => {
 
 const normalizeCatalogResponse = (payload) => toList(payload).map(normalizeCatalogItem);
 
+const normalizeShift = (shift) => {
+    if (!shift) return null;
+
+    return {
+        ...shift,
+        openingFloat: Number(shift.openingFloat || 0),
+        expectedCashAmount: Number(shift.expectedCashAmount || 0),
+        declaredCashAmount: Number(shift.declaredCashAmount || 0),
+        overShortAmount: Number(shift.overShortAmount || 0),
+    };
+};
+
 const normalizeSale = (sale) => ({
     id: sale.id,
     invoiceNumber: sale.receiptNumber,
@@ -123,6 +135,7 @@ const normalizeSale = (sale) => ({
     terminalName: sale.terminalName,
     shiftId: sale.shiftId,
     paymentMethod: sale.paymentMethod,
+    suspendedSaleId: sale.suspendedSaleId || null,
     currency: sale.currency || 'USD',
     tenderedAmount: Number(sale.tenderedAmount || 0),
     subtotal: Number(sale.subtotal || 0),
@@ -131,7 +144,19 @@ const normalizeSale = (sale) => ({
     total: Number(sale.totalAmount || 0),
     changeDue: Number(sale.changeAmount || 0),
     notes: sale.notes || '',
-    appliedCouponCodes: Array.isArray(sale.appliedCouponCodes) ? sale.appliedCouponCodes : [],
+    appliedCouponCodes: Array.isArray(sale.appliedCouponCodes)
+        ? sale.appliedCouponCodes
+        : String(sale.appliedCouponCodes || '')
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean),
+    payments: Array.isArray(sale.payments) ? sale.payments.map((payment) => ({
+        id: payment.id,
+        paymentMethod: payment.paymentMethod,
+        amount: Number(payment.amount || 0),
+        referenceNumber: payment.referenceNumber || '',
+        notes: payment.notes || '',
+    })) : [],
     syncStatus: 'synced',
     syncError: null,
     backendOrderId: sale.salesOrderId,
@@ -149,6 +174,40 @@ const normalizeSale = (sale) => ({
         lineTotal: Number(item.lineTotal || 0),
     })) : [],
     saleStatus: sale.saleStatus,
+});
+
+const normalizeSuspendedSale = (sale) => ({
+    id: sale.id,
+    suspendedNumber: sale.suspendedNumber,
+    terminalId: sale.terminalId,
+    terminalName: sale.terminalName,
+    cashierId: sale.cashierId,
+    cashierName: sale.cashierName,
+    customerId: sale.customerId,
+    customerName: sale.customerName,
+    warehouseId: sale.warehouseId,
+    warehouseName: sale.warehouseName,
+    status: sale.status,
+    suspendedAt: sale.suspendedAt,
+    completedAt: sale.completedAt,
+    cancelledAt: sale.cancelledAt,
+    manualDiscountAmount: Number(sale.manualDiscountAmount || 0),
+    taxAmount: Number(sale.taxAmount || 0),
+    subtotalAmount: Number(sale.subtotalAmount || 0),
+    totalAmount: Number(sale.totalAmount || 0),
+    currency: sale.currency || 'USD',
+    couponCodes: Array.isArray(sale.couponCodes) ? sale.couponCodes : [],
+    notes: sale.notes || '',
+    items: Array.isArray(sale.items) ? sale.items.map((item) => ({
+        id: item.id,
+        productVariantId: item.productVariantId,
+        sku: item.sku,
+        description: item.description,
+        quantity: Number(item.quantity || 0),
+        unitPrice: Number(item.unitPrice || 0),
+        lineDiscount: Number(item.lineDiscount || 0),
+        lineTotal: Number(item.lineTotal || 0),
+    })) : [],
 });
 
 const normalizeKpis = (payload) => ({
@@ -212,12 +271,19 @@ const buildBackendSalePayload = (sale) => ({
     shiftId: sale.shiftId || null,
     warehouseId: sale.warehouseId,
     paymentMethod: sale.paymentMethod,
+    suspendedSaleId: sale.suspendedSaleId || null,
     discountAmount: Number(sale.discountAmount || 0),
     taxAmount: Number(sale.taxAmount || 0),
     tenderedAmount: Number(sale.tenderedAmount || 0),
     couponCodes: Array.isArray(sale.appliedCouponCodes) ? sale.appliedCouponCodes : [],
     currency: sale.currency || 'USD',
     notes: sale.notes || '',
+    payments: Array.isArray(sale.payments) ? sale.payments.map((payment) => ({
+        paymentMethod: payment.paymentMethod,
+        amount: Number(payment.amount || 0),
+        referenceNumber: payment.referenceNumber || '',
+        notes: payment.notes || '',
+    })) : [],
     items: sale.items.map((item) => ({
         productVariantId: item.productVariantId,
         quantity: Number(item.quantity),
@@ -255,24 +321,25 @@ const openShift = async (terminalId) => {
 };
 
 export const openPosShift = async ({ terminalId, openingFloat = 0 }) => {
-    const shift = await unwrap(request('/pos/shifts/open', {
+    const shift = normalizeShift(await unwrap(request('/pos/shifts/open', {
         method: 'POST',
         body: {
             terminalId,
             openingFloat,
         },
-    }));
+    })));
     saveActiveShiftStore(shift);
     return shift;
 };
 
-export const closePosShift = async ({ shiftId, closingNotes = '' }) => {
-    const shift = await unwrap(request(`/pos/shifts/${shiftId}/close`, {
+export const closePosShift = async ({ shiftId, closingNotes = '', tenderCounts = [] }) => {
+    const shift = normalizeShift(await unwrap(request(`/pos/shifts/${shiftId}/close`, {
         method: 'POST',
         body: {
             closingNotes,
+            tenderCounts,
         },
-    }));
+    })));
     saveActiveShiftStore(null);
     return shift;
 };
@@ -283,7 +350,7 @@ export const fetchCurrentPosShift = async (terminalId) => {
     }
 
     try {
-        const shift = await unwrap(request(`/pos/shifts/current?terminalId=${encodeURIComponent(terminalId)}`));
+        const shift = normalizeShift(await unwrap(request(`/pos/shifts/current?terminalId=${encodeURIComponent(terminalId)}`)));
         saveActiveShiftStore(shift);
         return shift;
     } catch {
@@ -306,7 +373,7 @@ const getOrCreateShift = async (terminalId, bootstrapShift = null) => {
     }
 
     try {
-        const shift = await unwrap(request(`/pos/shifts/current?terminalId=${encodeURIComponent(terminalId)}`));
+        const shift = normalizeShift(await unwrap(request(`/pos/shifts/current?terminalId=${encodeURIComponent(terminalId)}`)));
         saveActiveShiftStore(shift);
         return shift;
     } catch {
@@ -321,7 +388,7 @@ export const getPosBootstrap = async () => {
         warehouses: Array.isArray(payload?.warehouses) ? payload.warehouses : [],
         customers: Array.isArray(payload?.customers) ? payload.customers.filter((customer) => customer.isActive !== false && customer.status === 'ACTIVE') : [],
         categories: Array.isArray(payload?.categories) ? payload.categories : [],
-        activeShift: payload?.activeShift || null,
+        activeShift: normalizeShift(payload?.activeShift || null),
     };
 
     if (bootstrap.activeShift) {
@@ -335,6 +402,49 @@ export const getPosTerminals = async () => {
     const payload = await unwrap(request('/pos/terminals'));
     return Array.isArray(payload) ? payload : [];
 };
+
+export const getPosShiftSettlement = async (shiftId) => unwrap(request(`/pos/shifts/${shiftId}/settlement`));
+
+export const approvePosShiftSettlement = async (shiftId, payload) => unwrap(request(`/pos/shifts/${shiftId}/settlement-approval`, {
+    method: 'POST',
+    body: payload,
+}));
+
+export const getDailyPosSettlement = async ({ businessDate = '', terminalId = '' } = {}) => {
+    const params = new URLSearchParams();
+    if (businessDate) params.set('businessDate', businessDate);
+    if (terminalId) params.set('terminalId', terminalId);
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    return unwrap(request(`/pos/settlement/daily${suffix}`));
+};
+
+export const recordPosCashMovement = async (shiftId, payload) => unwrap(request(`/pos/shifts/${shiftId}/cash-movements`, {
+    method: 'POST',
+    body: payload,
+}));
+
+export const getPosCashMovements = async (shiftId) => {
+    const payload = await unwrap(request(`/pos/shifts/${shiftId}/cash-movements`));
+    return Array.isArray(payload) ? payload : [];
+};
+
+export const suspendPosSale = async (payload) => normalizeSuspendedSale(await unwrap(request('/pos/suspended-sales', {
+    method: 'POST',
+    body: payload,
+})));
+
+export const getSuspendedPosSales = async (terminalId) => {
+    const payload = await unwrap(request(`/pos/suspended-sales?terminalId=${encodeURIComponent(terminalId)}`));
+    return Array.isArray(payload) ? payload.map(normalizeSuspendedSale) : [];
+};
+
+export const resumeSuspendedPosSale = async (suspendedSaleId) => normalizeSuspendedSale(await unwrap(request(`/pos/suspended-sales/${suspendedSaleId}/resume`, {
+    method: 'POST',
+}))); 
+
+export const cancelSuspendedPosSale = async (suspendedSaleId) => normalizeSuspendedSale(await unwrap(request(`/pos/suspended-sales/${suspendedSaleId}/cancel`, {
+    method: 'POST',
+})));
 
 export const getPosTerminalRegister = async ({ includeInactive = false } = {}) => {
     const params = new URLSearchParams();
@@ -458,6 +568,27 @@ export const summarizeCart = (cart, checkout = {}) => ({
 export const finalizePosSale = async ({ cart, checkout, cashier, customer, warehouse, terminal, activeShift }) => {
     const totals = summarizeCart(cart, checkout);
     const shift = navigator.onLine ? await getOrCreateShift(terminal?.id, activeShift) : activeShift || getActiveShiftStore();
+    const payments = Array.isArray(checkout.payments) && checkout.payments.length > 0
+        ? checkout.payments
+            .map((payment) => ({
+                paymentMethod: payment.paymentMethod,
+                amount: Number(payment.amount || 0),
+                referenceNumber: payment.referenceNumber || '',
+                notes: payment.notes || '',
+            }))
+            .filter((payment) => payment.paymentMethod && payment.amount > 0)
+        : [{
+            paymentMethod: checkout.paymentMethod,
+            amount: Number(totals.total || 0),
+            referenceNumber: '',
+            notes: '',
+        }];
+    const salePaymentMethod = checkout.paymentMethod === 'MIXED' || payments.length > 1
+        ? 'MIXED'
+        : checkout.paymentMethod;
+    const tenderedAmount = checkout.paymentMethod === 'CASH'
+        ? Number(checkout.tenderedAmount || 0)
+        : Number(payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0));
     const sale = {
         id: generateUUID(),
         clientSaleId: generateUUID(),
@@ -472,13 +603,15 @@ export const finalizePosSale = async ({ cart, checkout, cashier, customer, wareh
         terminalId: terminal?.id || null,
         terminalName: terminal?.name || 'POS terminal',
         shiftId: shift?.id || null,
-        paymentMethod: checkout.paymentMethod,
+        paymentMethod: salePaymentMethod,
         currency: checkout.currency || 'USD',
-        tenderedAmount: Number(checkout.tenderedAmount || 0),
+        tenderedAmount,
         notes: checkout.notes || '',
+        suspendedSaleId: checkout.suspendedSaleId || null,
         appliedCouponCodes: Array.isArray(checkout.pricingPreview?.appliedCouponCodes)
             ? checkout.pricingPreview.appliedCouponCodes
             : [],
+        payments,
         syncMode: checkout.syncMode,
         items: cart.map((line) => ({ ...line })),
         ...totals,

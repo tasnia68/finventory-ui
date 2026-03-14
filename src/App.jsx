@@ -1,53 +1,55 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import AcceptInvitation from './pages/AcceptInvitation';
-import Users from './pages/Users';
-import UserDetails from './pages/Users/UserDetails';
-import Profile from './pages/Profile';
-import Roles from './pages/Roles';
-import Categories from './pages/Categories';
-import UnitsOfMeasure from './pages/UnitsOfMeasure';
-import Products from './pages/Products';
-import CreateProduct from './pages/Products/CreateProduct';
-import CreateSimpleProduct from './pages/Products/CreateSimpleProduct';
-import ProductDetails from './pages/Products/ProductDetails';
-import Attributes from './pages/Attributes';
-import AttributeGroups from './pages/AttributeGroups';
-import Templates from './pages/Templates';
-import Batches from './pages/Batches';
-import Serials from './pages/Serials';
-import Reservations from './pages/Reservations';
-import Replenishment from './pages/Replenishment';
-import DamageControl from './pages/DamageControl';
-import PurchaseRequisitions from './pages/PurchaseRequisitions';
-import Suppliers from './pages/Suppliers';
-import PurchaseOrders from './pages/PurchaseOrders';
-import GoodsReceipts from './pages/GoodsReceipts';
-import CycleCounts from './pages/CycleCounts';
-import WarehouseTransfers from './pages/WarehouseTransfers';
-import Inventory from './pages/Inventory';
-import Warehouses from './pages/Warehouses';
-import Transactions from './pages/Transactions';
-import Valuation from './pages/Valuation';
-import Customers from './pages/Customers';
-import SalesOrders from './pages/SalesOrders';
-import RefundsExchanges from './pages/RefundsExchanges';
-import PromotionsPricing from './pages/PromotionsPricing';
-import Fulfillment from './pages/Fulfillment';
-import PosTerminal from './pages/POS';
-import PosCounters from './pages/POSCounters';
-import PosRegister from './pages/POSRegister';
-import PosSales from './pages/POSSales';
-import AnalyticsOverview from './pages/Analytics';
-import AnalyticsReports from './pages/Analytics/Reports';
-import AnalyticsDataExchange from './pages/Analytics/DataExchange';
-import AnalyticsAutomation from './pages/Analytics/Automation';
-import Settings from './pages/Settings';
 import { PERMISSIONS } from './constants/permissions';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Login = lazy(() => import('./pages/Login'));
+const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'));
+const Users = lazy(() => import('./pages/Users'));
+const UserDetails = lazy(() => import('./pages/Users/UserDetails'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Roles = lazy(() => import('./pages/Roles'));
+const Categories = lazy(() => import('./pages/Categories'));
+const UnitsOfMeasure = lazy(() => import('./pages/UnitsOfMeasure'));
+const Products = lazy(() => import('./pages/Products'));
+const CreateProduct = lazy(() => import('./pages/Products/CreateProduct'));
+const CreateSimpleProduct = lazy(() => import('./pages/Products/CreateSimpleProduct'));
+const ProductDetails = lazy(() => import('./pages/Products/ProductDetails'));
+const Attributes = lazy(() => import('./pages/Attributes'));
+const AttributeGroups = lazy(() => import('./pages/AttributeGroups'));
+const Templates = lazy(() => import('./pages/Templates'));
+const Batches = lazy(() => import('./pages/Batches'));
+const Serials = lazy(() => import('./pages/Serials'));
+const Reservations = lazy(() => import('./pages/Reservations'));
+const Replenishment = lazy(() => import('./pages/Replenishment'));
+const DamageControl = lazy(() => import('./pages/DamageControl'));
+const PurchaseRequisitions = lazy(() => import('./pages/PurchaseRequisitions'));
+const Suppliers = lazy(() => import('./pages/Suppliers'));
+const PurchaseOrders = lazy(() => import('./pages/PurchaseOrders'));
+const GoodsReceipts = lazy(() => import('./pages/GoodsReceipts'));
+const CycleCounts = lazy(() => import('./pages/CycleCounts'));
+const WarehouseTransfers = lazy(() => import('./pages/WarehouseTransfers'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Warehouses = lazy(() => import('./pages/Warehouses'));
+const Transactions = lazy(() => import('./pages/Transactions'));
+const Valuation = lazy(() => import('./pages/Valuation'));
+const Customers = lazy(() => import('./pages/Customers'));
+const SalesOrders = lazy(() => import('./pages/SalesOrders'));
+const RefundsExchanges = lazy(() => import('./pages/RefundsExchanges'));
+const PromotionsPricing = lazy(() => import('./pages/PromotionsPricing'));
+const Fulfillment = lazy(() => import('./pages/Fulfillment'));
+const PosTerminal = lazy(() => import('./pages/POS'));
+const PosCounters = lazy(() => import('./pages/POSCounters'));
+const PosRegister = lazy(() => import('./pages/POSRegister'));
+const PosSales = lazy(() => import('./pages/POSSales'));
+const PosSettlement = lazy(() => import('./pages/POSSettlement'));
+const AnalyticsOverview = lazy(() => import('./pages/Analytics'));
+const AnalyticsReports = lazy(() => import('./pages/Analytics/Reports'));
+const AnalyticsDataExchange = lazy(() => import('./pages/Analytics/DataExchange'));
+const AnalyticsAutomation = lazy(() => import('./pages/Analytics/Automation'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, permission }) => {
@@ -69,19 +71,20 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/accept-invitation" element={<AcceptInvitation />} />
+        <Suspense fallback={<RouteLoading />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/accept-invitation" element={<AcceptInvitation />} />
 
-          {/* Protected Routes */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Protected Routes */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          <Route path="/dashboard" element={
-            <ProtectedRoute permission={PERMISSIONS.MENU_DASHBOARD}>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute permission={PERMISSIONS.MENU_DASHBOARD}>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
 
           <Route path="/users" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_USER_MANAGEMENT}>
@@ -322,22 +325,36 @@ function App() {
               <PosRegister />
             </ProtectedRoute>
           } />
+          <Route path="/pos/settlement" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <PosSettlement />
+            </ProtectedRoute>
+          } />
           <Route path="/pos/sales" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
               <PosSales />
             </ProtectedRoute>
           } />
-          <Route path="/pos/counters" element={
-            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
-              <PosCounters />
-            </ProtectedRoute>
-          } />
+            <Route path="/pos/counters" element={
+              <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+                <PosCounters />
+              </ProtectedRoute>
+            } />
 
-        </Routes>
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );
 }
+
+const RouteLoading = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background-light px-6 dark:bg-background-dark">
+    <div className="rounded-3xl border border-slate-200 bg-white/90 px-6 py-4 text-sm font-medium text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-300">
+      Loading workspace...
+    </div>
+  </div>
+);
 
 // Not Authorized Component
 const NotAuthorized = () => (

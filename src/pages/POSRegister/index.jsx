@@ -10,6 +10,7 @@ import {
     getCashierKpis,
     getCurrentPosShift,
     getPosBootstrap,
+    getPosShiftSettlement,
     openPosShift,
     syncQueuedPosSales,
 } from '../../services/posService';
@@ -29,6 +30,8 @@ const PosRegister = () => {
     const [kpis, setKpis] = useState({ gross: 0, tickets: 0, units: 0, averageTicket: 0, offlineQueued: 0 });
     const [showShiftModal, setShowShiftModal] = useState(false);
     const [shiftMode, setShiftMode] = useState('open');
+    const [settlementPreview, setSettlementPreview] = useState(null);
+    const [settlementPreviewLoading, setSettlementPreviewLoading] = useState(false);
 
     const allowManualCloseWithOfflineQueue = getBooleanSetting('pos.register.allowManualCloseWithOfflineQueue', false);
     const autoSyncOnReconnect = getBooleanSetting('pos.offline.autoSyncOnReconnect', true);
@@ -129,15 +132,16 @@ const PosRegister = () => {
         }
     };
 
-    const handleCloseShift = async ({ closingNotes }) => {
+    const handleCloseShift = async ({ closingNotes, tenderCounts }) => {
         if (!activeShift?.id) {
             return;
         }
         try {
             setWorking(true);
-            await closePosShift({ shiftId: activeShift.id, closingNotes });
+            await closePosShift({ shiftId: activeShift.id, closingNotes, tenderCounts });
             setActiveShift(null);
             setShowShiftModal(false);
+            setSettlementPreview(null);
             showAlert('success', 'Shift closed successfully');
         } catch (error) {
             showAlert('error', error.message || 'Failed to close shift');
@@ -213,13 +217,27 @@ const PosRegister = () => {
                             <div className="mt-5 flex flex-wrap gap-3">
                                 <Button
                                     icon={activeShift?.status === 'OPEN' ? 'lock_open_right' : 'point_of_sale'}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (activeShift?.status === 'OPEN' && !canCloseShift) {
                                             showAlert('warning', 'Sync queued offline sales before closing this shift.');
                                             return;
                                         }
 
-                                        setShiftMode(activeShift?.status === 'OPEN' ? 'close' : 'open');
+                                        const nextMode = activeShift?.status === 'OPEN' ? 'close' : 'open';
+                                        setShiftMode(nextMode);
+                                        if (nextMode === 'close' && activeShift?.id) {
+                                            try {
+                                                setSettlementPreviewLoading(true);
+                                                const preview = await getPosShiftSettlement(activeShift.id);
+                                                setSettlementPreview(preview);
+                                            } catch (error) {
+                                                showAlert('error', error.message || 'Failed to load settlement snapshot');
+                                            } finally {
+                                                setSettlementPreviewLoading(false);
+                                            }
+                                        } else {
+                                            setSettlementPreview(null);
+                                        }
                                         setShowShiftModal(true);
                                     }}
                                     disabled={!selectedTerminalId || (!activeShift && !online) || (activeShift?.status === 'OPEN' && !canCloseShift)}
@@ -241,6 +259,7 @@ const PosRegister = () => {
                         </div>
                         <div className="mt-6 flex flex-col gap-3">
                             <Link to="/pos/sales" className="inline-flex"><Button variant="secondary" icon="receipt_long">Review Sold History</Button></Link>
+                            <Link to="/pos/settlement" className="inline-flex"><Button variant="secondary" icon="account_balance_wallet">Open Settlement Desk</Button></Link>
                             <Link to="/pos/counters" className="inline-flex"><Button variant="secondary" icon="storefront">Manage Counters</Button></Link>
                         </div>
                     </Card>
@@ -252,7 +271,9 @@ const PosRegister = () => {
                 mode={shiftMode}
                 terminal={selectedTerminal}
                 shift={activeShift}
+                settlementPreview={settlementPreview}
                 loading={working}
+                previewLoading={settlementPreviewLoading}
                 onClose={() => setShowShiftModal(false)}
                 onOpenShift={handleOpenShift}
                 onCloseShift={handleCloseShift}

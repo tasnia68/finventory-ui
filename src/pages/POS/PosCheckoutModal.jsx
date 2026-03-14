@@ -6,6 +6,8 @@ const PAYMENT_OPTIONS = [
     { value: 'CASH', label: 'Cash' },
     { value: 'CARD', label: 'Card' },
     { value: 'TRANSFER', label: 'Bank Transfer' },
+    { value: 'WALLET', label: 'Wallet' },
+    { value: 'MIXED', label: 'Mixed Tender' },
     { value: 'OTHER', label: 'Other Tender' },
 ];
 
@@ -25,8 +27,20 @@ const appendTenderValue = (currentValue, nextValue) => {
     return `${normalizedCurrent}${nextValue}`;
 };
 
+const createPaymentLine = () => ({
+    id: crypto.randomUUID(),
+    paymentMethod: 'CASH',
+    amount: '',
+    referenceNumber: '',
+    notes: '',
+});
+
 const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pricingPreviewLoading, pricingPreviewError, cart, online, canSyncSale, onSubmit, loading }) => {
-    const changeDue = Math.max(0, Number(checkout.tenderedAmount || 0) - Number(summary.total || 0));
+    const isMixedTender = checkout.paymentMethod === 'MIXED';
+    const paymentLines = Array.isArray(checkout.payments) ? checkout.payments : [];
+    const allocatedAmount = paymentLines.reduce((sum, line) => sum + Number(line.amount || 0), 0);
+    const remainingAmount = Math.max(0, Number(summary.total || 0) - allocatedAmount);
+    const changeDue = isMixedTender ? 0 : Math.max(0, Number(checkout.tenderedAmount || 0) - Number(summary.total || 0));
 
     const setTenderedAmount = (value) => {
         setCheckout((current) => ({ ...current, tenderedAmount: value }));
@@ -44,17 +58,84 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pri
         setTenderedAmount(appendTenderValue(checkout.tenderedAmount, value));
     };
 
+    const setPaymentMethod = (value) => {
+        setCheckout((current) => ({
+            ...current,
+            paymentMethod: value,
+            tenderedAmount: value === 'CASH' ? current.tenderedAmount : String(Number(summary.total || 0).toFixed(2)),
+            payments: value === 'MIXED' ? (current.payments?.length ? current.payments : [createPaymentLine()]) : [],
+        }));
+    };
+
+    const updatePaymentLine = (lineId, patch) => {
+        setCheckout((current) => ({
+            ...current,
+            payments: (current.payments || []).map((line) => (line.id === lineId ? { ...line, ...patch } : line)),
+        }));
+    };
+
+    const addPaymentLine = () => {
+        setCheckout((current) => ({
+            ...current,
+            payments: [...(current.payments || []), createPaymentLine()],
+        }));
+    };
+
+    const removePaymentLine = (lineId) => {
+        setCheckout((current) => ({
+            ...current,
+            payments: (current.payments || []).filter((line) => line.id !== lineId),
+        }));
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Complete POS Sale" size="xl">
             <form className="space-y-6" onSubmit={onSubmit}>
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <Select label="Payment Method" value={checkout.paymentMethod} onChange={(event) => setCheckout((current) => ({ ...current, paymentMethod: event.target.value }))} options={PAYMENT_OPTIONS} required />
-                            <Input label="Tendered Amount" type="number" min="0" step="0.01" value={checkout.tenderedAmount} onChange={(event) => setTenderedAmount(event.target.value)} />
+                            <Select label="Payment Method" value={checkout.paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} options={PAYMENT_OPTIONS} required />
+                            {!isMixedTender ? (
+                                <Input label="Tendered Amount" type="number" min="0" step="0.01" value={checkout.tenderedAmount} onChange={(event) => setTenderedAmount(event.target.value)} />
+                            ) : (
+                                <div className="rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-700">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tender Allocation</div>
+                                    <div className="mt-2 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300"><span>Allocated</span><span>{formatCurrency(allocatedAmount, checkout.currency)}</span></div>
+                                    <div className="mt-1 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300"><span>Remaining</span><span>{formatCurrency(remainingAmount, checkout.currency)}</span></div>
+                                </div>
+                            )}
                             <Input label="Discount Amount" type="number" min="0" step="0.01" value={checkout.discountAmount} onChange={(event) => setCheckout((current) => ({ ...current, discountAmount: event.target.value }))} />
                             <Input label="Tax Rate %" type="number" min="0" step="0.01" value={checkout.taxRate} onChange={(event) => setCheckout((current) => ({ ...current, taxRate: event.target.value }))} />
                         </div>
+
+                        {isMixedTender ? (
+                            <div className="space-y-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Split Tender Allocation</p>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Allocate the exact receipt total across multiple tender lines.</p>
+                                    </div>
+                                    <Button size="sm" variant="secondary" onClick={addPaymentLine}>Add Tender</Button>
+                                </div>
+                                <div className="space-y-3">
+                                    {paymentLines.map((line, index) => (
+                                        <div key={line.id} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tender Line {index + 1}</div>
+                                                {paymentLines.length > 1 ? <Button size="sm" variant="ghost" onClick={() => removePaymentLine(line.id)}>Remove</Button> : null}
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                                <Select label="Tender Type" value={line.paymentMethod} onChange={(event) => updatePaymentLine(line.id, { paymentMethod: event.target.value })} options={PAYMENT_OPTIONS.filter((option) => option.value !== 'MIXED')} />
+                                                <Input label="Amount" type="number" min="0" step="0.01" value={line.amount} onChange={(event) => updatePaymentLine(line.id, { amount: event.target.value })} />
+                                                <Input label="Reference" value={line.referenceNumber} onChange={(event) => updatePaymentLine(line.id, { referenceNumber: event.target.value })} />
+                                                <Input label="Notes" value={line.notes} onChange={(event) => updatePaymentLine(line.id, { notes: event.target.value })} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                {remainingAmount > 0 ? <p className="text-xs font-medium text-amber-600 dark:text-amber-300">Allocate the full sale total before completing this mixed-tender receipt.</p> : null}
+                            </div>
+                        ) : null}
 
                         <div className="space-y-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                             <div className="flex items-center justify-between gap-3">
@@ -73,7 +154,7 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pri
                             {pricingPreviewError ? <p className="text-xs font-medium text-amber-600 dark:text-amber-300">{pricingPreviewError}</p> : null}
                         </div>
 
-                        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                        {!isMixedTender ? <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Quick Tender</p>
                                 <Button size="sm" variant="secondary" onClick={applyExactAmount}>Exact Cash</Button>
@@ -91,7 +172,7 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pri
                             <div className="mt-3">
                                 <Button variant="ghost" className="w-full py-3" onClick={() => handleTenderPad('C')}>Clear Tender</Button>
                             </div>
-                        </div>
+                        </div> : null}
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Sale Notes</label>
@@ -145,8 +226,8 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pri
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Discount</span><span>{formatCurrency(summary.discountAmount, checkout.currency)}</span></div>
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Tax</span><span>{formatCurrency(summary.taxAmount, checkout.currency)}</span></div>
                             <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-lg font-black text-slate-900 dark:border-slate-700 dark:text-white"><span>Total</span><span>{formatCurrency(summary.total, checkout.currency)}</span></div>
-                            <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Tendered</span><span>{formatCurrency(checkout.tenderedAmount || 0, checkout.currency)}</span></div>
-                            <div className="flex items-center justify-between text-base font-semibold text-emerald-700 dark:text-emerald-300"><span>Change Due</span><span>{formatCurrency(changeDue, checkout.currency)}</span></div>
+                            <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>{isMixedTender ? 'Allocated' : 'Tendered'}</span><span>{formatCurrency(isMixedTender ? allocatedAmount : checkout.tenderedAmount || 0, checkout.currency)}</span></div>
+                            <div className="flex items-center justify-between text-base font-semibold text-emerald-700 dark:text-emerald-300"><span>{isMixedTender ? 'Unallocated' : 'Change Due'}</span><span>{formatCurrency(isMixedTender ? remainingAmount : changeDue, checkout.currency)}</span></div>
                         </div>
                     </div>
                 </div>

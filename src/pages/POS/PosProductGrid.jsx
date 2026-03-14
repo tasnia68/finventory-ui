@@ -12,9 +12,9 @@ const stockBadgeClass = {
 const PosProductGrid = ({ products, loading, onAdd }) => {
     if (loading) {
         return (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="h-56 animate-pulse rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800" />
+                    <div key={index} className="h-20 animate-pulse rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800" />
                 ))}
             </div>
         );
@@ -35,41 +35,41 @@ const PosProductGrid = ({ products, loading, onAdd }) => {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {products.map((product) => {
-                const stockTone = getStockTone(product.onHand);
-                return (
-                    <Card key={product.id} className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
-                        <div className="flex items-start justify-between gap-4">
+        <Card padding="none" className="overflow-hidden rounded-[30px] border border-slate-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
+            <div className="grid grid-cols-[minmax(0,1.8fr)_minmax(120px,0.7fr)_120px_120px_116px] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                <span>Item</span>
+                <span>Barcode</span>
+                <span>Stock</span>
+                <span>Unit Price</span>
+                <span className="text-right">Action</span>
+            </div>
+            <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                {products.map((product) => {
+                    const stockTone = getStockTone(product.onHand);
+                    return (
+                        <div key={product.id} className="grid grid-cols-[minmax(0,1.8fr)_minmax(120px,0.7fr)_120px_120px_116px] items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/20">
                             <div className="min-w-0">
-                                <p className="truncate text-lg font-bold text-slate-900 dark:text-white">{product.sku}</p>
-                                <p className="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{product.description}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{product.sku}</p>
+                                    <Badge size="sm" variant="info">SELLABLE</Badge>
+                                </div>
+                                <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{product.description}</p>
                             </div>
-                            <Badge variant="info">POS</Badge>
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                            {product.barcode ? (
-                                <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600 dark:bg-slate-700/60 dark:text-slate-300">
-                                    Barcode {product.barcode}
-                                </span>
-                            ) : null}
-                            <span className={`rounded-full px-2.5 py-1 font-medium ${stockBadgeClass[stockTone]}`}>
-                                {product.onHand === null || product.onHand === undefined ? 'Stock not loaded' : `${product.onHand} on hand`}
-                            </span>
-                        </div>
-
-                        <div className="mt-auto flex items-end justify-between gap-4 pt-6">
+                            <div className="truncate text-sm text-slate-500 dark:text-slate-400">{product.barcode || 'No barcode'}</div>
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Unit Price</p>
-                                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(product.price)}</p>
+                                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${stockBadgeClass[stockTone]}`}>
+                                    {product.onHand === null || product.onHand === undefined ? 'Stock not loaded' : `${product.onHand} on hand`}
+                                </span>
                             </div>
-                            <Button icon="add_shopping_cart" onClick={() => onAdd(product)}>Add to Cart</Button>
+                            <div className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(product.price)}</div>
+                            <div className="flex justify-end">
+                                <Button size="sm" icon="add" onClick={() => onAdd(product)}>Add</Button>
+                            </div>
                         </div>
-                    </Card>
-                );
-            })}
-        </div>
+                    );
+                })}
+            </div>
+        </Card>
     );
 };
 
