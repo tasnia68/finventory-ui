@@ -39,6 +39,10 @@ import PosTerminal from './pages/POS';
 import PosCounters from './pages/POSCounters';
 import PosRegister from './pages/POSRegister';
 import PosSales from './pages/POSSales';
+import AnalyticsOverview from './pages/Analytics';
+import AnalyticsReports from './pages/Analytics/Reports';
+import AnalyticsDataExchange from './pages/Analytics/DataExchange';
+import AnalyticsAutomation from './pages/Analytics/Automation';
 import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
@@ -122,7 +126,27 @@ function App() {
           } />
           <Route path="/analytics" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Analytics Page</h1></div>
+              <Navigate to="/analytics/overview" replace />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics/overview" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <AnalyticsOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics/reports" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <AnalyticsReports />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics/data-exchange" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <AnalyticsDataExchange />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics/automation" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <AnalyticsAutomation />
             </ProtectedRoute>
           } />
           <Route path="/settings" element={

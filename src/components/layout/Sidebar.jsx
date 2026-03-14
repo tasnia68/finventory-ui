@@ -90,9 +90,14 @@ const MENU_ITEMS = [
   },
   {
     title: 'Analytics',
-    path: '/analytics',
     icon: 'bar_chart',
     permission: PERMISSIONS.MENU_ANALYTICS,
+    submenu: [
+      { title: 'Overview', path: '/analytics/overview' },
+      { title: 'Reports', path: '/analytics/reports' },
+      { title: 'Data Exchange', path: '/analytics/data-exchange' },
+      { title: 'Automation', path: '/analytics/automation' },
+    ]
   },
   {
     title: 'Settings',
