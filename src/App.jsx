@@ -35,6 +35,7 @@ import Transactions from './pages/Transactions';
 import Valuation from './pages/Valuation';
 import Customers from './pages/Customers';
 import SalesOrders from './pages/SalesOrders';
+import RefundsExchanges from './pages/RefundsExchanges';
 import Fulfillment from './pages/Fulfillment';
 import PosTerminal from './pages/POS';
 import PosCounters from './pages/POSCounters';
@@ -293,6 +294,11 @@ function App() {
           <Route path="/sales-orders" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
               <SalesOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/refunds-exchanges" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <RefundsExchanges />
             </ProtectedRoute>
           } />
           <Route path="/fulfillment" element={

@@ -76,6 +76,7 @@ const MENU_ITEMS = [
     submenu: [
       { titleKey: 'navigation.customers', path: '/customers' },
       { titleKey: 'navigation.salesOrders', path: '/sales-orders' },
+      { titleKey: 'navigation.refundsExchanges', path: '/refunds-exchanges' },
       { titleKey: 'navigation.fulfillment', path: '/fulfillment' },
     ]
   },

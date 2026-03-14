@@ -33,6 +33,7 @@ const ROUTE_META = [
   { match: '/purchase-requisitions', titleKey: 'routes.purchaseRequisitions', sectionKey: 'sections.procurement' },
   { match: '/customers', titleKey: 'routes.customers', sectionKey: 'sections.salesFulfillment' },
   { match: '/sales-orders', titleKey: 'routes.salesOrders', sectionKey: 'sections.salesFulfillment' },
+  { match: '/refunds-exchanges', titleKey: 'routes.refundsExchanges', sectionKey: 'sections.salesFulfillment' },
   { match: '/fulfillment', titleKey: 'routes.fulfillmentControl', sectionKey: 'sections.salesFulfillment' },
   { match: '/pos/register', titleKey: 'routes.posRegisterControl', sectionKey: 'sections.pointOfSale' },
   { match: '/pos/sales', titleKey: 'routes.posSoldHistory', sectionKey: 'sections.pointOfSale' },
