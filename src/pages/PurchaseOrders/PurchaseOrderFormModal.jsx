@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button, Input, Modal, ProductVariantLookup, Select } from '../../components/common';
+import { generateUUID } from '../../utils/uuid';
 
-const defaultItem = { id: crypto.randomUUID(), variant: null, quantity: 1, unitPrice: '' };
+const defaultItem = { id: generateUUID(), variant: null, quantity: 1, unitPrice: '' };
 
 const PurchaseOrderFormModal = ({ isOpen, onClose, suppliers, formData, setFormData, onSubmit, loading, isEditing }) => {
     const [localError, setLocalError] = useState('');
@@ -16,7 +17,7 @@ const PurchaseOrderFormModal = ({ isOpen, onClose, suppliers, formData, setFormD
     };
 
     const addItem = () => {
-        setFormData((current) => ({ ...current, items: [...current.items, { ...defaultItem, id: crypto.randomUUID() }] }));
+        setFormData((current) => ({ ...current, items: [...current.items, { ...defaultItem, id: generateUUID() }] }));
     };
 
     const removeItem = (id) => {

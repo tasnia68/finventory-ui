@@ -1,8 +1,26 @@
 import React, { useState, useContext } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemeContext } from '../../contexts/ThemeContext';
-import { Button, Input, Alert, Card } from '../../components/common';
+import { Button, Input, Alert } from '../../components/common';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+const FEATURES = [
+    {
+        icon: 'inventory_2',
+        label: 'Catalog',
+        desc: 'Products, variants, and attributes organized with consistent workflow language.',
+    },
+    {
+        icon: 'warehouse',
+        label: 'One Workspace',
+        desc: 'Receiving, procurement, and sales — no context switching required.',
+    },
+    {
+        icon: 'monitoring',
+        label: 'Faster Decisions',
+        desc: 'Clear signals help teams act on exceptions quickly and with confidence.',
+    },
+];
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -21,12 +39,8 @@ const Login = () => {
         e.preventDefault();
         setError('');
         setLoading(true);
-
         try {
             await login(email, password);
-            // Determine where to redirect
-            // If the user has a specific role that can't access dashboard, logic would go here
-            // For now, redirect to saved location or dashboard
             navigate(from, { replace: true });
         } catch (err) {
             setError(err.message || 'Failed to sign in. Please check your credentials.');
@@ -36,57 +50,80 @@ const Login = () => {
     };
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_32%),radial-gradient(circle_at_75%_20%,_rgba(249,115,22,0.16),_transparent_24%),linear-gradient(to_bottom,_transparent,_rgba(15,23,42,0.04))] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_32%),radial-gradient(circle_at_75%_20%,_rgba(249,115,22,0.12),_transparent_24%),linear-gradient(to_bottom,_transparent,_rgba(15,23,42,0.18))]" />
-            <div className="relative mx-auto grid min-h-screen max-w-6xl grid-cols-1 gap-8 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
-                <div className="flex flex-col justify-center gap-8">
-                    <div className="max-w-xl">
-                        <div className="mb-8 inline-flex rounded-[2rem] border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
-                            <img 
-                                src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
-                                alt="Logistra" 
-                                className="h-14 w-auto sm:h-16"
-                            />
+        <div className="flex min-h-screen">
+            {/* ── Left panel (desktop only) ── */}
+            <div className="hidden lg:flex lg:w-[56%] relative flex-col overflow-hidden bg-slate-900">
+                {/* Ambient glow */}
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_25%,_rgba(19,91,236,0.28),_transparent_55%),radial-gradient(ellipse_at_80%_75%,_rgba(249,115,22,0.15),_transparent_50%)]" />
+                {/* Subtle grid overlay */}
+                <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{backgroundImage:'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)',backgroundSize:'40px 40px'}} />
+                {/* Right edge separator */}
+                <div className="absolute right-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-slate-700/60 to-transparent" />
+
+                <div className="relative flex flex-1 flex-col justify-between p-12 xl:p-16">
+                    {/* Logo */}
+                    <div>
+                        <div className="inline-flex rounded-2xl border border-white/10 bg-white/8 p-3.5 backdrop-blur-sm">
+                            <img src="/logistra-nightmode.svg" alt="Logistra" className="h-9 w-auto" />
                         </div>
-                        <h1 className="text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-                            Unified inventory operations, from sign-in to dispatch.
+                    </div>
+
+                    {/* Headline + feature cards */}
+                    <div>
+                        <h1 className="text-4xl xl:text-[2.75rem] font-black tracking-tight text-white leading-[1.12]">
+                            Unified inventory<br />operations, from<br />sign-in to dispatch.
                         </h1>
-                        <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-400">
+                        <p className="mt-5 max-w-md text-[0.9375rem] leading-relaxed text-slate-400">
                             Manage catalog, stock, purchasing, and fulfillment from one consistent workspace designed for fast operational decisions.
                         </p>
+
+                        <div className="mt-10 grid grid-cols-3 gap-3">
+                            {FEATURES.map(({ icon, label, desc }) => (
+                                <div key={label} className="rounded-2xl border border-white/8 bg-white/5 p-4 backdrop-blur-sm transition-colors hover:bg-white/8">
+                                    <span className="material-symbols-outlined text-[22px] text-blue-400">{icon}</span>
+                                    <div className="mt-3 text-sm font-bold text-white">{label}</div>
+                                    <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{desc}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">Catalog</div>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Keep products, variants, and attributes organized with the same workflow language used across operations.</p>
-                        </div>
-                        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">One Workspace</div>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Move between receiving, stock control, procurement, and sales without relearning the interface.</p>
-                        </div>
-                        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">Faster Decisions</div>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Clear hierarchy and operational signals help teams review exceptions and act with confidence.</p>
-                        </div>
-                    </div>
+                    {/* Footer */}
+                    <p className="text-xs text-slate-600">© 2026 Logistra. All rights reserved.</p>
+                </div>
+            </div>
+
+            {/* ── Right panel ── */}
+            <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-16 dark:bg-slate-950">
+                {/* Mobile logo */}
+                <div className="mb-10 lg:hidden">
+                    <img
+                        src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'}
+                        alt="Logistra"
+                        className="h-9 w-auto"
+                    />
                 </div>
 
-                <div className="flex items-center justify-center">
-                <Card className="w-full max-w-md px-4 py-8 sm:px-10">
-                    <div className="mb-6">
-                        <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white dark:bg-white dark:text-slate-900">
-                            Secure Access
-                        </span>
-                        <h2 className="mt-4 text-3xl font-extrabold text-slate-900 dark:text-white">
+                <div className="w-full max-w-[400px]">
+                    {/* Form header */}
+                    <div className="mb-8">
+                        <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 dark:border-slate-700 dark:bg-slate-800/60">
+                            <span className="material-symbols-outlined text-[13px] text-emerald-500">lock</span>
+                            <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Secure Access</span>
+                        </div>
+                        <h2 className="text-[1.75rem] font-extrabold leading-tight text-slate-900 dark:text-white">
                             Sign in to your account
                         </h2>
-                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                            Streamline your inventory management with Logistra.
+                        <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+                            Enter your credentials to access Logistra.
                         </p>
                     </div>
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error ? <Alert type="error" message={error} onDismiss={() => setError('')} /> : null}
+
+                    {/* Form */}
+                    <form className="space-y-5" onSubmit={handleSubmit}>
+                        {error && (
+                            <Alert type="error" message={error} onDismiss={() => setError('')} />
+                        )}
 
                         <Input
                             label="Email address"
@@ -94,7 +131,7 @@ const Login = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            placeholder="Enter your email"
+                            placeholder="you@company.com"
                             icon="mail"
                         />
 
@@ -104,28 +141,23 @@ const Login = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            placeholder="Enter your password"
+                            placeholder="••••••••"
                             icon="lock"
                         />
 
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center">
+                            <label className="flex cursor-pointer items-center gap-2">
                                 <input
                                     id="remember-me"
                                     name="remember-me"
                                     type="checkbox"
-                                    className="h-4 w-4 text-primary focus:ring-primary border-slate-300 rounded"
+                                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
                                 />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900 dark:text-slate-300">
-                                    Remember me
-                                </label>
-                            </div>
-
-                            <div className="text-sm">
-                                <a href="#" className="font-medium text-primary hover:text-primary/80">
-                                    Forgot your password?
-                                </a>
-                            </div>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Remember me</span>
+                            </label>
+                            <a href="#" className="text-sm font-medium text-primary transition-colors hover:text-primary/80">
+                                Forgot password?
+                            </a>
                         </div>
 
                         <Button
@@ -134,30 +166,34 @@ const Login = () => {
                             fullWidth
                             loading={loading}
                             size="lg"
+                            className="!rounded-xl"
                         >
                             Sign in
                         </Button>
                     </form>
 
-                    <div className="mt-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-slate-300 dark:border-slate-700" />
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="bg-white px-2 text-slate-500 dark:bg-slate-800">
-                                    Protected by standard encryption
-                                </span>
-                            </div>
+                    {/* Trust row */}
+                    <div className="mt-8 flex items-center justify-center gap-4">
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <span className="material-symbols-outlined text-[13px]">encrypted</span>
+                            TLS encrypted
+                        </div>
+                        <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <span className="material-symbols-outlined text-[13px]">verified_user</span>
+                            Role-based access
+                        </div>
+                        <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <span className="material-symbols-outlined text-[13px]">shield</span>
+                            Audit logging
                         </div>
                     </div>
-                </Card>
                 </div>
-            </div>
 
-            <p className="relative pb-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                © 2026 Logistra. All rights reserved.
-            </p>
+                {/* Mobile footer */}
+                <p className="mt-10 text-xs text-slate-400 lg:hidden">© 2026 Logistra. All rights reserved.</p>
+            </div>
         </div>
     );
 };

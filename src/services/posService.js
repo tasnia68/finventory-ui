@@ -392,8 +392,10 @@ export const scanPosBarcode = async (barcode, { warehouseId = '' } = {}) => {
     return item;
 };
 
+import { generateUUID } from '../utils/uuid';
+
 export const createCartLine = (product, quantity = 1) => ({
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     productVariantId: product.id,
     sku: product.sku,
     barcode: product.barcode,
@@ -447,8 +449,8 @@ export const finalizePosSale = async ({ cart, checkout, cashier, customer, wareh
     const totals = summarizeCart(cart, checkout);
     const shift = navigator.onLine ? await getOrCreateShift(terminal?.id, activeShift) : activeShift || getActiveShiftStore();
     const sale = {
-        id: crypto.randomUUID(),
-        clientSaleId: crypto.randomUUID(),
+        id: generateUUID(),
+        clientSaleId: generateUUID(),
         invoiceNumber: createInvoiceNumber(),
         createdAt: new Date().toISOString(),
         cashierId: cashier?.id || null,

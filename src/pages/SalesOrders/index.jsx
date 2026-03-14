@@ -7,11 +7,12 @@ import { getWarehouses } from '../../services/warehouseService';
 import SalesOrderDetailModal from './SalesOrderDetailModal';
 import SalesOrderFormModal from './SalesOrderFormModal';
 import { formatCurrency, formatDate, formatDateTime, formatNumber, getSalesOrderStatusVariant, toList } from '../Sales/utils';
+import { generateUUID } from '../../utils/uuid';
 
 const STATUS_OPTIONS = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'BACKORDERED', 'PARTIALLY_SHIPPED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED'].map((value) => ({ value, label: value.replaceAll('_', ' ') }));
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((value) => ({ value, label: value }));
 
-const createEmptyForm = () => ({ customerId: '', warehouseId: '', expectedDeliveryDate: '', priority: 'MEDIUM', currency: 'USD', notes: '', items: [{ id: crypto.randomUUID(), variant: null, quantity: 1, unitPrice: '' }] });
+const createEmptyForm = () => ({ customerId: '', warehouseId: '', expectedDeliveryDate: '', priority: 'MEDIUM', currency: 'USD', notes: '', items: [{ id: generateUUID(), variant: null, quantity: 1, unitPrice: '' }] });
 
 const SalesOrders = () => {
     const [salesOrders, setSalesOrders] = useState([]);

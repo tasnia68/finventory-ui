@@ -5,8 +5,9 @@ import { formatCurrency, formatDate, formatDateTime, formatNumber, getPurchaseOr
 import { getSuppliers } from '../../services/supplierService';
 import { createPurchaseOrder, getPurchaseOrders, updatePurchaseOrder, updatePurchaseOrderStatus } from '../../services/purchaseOrderService';
 import PurchaseOrderFormModal from './PurchaseOrderFormModal';
+import { generateUUID } from '../../utils/uuid';
 
-const createEmptyForm = () => ({ supplierId: '', expectedDeliveryDate: '', currency: 'USD', notes: '', items: [{ id: crypto.randomUUID(), variant: null, quantity: 1, unitPrice: '' }] });
+const createEmptyForm = () => ({ supplierId: '', expectedDeliveryDate: '', currency: 'USD', notes: '', items: [{ id: generateUUID(), variant: null, quantity: 1, unitPrice: '' }] });
 
 const STATUS_OPTIONS = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'ISSUED', 'PARTIALLY_RECEIVED', 'COMPLETED', 'CLOSED'];
 

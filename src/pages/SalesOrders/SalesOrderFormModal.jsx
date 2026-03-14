@@ -1,9 +1,10 @@
 import React from 'react';
 import { Button, Input, Modal, ProductVariantLookup, Select } from '../../components/common';
+import { generateUUID } from '../../utils/uuid';
 
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((value) => ({ value, label: value }));
 
-const createLine = () => ({ id: crypto.randomUUID(), variant: null, quantity: 1, unitPrice: '' });
+const createLine = () => ({ id: generateUUID(), variant: null, quantity: 1, unitPrice: '' });
 
 const SalesOrderFormModal = ({ isOpen, onClose, customers, warehouses, formData, setFormData, onSubmit, loading, isEditing }) => {
     const updateLine = (lineId, field, value) => {
