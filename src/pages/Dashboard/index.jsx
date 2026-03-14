@@ -6,6 +6,7 @@ import InventoryByCategory from '../../components/dashboard/InventoryByCategory'
 import RecentItemsTable from '../../components/dashboard/RecentItemsTable';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getCachedSetting, useSettings } from '../../contexts/SettingsContext';
 import { Alert, Button, Select } from '../../components/common';
 import { getAnalyticsDashboardSummary, getCurrentStockReport, getStockMovementReport } from '../../services/reportingService';
 import { getWarehouses } from '../../services/warehouseService';
@@ -54,14 +55,22 @@ const getSignedQuantity = (movement) => {
 const Dashboard = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { getSetting } = useSettings();
   const displayName = user?.firstName || user?.email?.split('@')[0] || 'Alex';
-  const [filters, setFilters] = useState({ warehouseId: '', period: '30' });
+  const [filters, setFilters] = useState({ warehouseId: '', period: getCachedSetting('analytics.dashboard.defaultDateRange', '30') });
   const [warehouses, setWarehouses] = useState([]);
   const [summary, setSummary] = useState(null);
   const [stockReport, setStockReport] = useState([]);
   const [stockMovements, setStockMovements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const defaultRange = getSetting('analytics.dashboard.defaultDateRange', '30');
+    if (defaultRange !== filters.period && filters.period === '30') {
+      setFilters((current) => ({ ...current, period: defaultRange }));
+    }
+  }, [filters.period, getSetting]);
 
   useEffect(() => {
     const loadWarehouses = async () => {

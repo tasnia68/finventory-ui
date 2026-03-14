@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Button, Card, Input, MetricCard, Select } from '../../components/common';
 import SalesHero from '../../components/sales/SalesHero';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import { createCustomer } from '../../services/customerService';
 import {
     addCartLine,
@@ -39,8 +40,14 @@ const DEFAULT_CHECKOUT = {
     syncMode: 'online',
 };
 
+const createDefaultCheckout = (currency = 'USD') => ({
+    ...DEFAULT_CHECKOUT,
+    currency,
+});
+
 const PosTerminal = () => {
     const { user } = useAuth();
+    const { getBooleanSetting, getSetting } = useSettings();
     const [loading, setLoading] = useState(true);
     const [catalogLoading, setCatalogLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
@@ -56,13 +63,19 @@ const PosTerminal = () => {
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [cart, setCart] = useState([]);
     const [showCheckout, setShowCheckout] = useState(false);
-    const [checkout, setCheckout] = useState(DEFAULT_CHECKOUT);
+    const defaultCurrency = getSetting('general.localization.defaultCurrency', 'USD');
+    const [checkout, setCheckout] = useState(() => createDefaultCheckout(defaultCurrency));
     const [sales, setSales] = useState([]);
     const [selectedSale, setSelectedSale] = useState(null);
     const [activeShift, setActiveShift] = useState(getCurrentPosShift());
     const [kpis, setKpis] = useState({ gross: 0, tickets: 0, units: 0, averageTicket: 0, offlineQueued: 0 });
     const [showQuickCustomer, setShowQuickCustomer] = useState(false);
     const [savingCustomer, setSavingCustomer] = useState(false);
+    const autoSyncTriggered = useRef(false);
+
+    const requireOpenShiftBeforeSale = getBooleanSetting('pos.register.requireOpenShiftBeforeSale', true);
+    const autoSyncOnReconnect = getBooleanSetting('pos.offline.autoSyncOnReconnect', true);
+    const receiptFooterText = getSetting('pos.receipt.footerText', getSetting('general.branding.receiptFooterText', ''));
 
     useEffect(() => {
         const handleOnline = () => setOnline(true);
@@ -104,6 +117,12 @@ const PosTerminal = () => {
             setSelectedWarehouseId(terminal.warehouseId);
         }
     }, [bootstrap.terminals, selectedTerminalId]);
+
+    useEffect(() => {
+        if (!cart.length && checkout.currency !== defaultCurrency) {
+            setCheckout((current) => ({ ...current, currency: defaultCurrency }));
+        }
+    }, [cart.length, checkout.currency, defaultCurrency]);
 
     useEffect(() => {
         let isMounted = true;
@@ -202,6 +221,21 @@ const PosTerminal = () => {
     const selectedCustomer = useMemo(() => bootstrap.customers.find((customer) => customer.id === selectedCustomerId) || null, [bootstrap.customers, selectedCustomerId]);
     const summary = useMemo(() => summarizeCart(cart, checkout), [cart, checkout]);
     const canSyncSale = Boolean(selectedTerminalId && selectedWarehouseId && online);
+    const checkoutBlockedByShift = requireOpenShiftBeforeSale && activeShift?.status !== 'OPEN';
+
+    useEffect(() => {
+        if (!online) {
+            autoSyncTriggered.current = false;
+            return;
+        }
+
+        if (!autoSyncOnReconnect || autoSyncTriggered.current || !kpis.offlineQueued) {
+            return;
+        }
+
+        autoSyncTriggered.current = true;
+        handleSyncQueued(true);
+    }, [autoSyncOnReconnect, kpis.offlineQueued, online]);
 
     const handleAddProduct = (product) => {
         setCart((current) => addCartLine(current, product));
@@ -222,6 +256,11 @@ const PosTerminal = () => {
 
     const handleCheckout = async (event) => {
         event.preventDefault();
+        if (checkoutBlockedByShift) {
+            showAlert('warning', 'Open a register shift before completing POS sales.');
+            return;
+        }
+
         try {
             setSyncing(true);
             const sale = await finalizePosSale({
@@ -235,7 +274,7 @@ const PosTerminal = () => {
             });
             setSelectedSale(sale);
             setCart([]);
-            setCheckout(DEFAULT_CHECKOUT);
+            setCheckout(createDefaultCheckout(defaultCurrency));
             setShowCheckout(false);
             setActiveShift(getCurrentPosShift());
             const items = await fetchPosSales({ cashierId: user?.id, terminalId: selectedTerminalId, size: 20 });
@@ -248,13 +287,15 @@ const PosTerminal = () => {
         }
     };
 
-    const handleSyncQueued = async () => {
+    const handleSyncQueued = async (silentIfEmpty = false) => {
         try {
             setSyncing(true);
             const result = await syncQueuedPosSales(user?.id);
             const items = await fetchPosSales({ cashierId: user?.id, terminalId: selectedTerminalId, size: 20 });
             setSales(items);
-            showAlert(result.synced > 0 ? 'success' : 'warning', result.synced > 0 ? `Synced ${result.synced} offline sales` : 'No offline sales were synced');
+            if (result.synced > 0 || !silentIfEmpty) {
+                showAlert(result.synced > 0 ? 'success' : 'warning', result.synced > 0 ? `Synced ${result.synced} offline sales` : 'No offline sales were synced');
+            }
         } catch (error) {
             showAlert('error', error.message || 'Failed to sync offline sales');
         } finally {
@@ -312,7 +353,7 @@ const PosTerminal = () => {
                     <MetricCard title="Today's Gross" value={formatCurrency(kpis.gross)} caption="Sales value recorded by this cashier today" icon="payments" tone="blue" />
                     <MetricCard title="Tickets" value={kpis.tickets} caption="Completed POS sales for this cashier today" icon="receipt_long" tone="emerald" />
                     <MetricCard title="Average Basket" value={formatCurrency(kpis.averageTicket)} caption="Average total per ticket handled this shift" icon="shopping_basket" tone="violet" />
-                    <MetricCard title="Shift Status" value={activeShift?.status === 'OPEN' ? 'Open' : 'Closed'} caption={activeShift?.status === 'OPEN' ? `Register opened by ${activeShift.cashierName}` : 'Open the register from Register Control before selling'} icon="point_of_sale" tone="amber" />
+                    <MetricCard title="Shift Status" value={activeShift?.status === 'OPEN' ? 'Open' : 'Closed'} caption={activeShift?.status === 'OPEN' ? `Register opened by ${activeShift.cashierName}` : (requireOpenShiftBeforeSale ? 'Open the register from Register Control before selling' : 'Current policy allows sales without an open shift')} icon="point_of_sale" tone="amber" />
                 </div>
 
                 <Card className="rounded-[30px] border border-slate-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
@@ -321,7 +362,7 @@ const PosTerminal = () => {
                             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Active Counter</p>
                             <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{selectedTerminal?.name || 'Choose a counter'}</h2>
                             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{selectedWarehouse?.name || 'No warehouse bound'} • {activeShift?.status === 'OPEN' ? `Shift open by ${activeShift.cashierName}` : 'No open shift on this counter'}</p>
-                            <p className="mt-1 text-xs text-slate-400">{activeShift?.openedAt ? `Opened ${new Date(activeShift.openedAt).toLocaleString()}` : 'Open the register before posting live sales.'}</p>
+                            <p className="mt-1 text-xs text-slate-400">{activeShift?.openedAt ? `Opened ${new Date(activeShift.openedAt).toLocaleString()}` : (requireOpenShiftBeforeSale ? 'Open the register before posting live sales.' : 'Sales can proceed without an active shift under the current policy.')}</p>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             <Link to="/pos/register" className="inline-flex"><Button variant="secondary" icon="point_of_sale">Manage Register</Button></Link>
@@ -361,12 +402,19 @@ const PosTerminal = () => {
                         customerName={selectedCustomer?.name}
                         terminalName={selectedTerminal?.name}
                         warehouseName={selectedWarehouse?.name}
-                        checkoutDisabled={!selectedTerminalId || (online && activeShift?.status !== 'OPEN')}
+                        checkoutDisabled={!selectedTerminalId || checkoutBlockedByShift}
                         onQuantityChange={(lineId, quantity) => setCart((current) => updateCartQuantity(current, lineId, quantity))}
                         onPriceChange={(lineId, price) => setCart((current) => updateCartPrice(current, lineId, price))}
                         onRemove={(lineId) => setCart((current) => removeCartLine(current, lineId))}
                         onClear={() => setCart([])}
-                        onCheckout={() => setShowCheckout(true)}
+                        onCheckout={() => {
+                            if (checkoutBlockedByShift) {
+                                showAlert('warning', 'Open a register shift before completing POS sales.');
+                                return;
+                            }
+
+                            setShowCheckout(true);
+                        }}
                     />
                 </div>
             </div>
@@ -391,7 +439,7 @@ const PosTerminal = () => {
                 loading={savingCustomer}
             />
 
-            <PosInvoiceModal sale={selectedSale} isOpen={Boolean(selectedSale)} onClose={() => setSelectedSale(null)} onPrint={printPosInvoice} />
+            <PosInvoiceModal sale={selectedSale} isOpen={Boolean(selectedSale)} onClose={() => setSelectedSale(null)} onPrint={(sale) => printPosInvoice(sale, { footerText: receiptFooterText })} />
         </div>
     );
 };

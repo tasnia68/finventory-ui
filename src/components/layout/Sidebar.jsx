@@ -55,6 +55,7 @@ const MENU_ITEMS = [
       { titleKey: 'navigation.replenishment', path: '/replenishment' },
       { titleKey: 'navigation.cycleCounts', path: '/cycle-counts' },
       { titleKey: 'navigation.valuation', path: '/valuation' },
+      { titleKey: 'navigation.damageControl', path: '/damage-control' },
     ]
   },
   {

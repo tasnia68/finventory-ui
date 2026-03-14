@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, translations } from '../i18n/translations';
+import { getCachedSetting, useSettings } from './SettingsContext';
 
 const STORAGE_KEY = 'preferredLanguage';
 const LANGUAGE_LOOKUP = Object.fromEntries(SUPPORTED_LANGUAGES.map((language) => [language.code, language]));
@@ -41,15 +42,29 @@ const interpolate = (template, values) => {
 };
 
 export const LanguageProvider = ({ children }) => {
+  const { getSetting } = useSettings();
   const [language, setLanguage] = useState(() => {
     const storedLanguage = localStorage.getItem(STORAGE_KEY);
     if (storedLanguage && LANGUAGE_LOOKUP[storedLanguage]) {
       return storedLanguage;
     }
-    return DEFAULT_LANGUAGE;
+    const tenantDefaultLanguage = getCachedSetting('general.localization.defaultLanguage', DEFAULT_LANGUAGE);
+    return LANGUAGE_LOOKUP[tenantDefaultLanguage] ? tenantDefaultLanguage : DEFAULT_LANGUAGE;
   });
 
   const languageConfig = LANGUAGE_LOOKUP[language] || LANGUAGE_LOOKUP[DEFAULT_LANGUAGE];
+
+  useEffect(() => {
+    const storedLanguage = localStorage.getItem(STORAGE_KEY);
+    if (storedLanguage) {
+      return;
+    }
+
+    const tenantDefaultLanguage = getSetting('general.localization.defaultLanguage', DEFAULT_LANGUAGE);
+    if (tenantDefaultLanguage && tenantDefaultLanguage !== language && LANGUAGE_LOOKUP[tenantDefaultLanguage]) {
+      setLanguage(tenantDefaultLanguage);
+    }
+  }, [getSetting, language]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, language);

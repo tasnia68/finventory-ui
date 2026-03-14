@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Alert, Button, Card, MetricCard, Select } from '../../components/common';
 import SalesHero from '../../components/sales/SalesHero';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import {
     closePosShift,
     fetchCurrentPosShift,
@@ -17,6 +18,7 @@ import { formatCurrency } from '../POS/utils';
 
 const PosRegister = () => {
     const { user } = useAuth();
+    const { getBooleanSetting } = useSettings();
     const [loading, setLoading] = useState(true);
     const [working, setWorking] = useState(false);
     const [alert, setAlert] = useState(null);
@@ -27,6 +29,9 @@ const PosRegister = () => {
     const [kpis, setKpis] = useState({ gross: 0, tickets: 0, units: 0, averageTicket: 0, offlineQueued: 0 });
     const [showShiftModal, setShowShiftModal] = useState(false);
     const [shiftMode, setShiftMode] = useState('open');
+
+    const allowManualCloseWithOfflineQueue = getBooleanSetting('pos.register.allowManualCloseWithOfflineQueue', false);
+    const autoSyncOnReconnect = getBooleanSetting('pos.offline.autoSyncOnReconnect', true);
 
     useEffect(() => {
         const handleOnline = () => setOnline(true);
@@ -103,6 +108,7 @@ const PosRegister = () => {
     }, [user?.id, selectedTerminalId, online]);
 
     const selectedTerminal = useMemo(() => bootstrap.terminals.find((terminal) => terminal.id === selectedTerminalId) || null, [bootstrap.terminals, selectedTerminalId]);
+    const canCloseShift = activeShift?.status === 'OPEN' && (allowManualCloseWithOfflineQueue || kpis.offlineQueued === 0);
 
     const showAlert = (type, message) => {
         setAlert({ type, message });
@@ -154,6 +160,12 @@ const PosRegister = () => {
         }
     };
 
+    useEffect(() => {
+        if (online && autoSyncOnReconnect && kpis.offlineQueued > 0) {
+            handleSyncQueued();
+        }
+    }, [autoSyncOnReconnect, kpis.offlineQueued, online]);
+
     if (loading) {
         return <div className="flex-1 bg-background-light dark:bg-background-dark" />;
     }
@@ -202,10 +214,15 @@ const PosRegister = () => {
                                 <Button
                                     icon={activeShift?.status === 'OPEN' ? 'lock_open_right' : 'point_of_sale'}
                                     onClick={() => {
+                                        if (activeShift?.status === 'OPEN' && !canCloseShift) {
+                                            showAlert('warning', 'Sync queued offline sales before closing this shift.');
+                                            return;
+                                        }
+
                                         setShiftMode(activeShift?.status === 'OPEN' ? 'close' : 'open');
                                         setShowShiftModal(true);
                                     }}
-                                    disabled={!selectedTerminalId || (!activeShift && !online)}
+                                    disabled={!selectedTerminalId || (!activeShift && !online) || (activeShift?.status === 'OPEN' && !canCloseShift)}
                                 >
                                     {activeShift?.status === 'OPEN' ? 'Close Shift' : 'Open Shift'}
                                 </Button>

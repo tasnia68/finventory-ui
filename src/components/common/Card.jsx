@@ -29,7 +29,7 @@ const Card = ({
             {...props}
         >
             {(title || action) && (
-                <div className={`flex items-center justify-between ${padding !== 'none' ? '' : 'px-6 pt-6'} mb-6`}>
+                <div className={`mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${padding !== 'none' ? '' : 'px-6 pt-6'}`}>
                     <div>
                         {title && (
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white">

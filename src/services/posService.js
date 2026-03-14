@@ -570,7 +570,8 @@ export const syncQueuedPosSales = async (cashierId) => {
 
 export const getCurrentPosShift = () => getActiveShiftStore();
 
-export const buildInvoiceHtml = (sale) => {
+export const buildInvoiceHtml = (sale, options = {}) => {
+    const footerText = options.footerText || '';
     const lines = sale.items.map((item) => `
         <tr>
             <td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">${item.sku}</td>
@@ -610,19 +611,20 @@ export const buildInvoiceHtml = (sale) => {
                     <p>Tax: ${Number(sale.taxAmount || 0).toFixed(2)}</p>
                     <p style="font-size:20px;font-weight:700;">Total: ${Number(sale.total || 0).toFixed(2)}</p>
                 </div>
+                ${footerText ? `<p style="margin-top:20px;font-size:12px;color:#475569;">${footerText}</p>` : ''}
             </body>
         </html>
     `;
 };
 
-export const printPosInvoice = (sale) => {
+export const printPosInvoice = (sale, options = {}) => {
     const popup = window.open('', '_blank', 'width=720,height=900');
     if (!popup) {
         throw new Error('Unable to open print window');
     }
 
     popup.document.open();
-    popup.document.write(buildInvoiceHtml(sale));
+    popup.document.write(buildInvoiceHtml(sale, options));
     popup.document.close();
     popup.focus();
     popup.print();

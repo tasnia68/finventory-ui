@@ -26,6 +26,7 @@ const ROUTE_META = [
   { match: '/replenishment', titleKey: 'routes.replenishment', sectionKey: 'sections.advancedInventory' },
   { match: '/cycle-counts', titleKey: 'routes.cycleCounts', sectionKey: 'sections.advancedInventory' },
   { match: '/valuation', titleKey: 'routes.valuation', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control', titleKey: 'routes.damageControl', sectionKey: 'sections.advancedInventory' },
   { match: '/suppliers', titleKey: 'routes.suppliers', sectionKey: 'sections.procurement' },
   { match: '/purchase-orders', titleKey: 'routes.purchaseOrders', sectionKey: 'sections.procurement' },
   { match: '/goods-receipts', titleKey: 'routes.goodsReceipts', sectionKey: 'sections.procurement' },

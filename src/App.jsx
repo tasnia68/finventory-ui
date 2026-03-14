@@ -22,6 +22,7 @@ import Batches from './pages/Batches';
 import Serials from './pages/Serials';
 import Reservations from './pages/Reservations';
 import Replenishment from './pages/Replenishment';
+import DamageControl from './pages/DamageControl';
 import PurchaseRequisitions from './pages/PurchaseRequisitions';
 import Suppliers from './pages/Suppliers';
 import PurchaseOrders from './pages/PurchaseOrders';
@@ -43,6 +44,7 @@ import AnalyticsOverview from './pages/Analytics';
 import AnalyticsReports from './pages/Analytics/Reports';
 import AnalyticsDataExchange from './pages/Analytics/DataExchange';
 import AnalyticsAutomation from './pages/Analytics/Automation';
+import Settings from './pages/Settings';
 import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
@@ -151,7 +153,7 @@ function App() {
           } />
           <Route path="/settings" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SETTINGS}>
-              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Settings Page</h1></div>
+              <Settings />
             </ProtectedRoute>
           } />
 
@@ -245,6 +247,11 @@ function App() {
           <Route path="/valuation" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
               <Valuation />
+            </ProtectedRoute>
+          } />
+          <Route path="/damage-control" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ADVANCED_INVENTORY}>
+              <DamageControl />
             </ProtectedRoute>
           } />
 
