@@ -21,6 +21,11 @@ const PosInvoiceModal = ({ sale, isOpen, onClose, onPrint }) => {
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Customer</p>
                             <p className="mt-2 font-semibold text-slate-900 dark:text-white">{sale.customerName}</p>
                             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Warehouse: {sale.warehouseName}</p>
+                            {Array.isArray(sale.appliedCouponCodes) && sale.appliedCouponCodes.length > 0 ? (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {sale.appliedCouponCodes.map((code) => <Badge key={code} variant="info">{code}</Badge>)}
+                                </div>
+                            ) : null}
                         </div>
                         <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Payment</p>

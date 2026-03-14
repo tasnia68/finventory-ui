@@ -22,6 +22,7 @@ import {
     updateCartQuantity,
     removeCartLine,
 } from '../../services/posService';
+import { previewPricing } from '../../services/promotionService';
 import PosCartPanel from './PosCartPanel';
 import PosCheckoutModal from './PosCheckoutModal';
 import PosInvoiceModal from './PosInvoiceModal';
@@ -34,10 +35,12 @@ const DEFAULT_CHECKOUT = {
     paymentMethod: 'CASH',
     tenderedAmount: '',
     discountAmount: '',
+    couponCodes: '',
     taxRate: '0',
     notes: '',
     currency: 'USD',
     syncMode: 'online',
+    pricingPreview: null,
 };
 
 const createDefaultCheckout = (currency = 'USD') => ({
@@ -71,6 +74,8 @@ const PosTerminal = () => {
     const [kpis, setKpis] = useState({ gross: 0, tickets: 0, units: 0, averageTicket: 0, offlineQueued: 0 });
     const [showQuickCustomer, setShowQuickCustomer] = useState(false);
     const [savingCustomer, setSavingCustomer] = useState(false);
+    const [pricingPreviewLoading, setPricingPreviewLoading] = useState(false);
+    const [pricingPreviewError, setPricingPreviewError] = useState('');
     const autoSyncTriggered = useRef(false);
 
     const requireOpenShiftBeforeSale = getBooleanSetting('pos.register.requireOpenShiftBeforeSale', true);
@@ -123,6 +128,58 @@ const PosTerminal = () => {
             setCheckout((current) => ({ ...current, currency: defaultCurrency }));
         }
     }, [cart.length, checkout.currency, defaultCurrency]);
+
+    useEffect(() => {
+        if (!online || !selectedWarehouseId || cart.length === 0) {
+            setPricingPreviewLoading(false);
+            setPricingPreviewError('');
+            setCheckout((current) => current.pricingPreview ? { ...current, pricingPreview: null } : current);
+            return undefined;
+        }
+
+        let active = true;
+        const timer = window.setTimeout(async () => {
+            try {
+                setPricingPreviewLoading(true);
+                setPricingPreviewError('');
+                const result = await previewPricing({
+                    customerId: selectedCustomerId || null,
+                    warehouseId: selectedWarehouseId,
+                    terminalId: selectedTerminalId || null,
+                    salesChannel: 'POS',
+                    manualDiscountAmount: Number(checkout.discountAmount || 0),
+                    couponCodes: checkout.couponCodes
+                        .split(/[\n,]/)
+                        .map((value) => value.trim())
+                        .filter(Boolean),
+                    items: cart.map((line) => ({
+                        productVariantId: line.productVariantId,
+                        quantity: Number(line.quantity || 0),
+                        unitPrice: Number(line.unitPrice || 0),
+                        manualLineDiscount: Number(line.lineDiscount || 0),
+                    })),
+                });
+
+                if (active) {
+                    setCheckout((current) => ({ ...current, pricingPreview: result }));
+                }
+            } catch (error) {
+                if (active) {
+                    setPricingPreviewError(error.message || 'Unable to evaluate coupon pricing for this basket');
+                    setCheckout((current) => current.pricingPreview ? { ...current, pricingPreview: null } : current);
+                }
+            } finally {
+                if (active) {
+                    setPricingPreviewLoading(false);
+                }
+            }
+        }, 320);
+
+        return () => {
+            active = false;
+            window.clearTimeout(timer);
+        };
+    }, [cart, checkout.couponCodes, checkout.discountAmount, online, selectedCustomerId, selectedTerminalId, selectedWarehouseId]);
 
     useEffect(() => {
         let isMounted = true;
@@ -275,6 +332,7 @@ const PosTerminal = () => {
             setSelectedSale(sale);
             setCart([]);
             setCheckout(createDefaultCheckout(defaultCurrency));
+            setPricingPreviewError('');
             setShowCheckout(false);
             setActiveShift(getCurrentPosShift());
             const items = await fetchPosSales({ cashierId: user?.id, terminalId: selectedTerminalId, size: 20 });
@@ -402,6 +460,7 @@ const PosTerminal = () => {
                         customerName={selectedCustomer?.name}
                         terminalName={selectedTerminal?.name}
                         warehouseName={selectedWarehouse?.name}
+                        appliedCouponCodes={summary.appliedCouponCodes}
                         checkoutDisabled={!selectedTerminalId || checkoutBlockedByShift}
                         onQuantityChange={(lineId, quantity) => setCart((current) => updateCartQuantity(current, lineId, quantity))}
                         onPriceChange={(lineId, price) => setCart((current) => updateCartPrice(current, lineId, price))}
@@ -425,6 +484,8 @@ const PosTerminal = () => {
                 checkout={checkout}
                 setCheckout={setCheckout}
                 summary={summary}
+                        pricingPreviewLoading={pricingPreviewLoading}
+                        pricingPreviewError={pricingPreviewError}
                 cart={cart}
                 online={online}
                 canSyncSale={canSyncSale}

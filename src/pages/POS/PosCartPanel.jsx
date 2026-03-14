@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, Button, Card, Input } from '../../components/common';
 import { formatCurrency } from './utils';
 
-const PosCartPanel = ({ cart, summary, currency, customerName, terminalName, warehouseName, checkoutDisabled, onQuantityChange, onPriceChange, onRemove, onClear, onCheckout }) => {
+const PosCartPanel = ({ cart, summary, currency, customerName, terminalName, warehouseName, appliedCouponCodes = [], checkoutDisabled, onQuantityChange, onPriceChange, onRemove, onClear, onCheckout }) => {
     return (
         <Card className="sticky top-6 rounded-[30px] border border-slate-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
             <div className="flex items-start justify-between gap-4">
@@ -54,6 +54,16 @@ const PosCartPanel = ({ cart, summary, currency, customerName, terminalName, war
                     <span>Subtotal</span>
                     <span>{formatCurrency(summary.subtotal, currency)}</span>
                 </div>
+                {appliedCouponCodes.length > 0 ? (
+                    <div className="space-y-2">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Applied Coupons</div>
+                        <div className="flex flex-wrap gap-2">
+                            {appliedCouponCodes.map((code) => (
+                                <Badge key={code} variant="info">{code}</Badge>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
                 <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                     <span>Discount</span>
                     <span>{formatCurrency(summary.discountAmount, currency)}</span>

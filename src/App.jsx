@@ -36,6 +36,7 @@ import Valuation from './pages/Valuation';
 import Customers from './pages/Customers';
 import SalesOrders from './pages/SalesOrders';
 import RefundsExchanges from './pages/RefundsExchanges';
+import PromotionsPricing from './pages/PromotionsPricing';
 import Fulfillment from './pages/Fulfillment';
 import PosTerminal from './pages/POS';
 import PosCounters from './pages/POSCounters';
@@ -299,6 +300,11 @@ function App() {
           <Route path="/refunds-exchanges" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
               <RefundsExchanges />
+            </ProtectedRoute>
+          } />
+          <Route path="/promotions-pricing" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <PromotionsPricing />
             </ProtectedRoute>
           } />
           <Route path="/fulfillment" element={

@@ -77,6 +77,7 @@ const MENU_ITEMS = [
       { titleKey: 'navigation.customers', path: '/customers' },
       { titleKey: 'navigation.salesOrders', path: '/sales-orders' },
       { titleKey: 'navigation.refundsExchanges', path: '/refunds-exchanges' },
+      { titleKey: 'navigation.promotionsPricing', path: '/promotions-pricing' },
       { titleKey: 'navigation.fulfillment', path: '/fulfillment' },
     ]
   },

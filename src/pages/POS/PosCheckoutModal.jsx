@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Modal, Select } from '../../components/common';
+import { Badge, Button, Input, Modal, Select } from '../../components/common';
 import { formatCurrency } from './utils';
 
 const PAYMENT_OPTIONS = [
@@ -25,7 +25,7 @@ const appendTenderValue = (currentValue, nextValue) => {
     return `${normalizedCurrent}${nextValue}`;
 };
 
-const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, cart, online, canSyncSale, onSubmit, loading }) => {
+const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pricingPreviewLoading, pricingPreviewError, cart, online, canSyncSale, onSubmit, loading }) => {
     const changeDue = Math.max(0, Number(checkout.tenderedAmount || 0) - Number(summary.total || 0));
 
     const setTenderedAmount = (value) => {
@@ -54,6 +54,23 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, car
                             <Input label="Tendered Amount" type="number" min="0" step="0.01" value={checkout.tenderedAmount} onChange={(event) => setTenderedAmount(event.target.value)} />
                             <Input label="Discount Amount" type="number" min="0" step="0.01" value={checkout.discountAmount} onChange={(event) => setCheckout((current) => ({ ...current, discountAmount: event.target.value }))} />
                             <Input label="Tax Rate %" type="number" min="0" step="0.01" value={checkout.taxRate} onChange={(event) => setCheckout((current) => ({ ...current, taxRate: event.target.value }))} />
+                        </div>
+
+                        <div className="space-y-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Coupons & Promotion Pricing</p>
+                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Enter one or more coupon codes. Backend pricing preview will reprice the basket automatically.</p>
+                                </div>
+                                {pricingPreviewLoading ? <Badge variant="warning">Pricing...</Badge> : <Badge variant={pricingPreviewError ? 'danger' : 'success'}>{pricingPreviewError ? 'Needs review' : 'Ready'}</Badge>}
+                            </div>
+                            <Input label="Coupon Codes" value={checkout.couponCodes} onChange={(event) => setCheckout((current) => ({ ...current, couponCodes: event.target.value }))} placeholder="Enter coupon codes separated by commas or new lines" />
+                            {Array.isArray(summary.appliedCouponCodes) && summary.appliedCouponCodes.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {summary.appliedCouponCodes.map((code) => <Badge key={code} variant="info">{code}</Badge>)}
+                                </div>
+                            ) : null}
+                            {pricingPreviewError ? <p className="text-xs font-medium text-amber-600 dark:text-amber-300">{pricingPreviewError}</p> : null}
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
@@ -117,6 +134,14 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, car
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Lines</span><span>{cart.length}</span></div>
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Items</span><span>{summary.itemCount}</span></div>
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Subtotal</span><span>{formatCurrency(summary.subtotal, checkout.currency)}</span></div>
+                            {Array.isArray(summary.appliedCouponCodes) && summary.appliedCouponCodes.length > 0 ? (
+                                <div className="space-y-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Coupons</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {summary.appliedCouponCodes.map((code) => <Badge key={code} variant="info">{code}</Badge>)}
+                                    </div>
+                                </div>
+                            ) : null}
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Discount</span><span>{formatCurrency(summary.discountAmount, checkout.currency)}</span></div>
                             <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400"><span>Tax</span><span>{formatCurrency(summary.taxAmount, checkout.currency)}</span></div>
                             <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-lg font-black text-slate-900 dark:border-slate-700 dark:text-white"><span>Total</span><span>{formatCurrency(summary.total, checkout.currency)}</span></div>

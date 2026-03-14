@@ -131,6 +131,7 @@ const normalizeSale = (sale) => ({
     total: Number(sale.totalAmount || 0),
     changeDue: Number(sale.changeAmount || 0),
     notes: sale.notes || '',
+    appliedCouponCodes: Array.isArray(sale.appliedCouponCodes) ? sale.appliedCouponCodes : [],
     syncStatus: 'synced',
     syncError: null,
     backendOrderId: sale.salesOrderId,
@@ -160,10 +161,16 @@ const normalizeKpis = (payload) => ({
 
 const createInvoiceNumber = () => `POS-${slugDate()}-${randomCode()}`;
 
-const computeTotals = ({ items, discountAmount = 0, taxRate = 0, tenderedAmount = 0 }) => {
-    const subtotal = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
-    const effectiveDiscount = Math.max(0, Number(discountAmount || 0));
-    const taxableBase = Math.max(0, subtotal - effectiveDiscount);
+const computeTotals = ({ items, discountAmount = 0, taxRate = 0, tenderedAmount = 0, pricingPreview = null }) => {
+    const subtotal = pricingPreview?.baseSubtotal !== undefined
+        ? Number(pricingPreview.baseSubtotal || 0)
+        : items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+    const effectiveDiscount = pricingPreview?.totalDiscount !== undefined
+        ? Math.max(0, Number(pricingPreview.totalDiscount || 0))
+        : Math.max(0, Number(discountAmount || 0));
+    const taxableBase = pricingPreview?.netSubtotal !== undefined
+        ? Math.max(0, Number(pricingPreview.netSubtotal || 0))
+        : Math.max(0, subtotal - effectiveDiscount);
     const taxAmount = taxableBase * (Number(taxRate || 0) / 100);
     const total = taxableBase + taxAmount;
     const changeDue = Math.max(0, Number(tenderedAmount || 0) - total);
@@ -175,6 +182,7 @@ const computeTotals = ({ items, discountAmount = 0, taxRate = 0, tenderedAmount 
         taxAmount,
         total,
         changeDue,
+        appliedCouponCodes: Array.isArray(pricingPreview?.appliedCouponCodes) ? pricingPreview.appliedCouponCodes : [],
     };
 };
 
@@ -207,6 +215,7 @@ const buildBackendSalePayload = (sale) => ({
     discountAmount: Number(sale.discountAmount || 0),
     taxAmount: Number(sale.taxAmount || 0),
     tenderedAmount: Number(sale.tenderedAmount || 0),
+    couponCodes: Array.isArray(sale.appliedCouponCodes) ? sale.appliedCouponCodes : [],
     currency: sale.currency || 'USD',
     notes: sale.notes || '',
     items: sale.items.map((item) => ({
@@ -442,6 +451,7 @@ export const summarizeCart = (cart, checkout = {}) => ({
         discountAmount: checkout.discountAmount,
         taxRate: checkout.taxRate,
         tenderedAmount: checkout.tenderedAmount,
+        pricingPreview: checkout.pricingPreview,
     }),
 });
 
@@ -466,6 +476,9 @@ export const finalizePosSale = async ({ cart, checkout, cashier, customer, wareh
         currency: checkout.currency || 'USD',
         tenderedAmount: Number(checkout.tenderedAmount || 0),
         notes: checkout.notes || '',
+        appliedCouponCodes: Array.isArray(checkout.pricingPreview?.appliedCouponCodes)
+            ? checkout.pricingPreview.appliedCouponCodes
+            : [],
         syncMode: checkout.syncMode,
         items: cart.map((line) => ({ ...line })),
         ...totals,
