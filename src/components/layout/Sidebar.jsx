@@ -68,12 +68,24 @@ const MENU_ITEMS = [
     ]
   },
   {
-    title: 'Sales & POS',
+    title: 'Sales',
+    icon: 'shopping_cart',
+    permission: PERMISSIONS.MENU_SALES,
+    submenu: [
+      { title: 'Customers', path: '/customers' },
+      { title: 'Sales Orders', path: '/sales-orders' },
+      { title: 'Fulfillment', path: '/fulfillment' },
+    ]
+  },
+  {
+    title: 'Point of Sale',
     icon: 'point_of_sale',
     permission: PERMISSIONS.MENU_SALES,
     submenu: [
-      { title: 'POS Terminal', path: '/pos' },
-      { title: 'Sales Orders', path: '/orders' }, // Mapped old /orders here
+      { title: 'Sell Screen', path: '/pos' },
+      { title: 'Register Control', path: '/pos/register' },
+      { title: 'Sold History', path: '/pos/sales' },
+      { title: 'Counter Setup', path: '/pos/counters' },
     ]
   },
   {

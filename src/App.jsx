@@ -32,6 +32,13 @@ import Inventory from './pages/Inventory';
 import Warehouses from './pages/Warehouses';
 import Transactions from './pages/Transactions';
 import Valuation from './pages/Valuation';
+import Customers from './pages/Customers';
+import SalesOrders from './pages/SalesOrders';
+import Fulfillment from './pages/Fulfillment';
+import PosTerminal from './pages/POS';
+import PosCounters from './pages/POSCounters';
+import PosRegister from './pages/POSRegister';
+import PosSales from './pages/POSSales';
 import { PERMISSIONS } from './constants/permissions';
 
 // Protected Route Wrapper
@@ -110,7 +117,7 @@ function App() {
           } />
           <Route path="/orders" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
-              <div className="p-8"><h1 className="text-2xl font-bold dark:text-white">Orders Page</h1></div>
+              <Navigate to="/sales-orders" replace />
             </ProtectedRoute>
           } />
           <Route path="/analytics" element={
@@ -247,9 +254,41 @@ function App() {
           } />
 
           {/* Sales */}
-          {['/pos'].map(path => (
-            <Route key={path} path={path} element={<ProtectedRoute permission={PERMISSIONS.MENU_SALES}><div className="p-8"><h1 className="text-2xl font-bold dark:text-white capitalize">{path.replace('/', '')}</h1></div></ProtectedRoute>} />
-          ))}
+          <Route path="/customers" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <Customers />
+            </ProtectedRoute>
+          } />
+          <Route path="/sales-orders" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <SalesOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/fulfillment" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <Fulfillment />
+            </ProtectedRoute>
+          } />
+          <Route path="/pos" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <PosTerminal />
+            </ProtectedRoute>
+          } />
+          <Route path="/pos/register" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <PosRegister />
+            </ProtectedRoute>
+          } />
+          <Route path="/pos/sales" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <PosSales />
+            </ProtectedRoute>
+          } />
+          <Route path="/pos/counters" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <PosCounters />
+            </ProtectedRoute>
+          } />
 
         </Routes>
       </AuthProvider>

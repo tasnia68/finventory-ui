@@ -41,36 +41,33 @@ const Login = () => {
             <div className="relative mx-auto grid min-h-screen max-w-6xl grid-cols-1 gap-8 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
                 <div className="flex flex-col justify-center gap-8">
                     <div className="max-w-xl">
-                        <div className="mb-6 flex items-center gap-3">
+                        <div className="mb-8 inline-flex rounded-[2rem] border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
                             <img 
                                 src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
                                 alt="Logistra" 
-                                className="h-10"
+                                className="h-14 w-auto sm:h-16"
                             />
-                            <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white dark:bg-white dark:text-slate-900">
-                                Inventory Control
-                            </span>
                         </div>
                         <h1 className="text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-                            The same operations theme now starts at sign-in.
+                            Unified inventory operations, from sign-in to dispatch.
                         </h1>
                         <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-400">
-                            Catalog, inventory, and transactional workspaces now share one visual system so users do not context-switch every time they move between modules.
+                            Manage catalog, stock, purchasing, and fulfillment from one consistent workspace designed for fast operational decisions.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">Phase 3</div>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Catalog screens now match the Phase 4 operations styling.</p>
+                            <div className="text-3xl font-black text-slate-900 dark:text-white">Catalog</div>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Keep products, variants, and attributes organized with the same workflow language used across operations.</p>
                         </div>
                         <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">1 Theme</div>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Shared visual language across login, navigation, and module workspaces.</p>
+                            <div className="text-3xl font-black text-slate-900 dark:text-white">One Workspace</div>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Move between receiving, stock control, procurement, and sales without relearning the interface.</p>
                         </div>
                         <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">Clearer</div>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Stronger hierarchy for operators moving quickly across daily tasks.</p>
+                            <div className="text-3xl font-black text-slate-900 dark:text-white">Faster Decisions</div>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Clear hierarchy and operational signals help teams review exceptions and act with confidence.</p>
                         </div>
                     </div>
                 </div>

@@ -429,7 +429,7 @@ const Products = () => {
           description="Review variants, filter catalog quality issues, run bulk maintenance, and trace change history without leaving the product workspace."
           info="This screen is the fast-control layer for template and variant maintenance. Use bulk operations carefully because they can affect multiple sellable SKUs at once."
           actions={
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start xl:justify-end">
               <Button variant="secondary" icon="upload_file" onClick={handleImportClick}>
                 Import CSV
               </Button>
@@ -450,7 +450,7 @@ const Products = () => {
                   </span>
                 </Button>
                 {showCreateMenu && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-10">
+                  <div className="absolute right-0 top-full z-30 mt-2 w-80 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
                     <div className="p-2">
                       <Link
                         to="/products/create/simple"
