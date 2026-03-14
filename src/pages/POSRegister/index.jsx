@@ -163,8 +163,8 @@ const PosRegister = () => {
             <div className="mx-auto flex max-w-7xl flex-col gap-8">
                 <SalesHero
                     eyebrow="Register Control"
-                    title="Open, close, and supervise the live POS register separately from selling."
-                    description="Cashiers and supervisors should manage shift state, drawer flow, and offline sync from a control workspace, not from the checkout screen."
+                    title="Manage register state and cashier shifts separately from checkout."
+                    description="Use this workspace to open or close registers, review shift status, and synchronize queued offline sales."
                     actions={(
                         <>
                             <Select value={selectedTerminalId} onChange={(event) => setSelectedTerminalId(event.target.value)} options={bootstrap.terminals.map((terminal) => ({ value: terminal.id, label: `${terminal.name} • ${terminal.warehouseName}` }))} placeholder="POS terminal" className="min-w-[280px]" />

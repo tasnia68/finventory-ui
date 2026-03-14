@@ -289,8 +289,8 @@ const PosTerminal = () => {
             <div className="mx-auto flex max-w-[1600px] flex-col gap-8">
                 <SalesHero
                     eyebrow="POS Terminal"
-                    title="Run counter sales with barcode-first speed, offline resilience, and cashier accountability."
-                    description="Staff with sales access can scan items, complete counter transactions, queue offline tickets, print receipts, and keep personal sales KPIs visible from one terminal workspace."
+                    title="Process point-of-sale transactions from a controlled terminal workspace."
+                    description="Use this screen to scan items, complete sales, queue offline tickets, and keep cashier activity tied to the active register."
                     actions={(
                         <>
                             <Select value={selectedTerminalId} onChange={(event) => setSelectedTerminalId(event.target.value)} options={bootstrap.terminals.map((terminal) => ({ value: terminal.id, label: `${terminal.name} • ${terminal.warehouseName}` }))} placeholder="POS terminal" className="min-w-[280px]" />

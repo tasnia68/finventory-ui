@@ -3,104 +3,105 @@ import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { PERMISSIONS } from '../../constants/permissions';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MENU_ITEMS = [
   {
-    title: 'Dashboard',
+    titleKey: 'navigation.dashboard',
     path: '/dashboard',
     icon: 'dashboard',
     permission: PERMISSIONS.MENU_DASHBOARD,
   },
   {
-    title: 'User Management',
+    titleKey: 'navigation.userManagement',
     icon: 'group',
     permission: PERMISSIONS.MENU_USER_MANAGEMENT,
     submenu: [
-      { title: 'Users', path: '/users' },
-      { title: 'Roles', path: '/roles' },
+      { titleKey: 'navigation.users', path: '/users' },
+      { titleKey: 'navigation.roles', path: '/roles' },
     ]
   },
   {
-    title: 'Product Catalog',
+    titleKey: 'navigation.productCatalog',
     icon: 'category',
     permission: PERMISSIONS.MENU_CATALOG,
     submenu: [
-      { title: 'Templates', path: '/products' },
-      { title: 'Categories', path: '/categories' },
-      { title: 'Units of Measure', path: '/uoms' },
-      { title: 'Attributes', path: '/attributes' },
-      { title: 'Attribute Groups', path: '/attribute-groups' },
+      { titleKey: 'navigation.templates', path: '/products' },
+      { titleKey: 'navigation.categories', path: '/categories' },
+      { titleKey: 'navigation.unitsOfMeasure', path: '/uoms' },
+      { titleKey: 'navigation.attributes', path: '/attributes' },
+      { titleKey: 'navigation.attributeGroups', path: '/attribute-groups' },
     ]
   },
   {
-    title: 'Inventory Core',
+    titleKey: 'navigation.inventoryCore',
     icon: 'inventory_2',
     permission: PERMISSIONS.MENU_INVENTORY_CORE,
     submenu: [
-      { title: 'Stock Levels', path: '/inventory' }, // Mapped old /inventory here
-      { title: 'Warehouses', path: '/warehouses' },
-      { title: 'Transactions', path: '/transactions' },
-      { title: 'Warehouse Transfers', path: '/warehouse-transfers' },
+      { titleKey: 'navigation.stockLevels', path: '/inventory' },
+      { titleKey: 'navigation.warehouses', path: '/warehouses' },
+      { titleKey: 'navigation.transactions', path: '/transactions' },
+      { titleKey: 'navigation.warehouseTransfers', path: '/warehouse-transfers' },
     ]
   },
   {
-    title: 'Advanced Inventory',
+    titleKey: 'navigation.advancedInventory',
     icon: 'domain_verification',
     permission: PERMISSIONS.MENU_ADVANCED_INVENTORY,
     submenu: [
-      { title: 'Batches & Lots', path: '/batches' },
-      { title: 'Serial Numbers', path: '/serials' },
-      { title: 'Reservations', path: '/reservations' },
-      { title: 'Replenishment', path: '/replenishment' },
-      { title: 'Cycle Counts', path: '/cycle-counts' },
-      { title: 'Valuation', path: '/valuation' },
+      { titleKey: 'navigation.batchesLots', path: '/batches' },
+      { titleKey: 'navigation.serialNumbers', path: '/serials' },
+      { titleKey: 'navigation.reservations', path: '/reservations' },
+      { titleKey: 'navigation.replenishment', path: '/replenishment' },
+      { titleKey: 'navigation.cycleCounts', path: '/cycle-counts' },
+      { titleKey: 'navigation.valuation', path: '/valuation' },
     ]
   },
   {
-    title: 'Procurement',
+    titleKey: 'navigation.procurement',
     icon: 'local_shipping',
     permission: PERMISSIONS.MENU_PROCUREMENT,
     submenu: [
-      { title: 'Suppliers', path: '/suppliers' },
-      { title: 'Purchase Orders', path: '/purchase-orders' },
-      { title: 'Goods Receipts', path: '/goods-receipts' },
-      { title: 'Purchase Requisitions', path: '/purchase-requisitions' },
+      { titleKey: 'navigation.suppliers', path: '/suppliers' },
+      { titleKey: 'navigation.purchaseOrders', path: '/purchase-orders' },
+      { titleKey: 'navigation.goodsReceipts', path: '/goods-receipts' },
+      { titleKey: 'navigation.purchaseRequisitions', path: '/purchase-requisitions' },
     ]
   },
   {
-    title: 'Sales',
+    titleKey: 'navigation.sales',
     icon: 'shopping_cart',
     permission: PERMISSIONS.MENU_SALES,
     submenu: [
-      { title: 'Customers', path: '/customers' },
-      { title: 'Sales Orders', path: '/sales-orders' },
-      { title: 'Fulfillment', path: '/fulfillment' },
+      { titleKey: 'navigation.customers', path: '/customers' },
+      { titleKey: 'navigation.salesOrders', path: '/sales-orders' },
+      { titleKey: 'navigation.fulfillment', path: '/fulfillment' },
     ]
   },
   {
-    title: 'Point of Sale',
+    titleKey: 'navigation.pointOfSale',
     icon: 'point_of_sale',
     permission: PERMISSIONS.MENU_SALES,
     submenu: [
-      { title: 'Sell Screen', path: '/pos' },
-      { title: 'Register Control', path: '/pos/register' },
-      { title: 'Sold History', path: '/pos/sales' },
-      { title: 'Counter Setup', path: '/pos/counters' },
+      { titleKey: 'navigation.sellScreen', path: '/pos' },
+      { titleKey: 'navigation.registerControl', path: '/pos/register' },
+      { titleKey: 'navigation.soldHistory', path: '/pos/sales' },
+      { titleKey: 'navigation.counterSetup', path: '/pos/counters' },
     ]
   },
   {
-    title: 'Analytics',
+    titleKey: 'navigation.analytics',
     icon: 'bar_chart',
     permission: PERMISSIONS.MENU_ANALYTICS,
     submenu: [
-      { title: 'Overview', path: '/analytics/overview' },
-      { title: 'Reports', path: '/analytics/reports' },
-      { title: 'Data Exchange', path: '/analytics/data-exchange' },
-      { title: 'Automation', path: '/analytics/automation' },
+      { titleKey: 'navigation.overview', path: '/analytics/overview' },
+      { titleKey: 'navigation.reports', path: '/analytics/reports' },
+      { titleKey: 'navigation.dataExchange', path: '/analytics/data-exchange' },
+      { titleKey: 'navigation.automation', path: '/analytics/automation' },
     ]
   },
   {
-    title: 'Settings',
+    titleKey: 'navigation.settings',
     path: '/settings',
     icon: 'settings',
     permission: PERMISSIONS.MENU_SETTINGS,
@@ -109,6 +110,7 @@ const MENU_ITEMS = [
 
 const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   // If item requests permission and user doesn't have it, don't render
   if (item.permission && !hasPermission(item.permission)) {
@@ -135,7 +137,7 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
             <span className={`material-symbols-outlined rounded-xl p-2 text-[20px] ${isActive ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500 group-hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:text-white'}`}>
               {item.icon}
             </span>
-            <span className="text-sm font-medium whitespace-nowrap">{item.title}</span>
+            <span className="text-sm font-medium whitespace-nowrap">{t(item.titleKey)}</span>
           </div>
           <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
             expand_more
@@ -155,7 +157,7 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
                   }`
                 }
               >
-                {subItem.title}
+                {t(subItem.titleKey)}
               </NavLink>
             ))}
           </div>
@@ -179,7 +181,7 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
           <span className={`material-symbols-outlined rounded-xl p-2 text-[20px] ${isActive ? 'bg-primary/10' : 'bg-slate-100 text-slate-500 group-hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:text-white'}`}>
             {item.icon}
           </span>
-          <span className="text-sm font-medium whitespace-nowrap">{item.title}</span>
+          <span className="text-sm font-medium whitespace-nowrap">{t(item.titleKey)}</span>
         </>
       )}
     </NavLink>
@@ -189,13 +191,13 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
 const Sidebar = () => {
   const { user, hasPermission } = useAuth();
   const { theme } = useContext(ThemeContext);
-  // State to track expanded menus. Keyed by item title.
+  const { t } = useLanguage();
   const [expandedMenus, setExpandedMenus] = useState({});
 
-  const toggleMenu = (title) => {
+  const toggleMenu = (titleKey) => {
     setExpandedMenus(prev => ({
       ...prev,
-      [title]: !prev[title]
+      [titleKey]: !prev[titleKey]
     }));
   };
 
@@ -214,21 +216,21 @@ const Sidebar = () => {
           </div>
           <div className="flex flex-col">
             <p className="text-base font-bold leading-tight text-slate-900 dark:text-white">Logistra</p>
-            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Catalog and inventory workspace.</p>
+            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{t('shell.brandTagline')}</p>
             </div>
           </div>
         </div>
 
         <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Navigation
+          {t('common.navigation')}
         </div>
         <nav className="flex flex-col gap-1">
           {MENU_ITEMS.map((item, index) => (
             <SidebarItem
               key={index}
               item={item}
-              isExpanded={expandedMenus[item.title]}
-              onToggle={() => toggleMenu(item.title)}
+              isExpanded={expandedMenus[item.titleKey]}
+              onToggle={() => toggleMenu(item.titleKey)}
               hasPermission={hasPermission}
             />
           ))}
@@ -242,10 +244,10 @@ const Sidebar = () => {
           </div>
           <div className="flex flex-col overflow-hidden">
             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-              {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.email || 'User')}
+              {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.email || t('common.profileFallbackName'))}
             </p>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-              {user?.email || 'user@example.com'}
+              {user?.email || t('common.profileFallbackEmail')}
             </p>
           </div>
         </Link>

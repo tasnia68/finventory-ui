@@ -9,7 +9,7 @@ const SalesHero = ({ eyebrow, title, description, actions, accent = 'from-rose-5
                     <span className="inline-flex rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white dark:bg-white dark:text-slate-900">
                         {eyebrow}
                     </span>
-                    <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{title}</h1>
+                    <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white xl:text-[2rem]">{title}</h1>
                     <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{description}</p>
                 </div>
                 {actions ? <div className="flex w-full flex-col gap-3 xl:flex-row xl:flex-wrap xl:items-center">{actions}</div> : null}

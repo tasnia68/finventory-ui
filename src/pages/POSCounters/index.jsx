@@ -91,8 +91,8 @@ const PosCounters = () => {
             <div className="mx-auto flex max-w-[1400px] flex-col gap-8">
                 <SalesHero
                     eyebrow="POS Counter Setup"
-                    title="Create counters and bind each one to an operating warehouse."
-                    description="Counter setup lives separately from checkout so supervisors can provision terminals without crowding the selling screen. Each counter is tied to one warehouse and can open its own cashier shift."
+                    title="Configure POS counters and assign each one to a warehouse."
+                    description="Provision selling terminals here so supervisors can manage terminal setup, warehouse assignment, and operational notes outside the checkout screen."
                     accent="from-amber-500/15 via-transparent to-blue-500/10"
                 />
 

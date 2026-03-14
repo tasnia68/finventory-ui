@@ -75,8 +75,8 @@ const PosSales = () => {
             <div className="mx-auto flex max-w-7xl flex-col gap-8">
                 <SalesHero
                     eyebrow="Sold History"
-                    title="Review sold receipts with cashier, counter, customer, and payment visibility."
-                    description="This register is the answer to 'who sold what'. Each row shows the cashier, POS counter, customer, payment method, and receipt total."
+                    title="Review completed POS receipts across cashiers and counters."
+                    description="Track receipt history by cashier, terminal, customer, payment method, and total for audit and support workflows."
                     actions={(
                         <>
                             <Select value={scope} onChange={(event) => setScope(event.target.value)} options={SCOPE_OPTIONS} className="min-w-[200px]" />
