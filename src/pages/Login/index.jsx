@@ -53,8 +53,8 @@ const Login = () => {
                 <div className="relative flex flex-1 flex-col justify-between p-12 xl:p-16">
                     {/* Logo */}
                     <div>
-                        <div className="inline-flex rounded-2xl border border-white/10 bg-white/8 p-3.5 backdrop-blur-sm">
-                            <img src="/logistra-nightmode.svg" alt="Logistra" className="h-9 w-auto" />
+                        <div className="inline-flex rounded-[50px] border border-white/10 bg-white/8 p-5 backdrop-blur-sm xl:p-6">
+                            <img src="/logistra-nightmode.svg" alt="Logistra" className="h-104 w-auto xl:h-40" />
                         </div>
                     </div>
 
@@ -94,7 +94,7 @@ const Login = () => {
                     <img
                         src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'}
                         alt="Logistra"
-                        className="h-9 w-auto"
+                        className="h-14 w-auto"
                     />
                 </div>
 

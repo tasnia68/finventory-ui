@@ -159,3 +159,9 @@ export const deleteWebhookEndpoint = (id) => request(`/reporting/webhooks/${id}`
 });
 
 export const getWebhookDeliveries = () => unwrap(request('/reporting/webhooks/deliveries'));
+
+export const getFinancialEvents = (params = {}) => unwrap(request(`/financial-events${buildQuery(params)}`));
+
+export const retryFinancialEvent = (id) => unwrap(request(`/financial-events/${id}/retry`, {
+    method: 'POST',
+}));

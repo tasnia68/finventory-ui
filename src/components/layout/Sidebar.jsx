@@ -105,6 +105,22 @@ const MENU_ITEMS = [
     ]
   },
   {
+    titleKey: 'navigation.accounting',
+    icon: 'account_balance',
+    permission: PERMISSIONS.MENU_ACCOUNTING,
+    submenu: [
+      { titleKey: 'navigation.accountingOverview', path: '/accounting' },
+      { titleKey: 'navigation.accountingAccounts', path: '/accounting/accounts' },
+      { titleKey: 'navigation.accountingJournals', path: '/accounting/journals' },
+      { titleKey: 'navigation.accountingEntries', path: '/accounting/entries' },
+      { titleKey: 'navigation.accountingPayables', path: '/accounting/payables' },
+      { titleKey: 'navigation.accountingReceivables', path: '/accounting/receivables' },
+      { titleKey: 'navigation.accountingTreasury', path: '/accounting/treasury' },
+      { titleKey: 'navigation.accountingStatements', path: '/accounting/statements' },
+      { titleKey: 'navigation.accountingGuide', path: '/accounting/guide' },
+    ]
+  },
+  {
     titleKey: 'navigation.settings',
     path: '/settings',
     icon: 'settings',

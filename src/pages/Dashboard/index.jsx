@@ -52,9 +52,20 @@ const getSignedQuantity = (movement) => {
   }
 };
 
+const formatCompactNumber = (value) => {
+  const number = Number(value || 0);
+  if (Math.abs(number) >= 1000000) {
+    return `${(number / 1000000).toFixed(1)}M`;
+  }
+  if (Math.abs(number) >= 1000) {
+    return `${(number / 1000).toFixed(1)}k`;
+  }
+  return `${number.toFixed(0)}`;
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { formatCurrency, formatNumber, t } = useLanguage();
   const { getSetting } = useSettings();
   const displayName = user?.firstName || user?.email?.split('@')[0] || 'Alex';
   const [filters, setFilters] = useState({ warehouseId: '', period: getCachedSetting('analytics.dashboard.defaultDateRange', '30') });
@@ -179,40 +190,143 @@ const Dashboard = () => {
       .slice(0, 6);
   }, [stockMovements]);
 
+  const netFlow = useMemo(() => trendData.reduce((sum, point) => sum + Number(point.value || 0), 0), [trendData]);
+
+  const summaryHighlights = useMemo(() => [
+    {
+      label: 'Net stock flow',
+      value: loading ? '...' : formatCompactNumber(netFlow),
+      tone: netFlow >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300',
+    },
+    {
+      label: 'Tracked SKUs',
+      value: loading ? '...' : formatCompactNumber(stockReport.length),
+      tone: 'text-slate-900 dark:text-white',
+    },
+    {
+      label: 'Open orders',
+      value: loading ? '...' : formatCompactNumber(Number(summary?.openPurchaseOrders || 0) + Number(summary?.openSalesOrders || 0)),
+      tone: 'text-slate-900 dark:text-white',
+    },
+  ], [loading, netFlow, stockReport.length, summary?.openPurchaseOrders, summary?.openSalesOrders]);
+
+  const warehouseLabel = warehouses.find((warehouse) => warehouse.id === filters.warehouseId)?.name || t('dashboard.allWarehouses');
+  const rangeLabel = periodOptions.find((option) => option.value === filters.period)?.label || t('dashboard.last30Days');
+
+  const operationalSignals = [
+    {
+      title: 'Warehouse utilization',
+      value: loading ? '...' : `${formatNumber(summary?.averageWarehouseUtilization || 0)}%`,
+      caption: 'Space pressure across the active warehouse scope.',
+      icon: 'stacked_bar_chart',
+    },
+    {
+      title: 'Fulfillment rate',
+      value: loading ? '...' : `${formatNumber(summary?.orderFulfillmentRate || 0)}%`,
+      caption: 'Customer demand served without delay in the current window.',
+      icon: 'local_shipping',
+    },
+    {
+      title: 'Open purchase orders',
+      value: loading ? '...' : formatNumber(summary?.openPurchaseOrders || 0),
+      caption: 'Inbound supply still expected into stock.',
+      icon: 'inventory',
+    },
+    {
+      title: 'Open sales orders',
+      value: loading ? '...' : formatNumber(summary?.openSalesOrders || 0),
+      caption: 'Outbound demand still waiting to be fulfilled.',
+      icon: 'shopping_cart',
+    },
+  ];
+
+  const quickActions = [
+    { to: '/products/create/simple', label: t('common.addNewItem'), icon: 'add_circle' },
+    { to: '/goods-receipts', label: 'Receive stock', icon: 'warehouse' },
+    { to: '/sales-orders', label: 'Review demand', icon: 'monitoring' },
+    { to: '/analytics/reports', label: 'Open reports', icon: 'insights' },
+  ];
+
   return (
     <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
       <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{t('dashboard.welcomeBack', { name: displayName })}</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">{t('dashboard.todaySummary')}</p>
-          </div>
-          <Link to="/products/create/simple" className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm shadow-primary/30">
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            <span>{t('common.addNewItem')}</span>
-          </Link>
-        </div>
+        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,_rgba(19,91,236,0.18),_transparent_36%),radial-gradient(circle_at_85%_0%,_rgba(16,185,129,0.18),_transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.75),rgba(248,250,252,0.2))] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_36%),radial-gradient(circle_at_85%_0%,_rgba(16,185,129,0.18),_transparent_28%)]" />
+          <div className="relative grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.5fr)_minmax(24rem,0.9fr)]">
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <div className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white dark:bg-white dark:text-slate-900">
+                  Operations cockpit
+                </div>
+                <div>
+                  <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{t('dashboard.welcomeBack', { name: displayName })}</h1>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{t('dashboard.todaySummary')}</p>
+                </div>
+              </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-            <Select
-              label={t('dashboard.warehouseScope')}
-              value={filters.warehouseId}
-              onChange={(event) => setFilters((current) => ({ ...current, warehouseId: event.target.value }))}
-              options={warehouseOptions}
-              placeholder={t('dashboard.allWarehouses')}
-            />
-            <Select
-              label={t('dashboard.dateRange')}
-              value={filters.period}
-              onChange={(event) => setFilters((current) => ({ ...current, period: event.target.value }))}
-              options={periodOptions}
-              placeholder={t('dashboard.last30Days')}
-            />
-            <div className="flex items-end">
-              <Button icon="sync" loading={loading} onClick={() => setFilters((current) => ({ ...current }))} className="w-full lg:w-auto">
-                {t('dashboard.refresh')}
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                {quickActions.map((action) => (
+                  <Link key={action.to} to={action.to} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700">
+                    <span className="material-symbols-outlined text-[20px]">{action.icon}</span>
+                    <span>{action.label}</span>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {summaryHighlights.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-800/70">
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{item.label}</div>
+                    <div className={`mt-2 text-2xl font-black ${item.tone}`}>{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50/90 p-5 shadow-inner dark:border-slate-700 dark:bg-slate-950/40">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Dashboard scope</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Refine the workspace without leaving the operations view.</p>
+                </div>
+                <Button icon="sync" loading={loading} onClick={() => setFilters((current) => ({ ...current }))} className="shrink-0">
+                  {t('dashboard.refresh')}
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <Select
+                  label={t('dashboard.warehouseScope')}
+                  value={filters.warehouseId}
+                  onChange={(event) => setFilters((current) => ({ ...current, warehouseId: event.target.value }))}
+                  options={warehouseOptions}
+                  placeholder={t('dashboard.allWarehouses')}
+                />
+                <Select
+                  label={t('dashboard.dateRange')}
+                  value={filters.period}
+                  onChange={(event) => setFilters((current) => ({ ...current, period: event.target.value }))}
+                  options={periodOptions}
+                  placeholder={t('dashboard.last30Days')}
+                />
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-white p-4 dark:bg-slate-900">
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Warehouse</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{warehouseLabel}</div>
+                </div>
+                <div className="rounded-2xl bg-white p-4 dark:bg-slate-900">
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Window</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{rangeLabel}</div>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-slate-900 p-5 text-white dark:bg-slate-800">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Inventory value</div>
+                <div className="mt-2 text-3xl font-black">{loading ? '...' : formatCurrency(summary?.totalInventoryValue || 0, { maximumFractionDigits: 0 })}</div>
+                <div className="mt-2 text-sm text-slate-300">Current carrying value for the active scope and period context.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -220,6 +334,22 @@ const Dashboard = () => {
         {error ? <Alert type="error" message={error} onDismiss={() => setError('')} /> : null}
 
         <DashboardStats summary={summary} loading={loading} />
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          {operationalSignals.map((signal) => (
+            <div key={signal.title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">{signal.title}</div>
+                  <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{signal.value}</div>
+                </div>
+                <span className="material-symbols-outlined rounded-2xl bg-slate-100 p-3 text-slate-600 dark:bg-slate-800 dark:text-slate-300">{signal.icon}</span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">{signal.caption}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <StockTrendsChart data={trendData} loading={loading} period={filters.period} />
           <InventoryByCategory summary={summary} items={topInventory} loading={loading} />

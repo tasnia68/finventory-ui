@@ -40,6 +40,15 @@ const SalesOrders = lazy(() => import('./pages/SalesOrders'));
 const RefundsExchanges = lazy(() => import('./pages/RefundsExchanges'));
 const PromotionsPricing = lazy(() => import('./pages/PromotionsPricing'));
 const Fulfillment = lazy(() => import('./pages/Fulfillment'));
+const Accounting = lazy(() => import('./pages/Accounting'));
+const AccountingAccounts = lazy(() => import('./pages/Accounting/Accounts'));
+const AccountingJournals = lazy(() => import('./pages/Accounting/Journals'));
+const AccountingEntries = lazy(() => import('./pages/Accounting/Entries'));
+const AccountingPayables = lazy(() => import('./pages/Accounting/Payables'));
+const AccountingReceivables = lazy(() => import('./pages/Accounting/Receivables'));
+const AccountingTreasury = lazy(() => import('./pages/Accounting/Treasury'));
+const AccountingStatements = lazy(() => import('./pages/Accounting/Statements'));
+const AccountingGuide = lazy(() => import('./pages/Accounting/Guide'));
 const PosTerminal = lazy(() => import('./pages/POS'));
 const PosCounters = lazy(() => import('./pages/POSCounters'));
 const PosRegister = lazy(() => import('./pages/POSRegister'));
@@ -134,6 +143,51 @@ function App() {
           <Route path="/analytics" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <Navigate to="/analytics/overview" replace />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <Accounting />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/accounts" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingAccounts />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/journals" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingJournals />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/entries" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingEntries />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/payables" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingPayables />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/receivables" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingReceivables />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/treasury" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingTreasury />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/statements" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingStatements />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/guide" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingGuide />
             </ProtectedRoute>
           } />
           <Route path="/analytics/overview" element={

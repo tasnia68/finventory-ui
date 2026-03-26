@@ -3,10 +3,12 @@ import { Alert, Badge, Button, Card, DataTable, InfoTip, Input, MetricCard } fro
 import {
     createWebhookEndpoint,
     deleteWebhookEndpoint,
+    getFinancialEvents,
     getReportConfigurations,
     getReportExecutions,
     getWebhookDeliveries,
     getWebhookEndpoints,
+    retryFinancialEvent,
 } from '../../services/reportingService';
 import {
     formatDateTime,
@@ -22,6 +24,7 @@ const Automation = () => {
     const [executions, setExecutions] = useState([]);
     const [webhooks, setWebhooks] = useState([]);
     const [deliveries, setDeliveries] = useState([]);
+    const [financialEvents, setFinancialEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [alert, setAlert] = useState(null);
@@ -46,17 +49,19 @@ const Automation = () => {
     const loadAutomation = async () => {
         try {
             setLoading(true);
-            const [configsResponse, executionsResponse, webhooksResponse, deliveriesResponse] = await Promise.all([
+            const [configsResponse, executionsResponse, webhooksResponse, deliveriesResponse, financialEventsResponse] = await Promise.all([
                 getReportConfigurations(),
                 getReportExecutions(),
                 getWebhookEndpoints(),
                 getWebhookDeliveries(),
+                getFinancialEvents(),
             ]);
 
             setConfigurations(toList(configsResponse));
             setExecutions(toList(executionsResponse));
             setWebhooks(toList(webhooksResponse));
             setDeliveries(toList(deliveriesResponse));
+            setFinancialEvents(toList(financialEventsResponse));
         } catch (error) {
             showAlert('error', error.message || 'Failed to load automation data');
         } finally {
@@ -107,19 +112,33 @@ const Automation = () => {
         }
     };
 
+    const handleRetryFinancialEvent = async (id) => {
+        try {
+            await retryFinancialEvent(id);
+            showAlert('success', 'Financial event moved back to pending.');
+            await loadAutomation();
+        } catch (error) {
+            showAlert('error', error.message || 'Failed to retry financial event');
+        }
+    };
+
     const metrics = useMemo(() => {
         const activeConfigurations = configurations.filter((configuration) => configuration.active).length;
         const scheduledConfigurations = configurations.filter((configuration) => configuration.scheduleCron).length;
         const successfulExecutions = executions.filter((execution) => execution.status === 'COMPLETED' || execution.status === 'SUCCESS').length;
         const activeWebhooks = webhooks.filter((webhook) => webhook.active).length;
+        const pendingFinancialEvents = financialEvents.filter((event) => event.postingStatus === 'PENDING').length;
+        const failedFinancialEvents = financialEvents.filter((event) => event.postingStatus === 'FAILED').length;
 
         return {
             activeConfigurations,
             scheduledConfigurations,
             successfulExecutions,
             activeWebhooks,
+            pendingFinancialEvents,
+            failedFinancialEvents,
         };
-    }, [configurations, executions, webhooks]);
+    }, [configurations, executions, webhooks, financialEvents]);
 
     const configurationColumns = [
         {
@@ -191,6 +210,34 @@ const Automation = () => {
         { key: 'deliveredAt', header: 'Delivered At', render: (value) => formatDateTime(value) },
     ];
 
+    const financialEventColumns = [
+        {
+            key: 'eventNumber',
+            header: 'Financial Event',
+            render: (value, row) => (
+                <div>
+                    <div className="font-semibold text-slate-900 dark:text-white">{value}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{row.sourceDocumentType} · {row.sourceDocumentNumber || row.sourceDocumentId}</div>
+                </div>
+            ),
+        },
+        { key: 'eventType', header: 'Type', render: (value) => <Badge variant="primary">{toHeadline(value)}</Badge> },
+        { key: 'postingStatus', header: 'Posting', render: (value) => <Badge variant={value === 'FAILED' ? 'danger' : value === 'POSTED' ? 'success' : 'warning'}>{toHeadline(value)}</Badge> },
+        { key: 'totalAmount', header: 'Amount', render: (value, row) => `${formatNumber(value)} ${row.currency || 'USD'}` },
+        { key: 'occurredAt', header: 'Occurred', render: (value) => formatDateTime(value) },
+        {
+            key: 'id',
+            header: 'Action',
+            render: (value, row) => row.postingStatus === 'FAILED' ? (
+                <Button variant="ghost" icon="refresh" onClick={() => handleRetryFinancialEvent(value)}>
+                    Retry
+                </Button>
+            ) : (
+                <span className="text-xs text-slate-400">No action</span>
+            ),
+        },
+    ];
+
     return (
         <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
             <div className="mx-auto flex max-w-7xl flex-col gap-8">
@@ -240,6 +287,11 @@ const Automation = () => {
                     <MetricCard title="Active Webhooks" value={formatNumber(metrics.activeWebhooks)} caption="Enabled outbound subscribers for reporting events" icon="webhook" tone="violet" />
                 </div>
 
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <MetricCard title="Pending Financial Events" value={formatNumber(metrics.pendingFinancialEvents)} caption="Posting-ready inventory events awaiting downstream export or posting" icon="account_balance" tone="amber" />
+                    <MetricCard title="Failed Financial Events" value={formatNumber(metrics.failedFinancialEvents)} caption="Financial events that require operator intervention before replay" icon="warning" tone="rose" />
+                </div>
+
                 <Card padding="none" className="overflow-hidden" title="Report Configurations" subtitle="Configured reports, categories, and schedule posture">
                     <DataTable columns={configurationColumns} data={configurations} loading={loading} emptyMessage="No report configurations have been created yet." />
                 </Card>
@@ -254,6 +306,10 @@ const Automation = () => {
 
                 <Card padding="none" className="overflow-hidden" title="Delivery History" subtitle="Outbound delivery attempts emitted by the automation pipeline">
                     <DataTable columns={deliveryColumns} data={deliveries} loading={loading} emptyMessage="No webhook deliveries have been recorded yet." />
+                </Card>
+
+                <Card padding="none" className="overflow-hidden" title="Financial Posting Queue" subtitle="Inventory subledger events emitted from receipts, transfers, POS, refunds, returns, and write-offs">
+                    <DataTable columns={financialEventColumns} data={financialEvents} loading={loading} emptyMessage="No financial events have been generated yet." />
                 </Card>
             </div>
         </div>

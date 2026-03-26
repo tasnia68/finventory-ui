@@ -31,9 +31,15 @@ const RecentItemsTable = ({ movements, loading }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.recentItems.title')}</h3>
+    <div className="bg-white dark:bg-slate-800 rounded-[28px] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[linear-gradient(180deg,rgba(248,250,252,0.9),rgba(255,255,255,0))] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.65),rgba(15,23,42,0))]">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.recentItems.title')}</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Latest stock movements affecting the active dashboard scope.</p>
+        </div>
+        <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          {loading ? '...' : `${movements.length} items`}
+        </div>
       </div>
       {loading ? (
         <div className="flex items-center justify-center py-12">
