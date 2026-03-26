@@ -121,6 +121,16 @@ const MENU_ITEMS = [
     ]
   },
   {
+    titleKey: 'navigation.plugins',
+    icon: 'extension',
+    permission: PERMISSIONS.MENU_ANALYTICS,
+    submenu: [
+      { titleKey: 'navigation.pluginsOverview', path: '/plugins' },
+      { titleKey: 'navigation.pluginsShopify', path: '/plugins/shopify' },
+      { titleKey: 'navigation.pluginsLogs', path: '/plugins/logs' },
+    ]
+  },
+  {
     titleKey: 'navigation.settings',
     path: '/settings',
     icon: 'settings',
@@ -233,7 +243,7 @@ const Sidebar = () => {
               alt="Logistra" 
               className="h-8"
             />
-          </div>
+            </div>
           <div className="flex flex-col">
             <p className="text-base font-bold leading-tight text-slate-900 dark:text-white">Logistra</p>
             <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{t('shell.brandTagline')}</p>

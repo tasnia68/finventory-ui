@@ -49,6 +49,9 @@ const AccountingReceivables = lazy(() => import('./pages/Accounting/Receivables'
 const AccountingTreasury = lazy(() => import('./pages/Accounting/Treasury'));
 const AccountingStatements = lazy(() => import('./pages/Accounting/Statements'));
 const AccountingGuide = lazy(() => import('./pages/Accounting/Guide'));
+const PluginsOverview = lazy(() => import('./pages/Plugins'));
+const ShopifyPlugin = lazy(() => import('./pages/Plugins/Shopify'));
+const PluginLogs = lazy(() => import('./pages/Plugins/Logs'));
 const PosTerminal = lazy(() => import('./pages/POS'));
 const PosCounters = lazy(() => import('./pages/POSCounters'));
 const PosRegister = lazy(() => import('./pages/POSRegister'));
@@ -188,6 +191,21 @@ function App() {
           <Route path="/accounting/guide" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
               <AccountingGuide />
+            </ProtectedRoute>
+          } />
+          <Route path="/plugins" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <PluginsOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/plugins/shopify" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <ShopifyPlugin />
+            </ProtectedRoute>
+          } />
+          <Route path="/plugins/logs" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <PluginLogs />
             </ProtectedRoute>
           } />
           <Route path="/analytics/overview" element={

@@ -63,6 +63,11 @@ const formatCompactNumber = (value) => {
   return `${number.toFixed(0)}`;
 };
 
+const formatTaka = (formatCurrency, value, options = {}) => formatCurrency(value, {
+  currency: 'BDT',
+  ...options,
+});
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { formatCurrency, formatNumber, t } = useLanguage();
@@ -324,7 +329,7 @@ const Dashboard = () => {
 
               <div className="mt-5 rounded-2xl bg-slate-900 p-5 text-white dark:bg-slate-800">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Inventory value</div>
-                <div className="mt-2 text-3xl font-black">{loading ? '...' : formatCurrency(summary?.totalInventoryValue || 0, { maximumFractionDigits: 0 })}</div>
+                <div className="mt-2 text-3xl font-black">{loading ? '...' : formatTaka(formatCurrency, summary?.totalInventoryValue || 0, { maximumFractionDigits: 0 })}</div>
                 <div className="mt-2 text-sm text-slate-300">Current carrying value for the active scope and period context.</div>
               </div>
             </div>

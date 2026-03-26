@@ -3,6 +3,10 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 const DashboardStats = ({ summary, loading }) => {
   const { formatCurrency, formatDateTime, formatNumber, t } = useLanguage();
+  const formatTaka = (value, options = {}) => formatCurrency(value, {
+    currency: 'BDT',
+    ...options,
+  });
   const metricValue = (value, formatter, suffix = '') => {
     if (loading) {
       return '...';
@@ -50,7 +54,7 @@ const DashboardStats = ({ summary, loading }) => {
         </div>
         <div className="relative">
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('dashboard.stats.totalValue')}</p>
-          <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{metricValue(summary?.totalInventoryValue, (value) => formatCurrency(value, { maximumFractionDigits: 0 }))}</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{metricValue(summary?.totalInventoryValue, (value) => formatTaka(value, { maximumFractionDigits: 0 }))}</p>
         </div>
         <div className="relative flex items-center gap-1 text-slate-500 text-sm font-medium">
           <span className="text-slate-400 font-normal leading-5">{t('dashboard.stats.valueCaption')}</span>
