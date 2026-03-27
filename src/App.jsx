@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
+import AppLoadingScreen from './components/common/AppLoadingScreen';
 import { PERMISSIONS } from './constants/permissions';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -421,11 +422,10 @@ function App() {
 }
 
 const RouteLoading = () => (
-  <div className="flex min-h-screen items-center justify-center bg-background-light px-6 dark:bg-background-dark">
-    <div className="rounded-3xl border border-slate-200 bg-white/90 px-6 py-4 text-sm font-medium text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-300">
-      Loading workspace...
-    </div>
-  </div>
+  <AppLoadingScreen
+    message="Loading workspace..."
+    caption="Preparing dashboard modules, inventory views, and operating context."
+  />
 );
 
 // Not Authorized Component

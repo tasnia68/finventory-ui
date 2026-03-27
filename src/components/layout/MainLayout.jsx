@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import AppLoadingScreen from '../common/AppLoadingScreen';
 import { useAuth } from '../../contexts/AuthContext';
 
 const MainLayout = ({ children }) => {
@@ -17,9 +18,10 @@ const MainLayout = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <span className="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>
-      </div>
+      <AppLoadingScreen
+        message="Initializing session..."
+        caption="Verifying access, loading tenant settings, and assembling your inventory workspace."
+      />
     );
   }
 
