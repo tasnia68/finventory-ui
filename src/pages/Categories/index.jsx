@@ -34,6 +34,11 @@ const Categories = () => {
     name: '',
     description: '',
     parentId: null,
+    publishedToStorefront: false,
+    storefrontSlug: '',
+    storefrontTitle: '',
+    storefrontDescription: '',
+    storefrontSortOrder: '',
   });
 
   useEffect(() => {
@@ -67,11 +72,15 @@ const Categories = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        storefrontSortOrder: formData.storefrontSortOrder === '' ? null : Number(formData.storefrontSortOrder),
+      };
       if (editingCategory) {
-        await updateCategory(editingCategory.id, formData);
+        await updateCategory(editingCategory.id, payload);
         showAlert('success', 'Category updated successfully');
       } else {
-        await createCategory(formData);
+        await createCategory(payload);
         showAlert('success', 'Category created successfully');
       }
       setShowModal(false);
@@ -88,6 +97,11 @@ const Categories = () => {
       name: category.name,
       description: category.description || '',
       parentId: category.parentId || null,
+      publishedToStorefront: category.publishedToStorefront || false,
+      storefrontSlug: category.storefrontSlug || '',
+      storefrontTitle: category.storefrontTitle || '',
+      storefrontDescription: category.storefrontDescription || '',
+      storefrontSortOrder: category.storefrontSortOrder ?? '',
     });
     setShowModal(true);
   };
@@ -159,7 +173,16 @@ const Categories = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', parentId: null });
+    setFormData({
+      name: '',
+      description: '',
+      parentId: null,
+      publishedToStorefront: false,
+      storefrontSlug: '',
+      storefrontTitle: '',
+      storefrontDescription: '',
+      storefrontSortOrder: '',
+    });
     setEditingCategory(null);
   };
 
@@ -185,6 +208,11 @@ const Categories = () => {
               <h3 className="font-semibold text-slate-900 dark:text-white">
                 {category.name}
               </h3>
+              {category.publishedToStorefront ? (
+                <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                  Storefront
+                </span>
+              ) : null}
             </div>
             {category.description && (
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1" style={{ marginLeft: level > 0 ? '28px' : '0' }}>
@@ -302,6 +330,60 @@ const Categories = () => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Brief description of this category"
             />
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Storefront Collection Settings</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    Use category merchandising fields to expose this category as a storefront collection.
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={formData.publishedToStorefront}
+                    onChange={(e) => setFormData({ ...formData, publishedToStorefront: e.target.checked })}
+                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  Publish to storefront
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Storefront Slug"
+                  value={formData.storefrontSlug}
+                  onChange={(e) => setFormData({ ...formData, storefrontSlug: e.target.value })}
+                  placeholder="warehouse-bundles"
+                />
+                <Input
+                  label="Storefront Title"
+                  value={formData.storefrontTitle}
+                  onChange={(e) => setFormData({ ...formData, storefrontTitle: e.target.value })}
+                  placeholder="Warehouse Bundles"
+                />
+                <Input
+                  label="Storefront Sort Order"
+                  type="number"
+                  value={formData.storefrontSortOrder}
+                  onChange={(e) => setFormData({ ...formData, storefrontSortOrder: e.target.value })}
+                  placeholder="20"
+                />
+              </div>
+
+              <div className="mt-4">
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Storefront Description
+                </label>
+                <textarea
+                  value={formData.storefrontDescription}
+                  onChange={(e) => setFormData({ ...formData, storefrontDescription: e.target.value })}
+                  rows={3}
+                  className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                  placeholder="Collection copy used in storefront collection cards."
+                />
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Parent Category (Optional)
@@ -318,7 +400,7 @@ const Categories = () => {
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
-                  ))}
+                ))}
               </select>
             </div>
             <div className="flex justify-end gap-3 pt-4">

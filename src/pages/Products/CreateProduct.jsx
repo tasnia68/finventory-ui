@@ -36,6 +36,13 @@ const CreateProduct = () => {
     categoryId: '',
     uomId: '',
     isActive: true,
+    publishedToStorefront: false,
+    storefrontSlug: '',
+    storefrontTitle: '',
+    storefrontDescription: '',
+    storefrontSortOrder: '',
+    storefrontSeoTitle: '',
+    storefrontSeoDescription: '',
   });
   const [createdTemplate, setCreatedTemplate] = useState(null);
 
@@ -51,7 +58,16 @@ const CreateProduct = () => {
   // Step 4: Variants
   const [variants, setVariants] = useState([]);
   const [bulkPrice, setBulkPrice] = useState('');
+  const [bulkCompareAtPrice, setBulkCompareAtPrice] = useState('');
   const [skuTemplate, setSkuTemplate] = useState('');
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-BD', {
+      style: 'currency',
+      currency: 'BDT',
+      maximumFractionDigits: 2,
+    }).format(Number(value || 0));
+  };
 
   useEffect(() => {
     fetchData();
@@ -94,6 +110,13 @@ const CreateProduct = () => {
         categoryId: product.categoryId,
         uomId: product.uomId,
         isActive: product.isActive,
+        publishedToStorefront: product.publishedToStorefront || false,
+        storefrontSlug: product.storefrontSlug || '',
+        storefrontTitle: product.storefrontTitle || '',
+        storefrontDescription: product.storefrontDescription || '',
+        storefrontSortOrder: product.storefrontSortOrder ?? '',
+        storefrontSeoTitle: product.storefrontSeoTitle || '',
+        storefrontSeoDescription: product.storefrontSeoDescription || '',
       });
       setCreatedTemplate(product);
 
@@ -127,6 +150,9 @@ const CreateProduct = () => {
       setVariants(
         filteredVariants.map((variant) => ({
           ...variant,
+          compareAtPrice: variant.compareAtPrice ?? '',
+          storefrontBadge: variant.storefrontBadge || '',
+          storefrontFeatured: variant.storefrontFeatured || false,
           templateId: productId,
           displayName: variant.attributeValues && variant.attributeValues.length > 0
             ? variant.attributeValues.map((val) => val.value).join('-')
@@ -149,6 +175,9 @@ const CreateProduct = () => {
       setVariants(
         filteredVariants.map((variant) => ({
           ...variant,
+          compareAtPrice: variant.compareAtPrice ?? '',
+          storefrontBadge: variant.storefrontBadge || '',
+          storefrontFeatured: variant.storefrontFeatured || false,
           templateId: productId,
           displayName: variant.attributeValues && variant.attributeValues.length > 0
             ? variant.attributeValues.map((val) => val.value).join('-')
@@ -171,11 +200,15 @@ const CreateProduct = () => {
     try {
       setLoading(true);
       let template;
+      const payload = {
+        ...templateData,
+        storefrontSortOrder: templateData.storefrontSortOrder === '' ? null : Number(templateData.storefrontSortOrder),
+      };
       if (isEditMode) {
-        template = await updateProductTemplate(productId, templateData);
+        template = await updateProductTemplate(productId, payload);
         showAlert('success', 'Product template updated successfully');
       } else {
-        template = await createProductTemplate(templateData);
+        template = await createProductTemplate(payload);
         showAlert('success', 'Product template created successfully');
       }
       setCreatedTemplate(template);
@@ -269,6 +302,9 @@ const CreateProduct = () => {
         sku: `${createdTemplate.name.toUpperCase().replace(/\s/g, '-')}-001`,
         barcode: '',
         price: '',
+        compareAtPrice: '',
+        storefrontBadge: '',
+        storefrontFeatured: false,
         cost: '',
         templateId: createdTemplate.id,
         attributeValues: [],
@@ -284,6 +320,9 @@ const CreateProduct = () => {
           sku,
           barcode: '',
           price: '',
+          compareAtPrice: '',
+          storefrontBadge: '',
+          storefrontFeatured: false,
           cost: '',
           templateId: createdTemplate.id,
           attributeValues: combo.map(c => ({
@@ -338,6 +377,16 @@ const CreateProduct = () => {
     setVariants(prev => prev.map(v => ({ ...v, price: priceValue })));
   };
 
+  const applyBulkCompareAtPrice = () => {
+    if (bulkCompareAtPrice === '') return;
+    const priceValue = parseFloat(bulkCompareAtPrice);
+    if (Number.isNaN(priceValue)) {
+      showAlert('error', 'Bulk compare-at price must be a valid number');
+      return;
+    }
+    setVariants(prev => prev.map(v => ({ ...v, compareAtPrice: priceValue })));
+  };
+
   const applySkuTemplate = () => {
     if (!skuTemplate.trim()) return;
     const baseName = createdTemplate?.name || templateData.name || 'PRODUCT';
@@ -370,6 +419,9 @@ const CreateProduct = () => {
         const data = {
           ...variant,
           price: parseFloat(variant.price),
+          compareAtPrice: variant.compareAtPrice === '' || variant.compareAtPrice === null || variant.compareAtPrice === undefined
+            ? null
+            : parseFloat(variant.compareAtPrice),
           cost: variant.cost ? parseFloat(variant.cost) : 0,
         };
         if (isEditMode && variant.id) {
@@ -498,6 +550,79 @@ const CreateProduct = () => {
                     <option key={uom.id} value={uom.id}>{uom.name} ({uom.code})</option>
                   ))}
                 </select>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Storefront Merchandising</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      Control whether this template is visible in the storefront and override how it appears publicly.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={templateData.publishedToStorefront}
+                      onChange={(e) => setTemplateData({ ...templateData, publishedToStorefront: e.target.checked })}
+                      className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    />
+                    Publish to storefront
+                  </label>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Input
+                    label="Storefront Slug"
+                    value={templateData.storefrontSlug}
+                    onChange={(e) => setTemplateData({ ...templateData, storefrontSlug: e.target.value })}
+                    placeholder="barcode-printer-x1"
+                  />
+                  <Input
+                    label="Storefront Title"
+                    value={templateData.storefrontTitle}
+                    onChange={(e) => setTemplateData({ ...templateData, storefrontTitle: e.target.value })}
+                    placeholder="Public-facing product title"
+                  />
+                  <Input
+                    label="Storefront Sort Order"
+                    type="number"
+                    value={templateData.storefrontSortOrder}
+                    onChange={(e) => setTemplateData({ ...templateData, storefrontSortOrder: e.target.value })}
+                    placeholder="10"
+                  />
+                  <Input
+                    label="SEO Title"
+                    value={templateData.storefrontSeoTitle}
+                    onChange={(e) => setTemplateData({ ...templateData, storefrontSeoTitle: e.target.value })}
+                    placeholder="Search-friendly title"
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Storefront Description
+                  </label>
+                  <textarea
+                    value={templateData.storefrontDescription}
+                    onChange={(e) => setTemplateData({ ...templateData, storefrontDescription: e.target.value })}
+                    rows={3}
+                    className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                    placeholder="Merchandising description used in public storefront cards and details."
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    SEO Description
+                  </label>
+                  <textarea
+                    value={templateData.storefrontSeoDescription}
+                    onChange={(e) => setTemplateData({ ...templateData, storefrontSeoDescription: e.target.value })}
+                    rows={3}
+                    className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                    placeholder="Search meta description for the storefront page."
+                  />
+                </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button variant="ghost" onClick={() => navigate('/products')}>
@@ -669,6 +794,19 @@ const CreateProduct = () => {
                 </div>
                 <div className="flex items-end gap-2">
                   <Input
+                    label="Bulk Compare-at Price"
+                    type="number"
+                    step="0.01"
+                    value={bulkCompareAtPrice}
+                    onChange={(e) => setBulkCompareAtPrice(e.target.value)}
+                    placeholder="e.g., 34.99"
+                  />
+                  <Button variant="ghost" onClick={applyBulkCompareAtPrice}>
+                    Apply
+                  </Button>
+                </div>
+                <div className="flex items-end gap-2 md:col-span-2">
+                  <Input
                     label="SKU Template"
                     value={skuTemplate}
                     onChange={(e) => setSkuTemplate(e.target.value)}
@@ -696,6 +834,9 @@ const CreateProduct = () => {
                             sku: '',
                             barcode: '',
                             price: 0,
+                            compareAtPrice: '',
+                            storefrontBadge: '',
+                            storefrontFeatured: false,
                             cost: 0,
                             templateId: createdTemplate?.id || productId,
                             attributeValues: [],
@@ -715,6 +856,26 @@ const CreateProduct = () => {
                   <div key={index} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg space-y-3">
                     <div className="font-medium text-slate-900 dark:text-white">
                       {variant.displayName || 'Default Variant'}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      {variant.storefrontFeatured ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold uppercase tracking-[0.14em] text-amber-700">
+                          Featured
+                        </span>
+                      ) : null}
+                      {variant.storefrontBadge ? (
+                        <span className="rounded-full bg-primary/10 px-2 py-1 font-semibold uppercase tracking-[0.14em] text-primary">
+                          {variant.storefrontBadge}
+                        </span>
+                      ) : null}
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Current price: {formatCurrency(variant.price)}
+                      </span>
+                      {variant.compareAtPrice ? (
+                        <span className="text-slate-400 line-through">
+                          {formatCurrency(variant.compareAtPrice)}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <Input
@@ -737,12 +898,36 @@ const CreateProduct = () => {
                         required
                       />
                       <Input
+                        label="Compare-at Price"
+                        type="number"
+                        step="0.01"
+                        value={variant.compareAtPrice}
+                        onChange={(e) => handleVariantChange(index, 'compareAtPrice', e.target.value)}
+                      />
+                      <Input
+                        label="Storefront Badge"
+                        value={variant.storefrontBadge}
+                        onChange={(e) => handleVariantChange(index, 'storefrontBadge', e.target.value)}
+                        placeholder="Featured, Wireless, Limited"
+                      />
+                      <Input
                         label="Cost"
                         type="number"
                         step="0.01"
                         value={variant.cost}
                         onChange={(e) => handleVariantChange(index, 'cost', e.target.value)}
                       />
+                      <div className="flex items-center rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(variant.storefrontFeatured)}
+                            onChange={(e) => handleVariantChange(index, 'storefrontFeatured', e.target.checked)}
+                            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                          />
+                          Mark as featured in storefront
+                        </label>
+                      </div>
                     </div>
                     <div className="flex justify-end">
                       <Button variant="ghost" onClick={() => handleRemoveVariant(index)}>

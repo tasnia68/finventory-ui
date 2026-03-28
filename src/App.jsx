@@ -50,6 +50,11 @@ const AccountingReceivables = lazy(() => import('./pages/Accounting/Receivables'
 const AccountingTreasury = lazy(() => import('./pages/Accounting/Treasury'));
 const AccountingStatements = lazy(() => import('./pages/Accounting/Statements'));
 const AccountingGuide = lazy(() => import('./pages/Accounting/Guide'));
+const StorefrontOverview = lazy(() => import('./pages/Storefront'));
+const StorefrontTheme = lazy(() => import('./pages/Storefront/Theme'));
+const StorefrontPages = lazy(() => import('./pages/Storefront/Pages'));
+const StorefrontNavigation = lazy(() => import('./pages/Storefront/Navigation'));
+const StorefrontPublish = lazy(() => import('./pages/Storefront/Publish'));
 const PluginsOverview = lazy(() => import('./pages/Plugins'));
 const ShopifyPlugin = lazy(() => import('./pages/Plugins/Shopify'));
 const PluginLogs = lazy(() => import('./pages/Plugins/Logs'));
@@ -82,7 +87,7 @@ const ProtectedRoute = ({ children, permission }) => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL}>
       <AuthProvider>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
@@ -197,6 +202,31 @@ function App() {
           <Route path="/plugins" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <PluginsOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/theme" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontTheme />
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/pages" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontPages />
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/navigation" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontNavigation />
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/publish" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontPublish />
             </ProtectedRoute>
           } />
           <Route path="/plugins/shopify" element={
@@ -371,6 +401,12 @@ function App() {
           <Route path="/sales-orders" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
               <SalesOrders />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/sales-orders/web" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <SalesOrders mode="storefront" />
             </ProtectedRoute>
           } />
           <Route path="/refunds-exchanges" element={

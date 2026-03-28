@@ -7,6 +7,7 @@ const Input = ({
     value,
     onChange,
     error,
+    helperText,
     icon,
     disabled = false,
     required = false,
@@ -65,6 +66,11 @@ const Input = ({
                 <p className="text-sm text-red-500 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[16px]">error</span>
                     {error}
+                </p>
+            )}
+            {!error && helperText && (
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {helperText}
                 </p>
             )}
         </div>

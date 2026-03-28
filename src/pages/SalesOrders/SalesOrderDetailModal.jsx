@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge, Button, Card, DataTable, Modal } from '../../components/common';
 import { formatCurrency, formatDate, formatDateTime, getSalesOrderStatusVariant } from '../Sales/utils';
+import { getSalesOrderSourceBadgeVariant, getSalesOrderSourceLabel } from '../../utils/salesOrderSource';
 
 const SalesOrderDetailModal = ({ salesOrder, isOpen, onClose, onEdit, onTransition }) => {
     if (!salesOrder) return null;
@@ -27,6 +28,7 @@ const SalesOrderDetailModal = ({ salesOrder, isOpen, onClose, onEdit, onTransiti
                     <div>
                         <div className="flex items-center gap-3">
                             <h3 className="text-2xl font-black text-slate-900 dark:text-white">{salesOrder.soNumber}</h3>
+                            <Badge variant={getSalesOrderSourceBadgeVariant(salesOrder)}>{getSalesOrderSourceLabel(salesOrder)}</Badge>
                             <Badge variant={getSalesOrderStatusVariant(salesOrder.status)}>{salesOrder.status}</Badge>
                         </div>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{salesOrder.customerName} • {salesOrder.warehouseName || 'No warehouse'} • Priority {salesOrder.priority}</p>
@@ -53,6 +55,10 @@ const SalesOrderDetailModal = ({ salesOrder, isOpen, onClose, onEdit, onTransiti
                     <Card>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Warehouse</p>
                         <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{salesOrder.warehouseName || '-'}</div>
+                    </Card>
+                    <Card>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Source</p>
+                        <div className="mt-2"><Badge variant={getSalesOrderSourceBadgeVariant(salesOrder)}>{getSalesOrderSourceLabel(salesOrder)}</Badge></div>
                     </Card>
                     <Card>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Priority</p>

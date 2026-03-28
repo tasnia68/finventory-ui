@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { PERMISSIONS } from '../../constants/permissions';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useStorefrontModule } from '../../hooks/useStorefrontModule';
 
 const MENU_ITEMS = [
   {
@@ -76,6 +77,7 @@ const MENU_ITEMS = [
     submenu: [
       { titleKey: 'navigation.customers', path: '/customers' },
       { titleKey: 'navigation.salesOrders', path: '/sales-orders' },
+      { titleKey: 'navigation.webOrders', path: '/sales-orders/web', requiresStorefrontModule: true },
       { titleKey: 'navigation.refundsExchanges', path: '/refunds-exchanges' },
       { titleKey: 'navigation.promotionsPricing', path: '/promotions-pricing' },
       { titleKey: 'navigation.fulfillment', path: '/fulfillment' },
@@ -121,6 +123,18 @@ const MENU_ITEMS = [
     ]
   },
   {
+    titleKey: 'navigation.storefront',
+    icon: 'storefront',
+    permission: PERMISSIONS.MENU_ANALYTICS,
+    submenu: [
+      { titleKey: 'navigation.storefrontOverview', path: '/storefront' },
+      { titleKey: 'navigation.storefrontTheme', path: '/storefront/theme' },
+      { titleKey: 'navigation.storefrontPages', path: '/storefront/pages' },
+      { titleKey: 'navigation.storefrontNavigation', path: '/storefront/navigation' },
+      { titleKey: 'navigation.storefrontPublish', path: '/storefront/publish' },
+    ]
+  },
+  {
     titleKey: 'navigation.plugins',
     icon: 'extension',
     permission: PERMISSIONS.MENU_ANALYTICS,
@@ -138,12 +152,16 @@ const MENU_ITEMS = [
   }
 ];
 
-const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
+const SidebarItem = ({ item, isExpanded, onToggle, hasPermission, storefrontEnabled }) => {
   const location = useLocation();
   const { t } = useLanguage();
 
   // If item requests permission and user doesn't have it, don't render
   if (item.permission && !hasPermission(item.permission)) {
+    return null;
+  }
+
+  if (item.requiresStorefrontModule && !storefrontEnabled) {
     return null;
   }
 
@@ -154,6 +172,11 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
   // Actually, keeping it simple: if isActive, we might want to default to open, but let's use the props.
 
   if (item.submenu) {
+    const visibleSubmenu = item.submenu.filter((subItem) => !subItem.requiresStorefrontModule || storefrontEnabled);
+    if (!visibleSubmenu.length) {
+      return null;
+    }
+
     return (
       <div className="mb-2">
         <button
@@ -176,7 +199,7 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission }) => {
 
         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'mt-2 max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="ml-6 flex flex-col gap-1 border-l border-slate-200 pl-4 dark:border-slate-700">
-            {item.submenu.map((subItem, index) => (
+            {visibleSubmenu.map((subItem, index) => (
               <NavLink
                 key={index}
                 to={subItem.path}
@@ -222,6 +245,7 @@ const Sidebar = () => {
   const { user, hasPermission } = useAuth();
   const { theme } = useContext(ThemeContext);
   const { t } = useLanguage();
+  const { storefrontEnabled } = useStorefrontModule();
   const [expandedMenus, setExpandedMenus] = useState({});
 
   const toggleMenu = (titleKey) => {
@@ -262,6 +286,7 @@ const Sidebar = () => {
               isExpanded={expandedMenus[item.titleKey]}
               onToggle={() => toggleMenu(item.titleKey)}
               hasPermission={hasPermission}
+              storefrontEnabled={storefrontEnabled}
             />
           ))}
         </nav>

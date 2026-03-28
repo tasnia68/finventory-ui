@@ -22,6 +22,12 @@ import MetricCard from '../../components/common/MetricCard';
 import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const Products = () => {
+  const formatCurrency = (value) => new Intl.NumberFormat('en-BD', {
+    style: 'currency',
+    currency: 'BDT',
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+
   const [variants, setVariants] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -288,7 +294,7 @@ const Products = () => {
     try {
       const parsed = JSON.parse(snapshot || '{}');
       const attrs = Array.isArray(parsed.attributeValues) ? parsed.attributeValues.length : 0;
-      return `SKU: ${parsed.sku || '-'} | Price: ${parsed.price ?? '-'} | Attributes: ${attrs}`;
+      return `SKU: ${parsed.sku || '-'} | Price: ${parsed.price ?? '-'} | Compare-at: ${parsed.compareAtPrice ?? '-'} | Badge: ${parsed.storefrontBadge || '-'} | Featured: ${parsed.storefrontFeatured ? 'Yes' : 'No'} | Attributes: ${attrs}`;
     } catch (error) {
       return 'Snapshot unavailable';
     }
@@ -322,11 +328,20 @@ const Products = () => {
       render: (value, row) => (
         <div>
           <div className="font-semibold text-slate-900 dark:text-white">{row.sku}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2">
             <span>Template: {templateMap[row.templateId]?.name || 'Unknown'}</span>
             {row.mainImageId && (
               <Badge variant="default">Image</Badge>
             )}
+            {templateMap[row.templateId]?.publishedToStorefront ? (
+              <Badge variant="success">Storefront</Badge>
+            ) : null}
+            {row.storefrontFeatured ? (
+              <Badge variant="warning">Featured</Badge>
+            ) : null}
+            {row.storefrontBadge ? (
+              <Badge variant="info">{row.storefrontBadge}</Badge>
+            ) : null}
           </div>
         </div>
       ),
@@ -363,10 +378,29 @@ const Products = () => {
     {
       key: 'price',
       header: 'Price',
-      render: (value) => (
-        <span className="font-semibold text-slate-900 dark:text-white">
-          ${value !== null && value !== undefined ? Number(value).toFixed(2) : '0.00'}
-        </span>
+      render: (value, row) => (
+        <div className="space-y-1">
+          <span className="block font-semibold text-slate-900 dark:text-white">
+            {formatCurrency(value)}
+          </span>
+          {row.compareAtPrice ? (
+            <span className="block text-xs text-slate-400 line-through">
+              {formatCurrency(row.compareAtPrice)}
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      key: 'merchandising',
+      header: 'Storefront Merchandising',
+      render: (value, row) => (
+        <div className="flex flex-wrap gap-2">
+          {row.storefrontBadge ? <Badge variant="info">{row.storefrontBadge}</Badge> : <Badge variant="default">No badge</Badge>}
+          <Badge variant={row.storefrontFeatured ? 'warning' : 'default'}>
+            {row.storefrontFeatured ? 'Featured' : 'Standard'}
+          </Badge>
+        </div>
       ),
     },
     {
@@ -374,10 +408,16 @@ const Products = () => {
       header: 'Template Status',
       render: (value, row) => {
         const isActive = templateMap[row.templateId]?.isActive;
+        const storefrontPublished = templateMap[row.templateId]?.publishedToStorefront;
         return (
-          <Badge variant={isActive ? 'success' : 'warning'}>
-            {isActive ? 'Active' : 'Inactive'}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={isActive ? 'success' : 'warning'}>
+              {isActive ? 'Active' : 'Inactive'}
+            </Badge>
+            <Badge variant={storefrontPublished ? 'info' : 'default'}>
+              {storefrontPublished ? 'Published to Storefront' : 'Backoffice Only'}
+            </Badge>
+          </div>
         );
       },
     },

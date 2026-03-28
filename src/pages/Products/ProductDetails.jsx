@@ -19,6 +19,12 @@ import InfoTip from '../../components/common/InfoTip';
 import { CatalogHero, CatalogPageFrame } from '../../components/catalog';
 
 const ProductDetails = () => {
+  const formatCurrency = (value) => new Intl.NumberFormat('en-BD', {
+    style: 'currency',
+    currency: 'BDT',
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -166,19 +172,29 @@ const ProductDetails = () => {
     {
       key: 'price',
       header: 'Price',
-      render: (value) => (
-        <span className="font-medium text-slate-900 dark:text-white">
-          ${value ? value.toFixed(2) : '0.00'}
-        </span>
+      render: (value, row) => (
+        <div className="space-y-1">
+          <span className="block font-medium text-slate-900 dark:text-white">
+            {formatCurrency(value)}
+          </span>
+          {row.compareAtPrice ? (
+            <span className="block text-xs text-slate-400 line-through">
+              {formatCurrency(row.compareAtPrice)}
+            </span>
+          ) : null}
+        </div>
       ),
     },
     {
-      key: 'cost',
-      header: 'Cost',
-      render: (value) => (
-        <span className="text-slate-600 dark:text-slate-400">
-          ${value ? value.toFixed(2) : '0.00'}
-        </span>
+      key: 'storefront',
+      header: 'Storefront',
+      render: (value, row) => (
+        <div className="flex flex-wrap gap-2">
+          {row.storefrontBadge ? <Badge variant="info">{row.storefrontBadge}</Badge> : <Badge variant="default">No badge</Badge>}
+          <Badge variant={row.storefrontFeatured ? 'warning' : 'default'}>
+            {row.storefrontFeatured ? 'Featured' : 'Standard'}
+          </Badge>
+        </div>
       ),
     },
     {
