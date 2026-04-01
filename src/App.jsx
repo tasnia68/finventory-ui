@@ -50,6 +50,13 @@ const AccountingReceivables = lazy(() => import('./pages/Accounting/Receivables'
 const AccountingTreasury = lazy(() => import('./pages/Accounting/Treasury'));
 const AccountingStatements = lazy(() => import('./pages/Accounting/Statements'));
 const AccountingGuide = lazy(() => import('./pages/Accounting/Guide'));
+const PayrollOverview = lazy(() => import('./pages/Payroll'));
+const PayrollEmployees = lazy(() => import('./pages/Payroll/Employees'));
+const PayrollAttendance = lazy(() => import('./pages/Payroll/Attendance'));
+const PayrollSalaryStructures = lazy(() => import('./pages/Payroll/SalaryStructures'));
+const PayrollRuns = lazy(() => import('./pages/Payroll/Runs'));
+const PayrollPayslips = lazy(() => import('./pages/Payroll/Payslips'));
+const PayrollSettings = lazy(() => import('./pages/Payroll/Settings'));
 const StorefrontOverview = lazy(() => import('./pages/Storefront'));
 const StorefrontTheme = lazy(() => import('./pages/Storefront/Theme'));
 const StorefrontPages = lazy(() => import('./pages/Storefront/Pages'));
@@ -197,6 +204,41 @@ function App() {
           <Route path="/accounting/guide" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
               <AccountingGuide />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/employees" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollEmployees />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/attendance" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollAttendance />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/salary-structures" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollSalaryStructures />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/runs" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollRuns />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/payslips" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollPayslips />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/settings" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PAYROLL}>
+              <PayrollSettings />
             </ProtectedRoute>
           } />
           <Route path="/plugins" element={

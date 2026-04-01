@@ -123,6 +123,20 @@ const MENU_ITEMS = [
     ]
   },
   {
+    titleKey: 'navigation.payroll',
+    icon: 'payments',
+    permission: PERMISSIONS.MENU_PAYROLL,
+    submenu: [
+      { titleKey: 'navigation.payrollOverview', path: '/payroll' },
+      { titleKey: 'navigation.payrollEmployees', path: '/payroll/employees' },
+      { titleKey: 'navigation.payrollAttendance', path: '/payroll/attendance' },
+      { titleKey: 'navigation.payrollStructures', path: '/payroll/salary-structures' },
+      { titleKey: 'navigation.payrollRuns', path: '/payroll/runs' },
+      { titleKey: 'navigation.payrollPayslips', path: '/payroll/payslips' },
+      { titleKey: 'navigation.payrollSettings', path: '/payroll/settings' },
+    ]
+  },
+  {
     titleKey: 'navigation.storefront',
     icon: 'storefront',
     permission: PERMISSIONS.MENU_ANALYTICS,
