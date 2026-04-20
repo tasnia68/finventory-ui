@@ -11,12 +11,33 @@ import PickingListFormModal from './PickingListFormModal';
 import RmaDetailModal from './RmaDetailModal';
 import ShipmentDetailModal from './ShipmentDetailModal';
 import ShipmentFormModal from './ShipmentFormModal';
-import { formatDateTime, formatNumber, getPickingStatusVariant, getRmaStatusVariant, getShipmentStatusVariant, toList } from '../Sales/utils';
+import {
+    formatCurrency,
+    formatDateTime,
+    formatNumber,
+    getCourierDispatchVariant,
+    getPickingStatusVariant,
+    getRmaStatusVariant,
+    getShipmentStatusVariant,
+    toList,
+} from '../Sales/utils';
 
 const PICKING_STATUS_OPTIONS = ['DRAFT', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((value) => ({ value, label: value.replaceAll('_', ' ') }));
+const SHIPMENT_STATUS_OPTIONS = ['DRAFT', 'READY_TO_SHIP', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED', 'RETURNED'].map((value) => ({ value, label: value.replaceAll('_', ' ') }));
+const COURIER_STATUS_OPTIONS = ['UNASSIGNED', 'BOOKED', 'PICKUP_PENDING', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DELIVERY_FAILED', 'RETURNED', 'CANCELLED'].map((value) => ({ value, label: value.replaceAll('_', ' ') }));
 
 const createEmptyPickingForm = () => ({ salesOrderIds: [], assignedToId: '', notes: '' });
-const createEmptyShipmentForm = () => ({ salesOrderId: '', carrier: '', notes: '', items: [] });
+const createEmptyShipmentForm = () => ({
+    salesOrderId: '',
+    carrier: '',
+    courierProvider: '',
+    courierService: '',
+    courierReference: '',
+    cashOnDeliveryAmount: '',
+    deliveryFee: '',
+    notes: '',
+    items: [],
+});
 
 const Fulfillment = () => {
     const [warehouses, setWarehouses] = useState([]);
@@ -28,7 +49,7 @@ const Fulfillment = () => {
     const [loading, setLoading] = useState(true);
     const [working, setWorking] = useState(false);
     const [alert, setAlert] = useState(null);
-    const [filters, setFilters] = useState({ query: '', warehouseId: '', pickingStatus: '' });
+    const [filters, setFilters] = useState({ query: '', warehouseId: '', pickingStatus: '', shipmentStatus: '', courierStatus: '', provider: '' });
     const [showPickingForm, setShowPickingForm] = useState(false);
     const [showShipmentForm, setShowShipmentForm] = useState(false);
     const [pickingForm, setPickingForm] = useState(createEmptyPickingForm());
@@ -117,8 +138,11 @@ const Fulfillment = () => {
         const normalizedQuery = filters.query.trim().toLowerCase();
         return shipments.filter((shipment) => {
             if (filters.warehouseId && shipment.warehouseId !== filters.warehouseId) return false;
+            if (filters.shipmentStatus && shipment.status !== filters.shipmentStatus) return false;
+            if (filters.courierStatus && shipment.courierDispatchStatus !== filters.courierStatus) return false;
+            if (filters.provider && (shipment.courierProvider || '') !== filters.provider) return false;
             if (!normalizedQuery) return true;
-            return [shipment.shipmentNumber, shipment.soNumber, shipment.trackingNumber, shipment.carrier]
+            return [shipment.shipmentNumber, shipment.soNumber, shipment.trackingNumber, shipment.carrier, shipment.courierProvider, shipment.courierReference]
                 .filter(Boolean)
                 .some((value) => value.toLowerCase().includes(normalizedQuery));
         });
@@ -136,10 +160,43 @@ const Fulfillment = () => {
 
     const summary = useMemo(() => ({
         openPicks: pickingLists.filter((list) => !['COMPLETED', 'CANCELLED'].includes(list.status)).length,
-        inTransitShipments: shipments.filter((shipment) => ['READY_TO_SHIP', 'IN_TRANSIT'].includes(shipment.status)).length,
+        awaitingCourier: shipments.filter((shipment) => ['UNASSIGNED', 'BOOKED', 'PICKUP_PENDING'].includes(shipment.courierDispatchStatus || 'UNASSIGNED')).length,
+        inTransitShipments: shipments.filter((shipment) => ['PICKED_UP', 'IN_TRANSIT'].includes(shipment.courierDispatchStatus)).length,
+        outForDelivery: shipments.filter((shipment) => shipment.courierDispatchStatus === 'OUT_FOR_DELIVERY').length,
         deliveredShipments: shipments.filter((shipment) => shipment.status === 'DELIVERED').length,
+        dispatchExceptions: shipments.filter((shipment) => ['DELIVERY_FAILED', 'RETURNED', 'CANCELLED'].includes(shipment.courierDispatchStatus)).length,
         openRmas: rmas.filter((rma) => !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(rma.status)).length,
     }), [pickingLists, shipments, rmas]);
+
+    const providerOptions = useMemo(
+        () => [...new Set(shipments.map((shipment) => shipment.courierProvider).filter(Boolean))]
+            .sort((left, right) => left.localeCompare(right))
+            .map((value) => ({ value, label: value })),
+        [shipments]
+    );
+
+    const shipmentPipelineRows = useMemo(() => {
+        const bucketConfig = [
+            { key: 'UNASSIGNED', label: 'Awaiting Provider' },
+            { key: 'BOOKED', label: 'Booked' },
+            { key: 'PICKUP_PENDING', label: 'Pickup Pending' },
+            { key: 'PICKED_UP', label: 'Picked Up' },
+            { key: 'IN_TRANSIT', label: 'In Transit' },
+            { key: 'OUT_FOR_DELIVERY', label: 'Out For Delivery' },
+            { key: 'DELIVERED', label: 'Delivered' },
+            { key: 'DELIVERY_FAILED', label: 'Delivery Failed' },
+        ];
+
+        return bucketConfig.map((bucket) => {
+            const matching = shipments.filter((shipment) => (shipment.courierDispatchStatus || 'UNASSIGNED') === bucket.key);
+            return {
+                ...bucket,
+                shipments: matching.length,
+                units: matching.reduce((sum, shipment) => sum + (shipment.items || []).reduce((lineSum, item) => lineSum + Number(item.quantity || 0), 0), 0),
+                codValue: matching.reduce((sum, shipment) => sum + Number(shipment.cashOnDeliveryAmount || 0), 0),
+            };
+        });
+    }, [shipments]);
 
     const eligibleForPicking = useMemo(() => salesOrders.filter((order) => ['CONFIRMED', 'BACKORDERED'].includes(order.status)), [salesOrders]);
     const eligibleForShipment = useMemo(() => salesOrders.filter((order) => ['CONFIRMED', 'BACKORDERED', 'PARTIALLY_SHIPPED'].includes(order.status)), [salesOrders]);
@@ -178,7 +235,17 @@ const Fulfillment = () => {
         event.preventDefault();
         const items = shipmentForm.items.filter((item) => Number(item.quantity) > 0).map((item) => ({ salesOrderItemId: item.salesOrderItemId, quantity: Number(item.quantity) }));
         const created = await runAction(
-            () => createShipment({ salesOrderId: shipmentForm.salesOrderId, carrier: shipmentForm.carrier || null, notes: shipmentForm.notes || null, items }),
+            () => createShipment({
+                salesOrderId: shipmentForm.salesOrderId,
+                carrier: shipmentForm.carrier || null,
+                courierProvider: shipmentForm.courierProvider || null,
+                courierService: shipmentForm.courierService || null,
+                courierReference: shipmentForm.courierReference || null,
+                cashOnDeliveryAmount: shipmentForm.cashOnDeliveryAmount === '' ? null : Number(shipmentForm.cashOnDeliveryAmount),
+                deliveryFee: shipmentForm.deliveryFee === '' ? null : Number(shipmentForm.deliveryFee),
+                notes: shipmentForm.notes || null,
+                items,
+            }),
             'Shipment created successfully'
         );
         setShowShipmentForm(false);
@@ -251,6 +318,9 @@ const Fulfillment = () => {
                             <Input placeholder="Search pick, shipment, tracking, or RMA" value={filters.query} onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))} className="min-w-[280px]" />
                             <Select value={filters.warehouseId} onChange={(event) => setFilters((current) => ({ ...current, warehouseId: event.target.value }))} options={warehouses.map((warehouse) => ({ value: warehouse.id, label: warehouse.name }))} placeholder="Warehouse" className="min-w-[200px]" />
                             <Select value={filters.pickingStatus} onChange={(event) => setFilters((current) => ({ ...current, pickingStatus: event.target.value }))} options={PICKING_STATUS_OPTIONS} placeholder="Pick status" className="min-w-[180px]" />
+                            <Select value={filters.shipmentStatus} onChange={(event) => setFilters((current) => ({ ...current, shipmentStatus: event.target.value }))} options={SHIPMENT_STATUS_OPTIONS} placeholder="Shipment status" className="min-w-[190px]" />
+                            <Select value={filters.courierStatus} onChange={(event) => setFilters((current) => ({ ...current, courierStatus: event.target.value }))} options={COURIER_STATUS_OPTIONS} placeholder="Courier stage" className="min-w-[190px]" />
+                            <Select value={filters.provider} onChange={(event) => setFilters((current) => ({ ...current, provider: event.target.value }))} options={providerOptions} placeholder="Courier provider" className="min-w-[190px]" />
                             <Button variant="secondary" icon="sync" onClick={loadPage}>Refresh</Button>
                             <Button variant="secondary" icon="playlist_add" onClick={() => setShowPickingForm(true)} disabled={pickingApiUnavailable}>Generate Pick</Button>
                             <Button icon="local_shipping" onClick={() => setShowShipmentForm(true)}>Create Shipment</Button>
@@ -261,12 +331,29 @@ const Fulfillment = () => {
 
                 {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
                     <MetricCard title="Open Picks" value={formatNumber(summary.openPicks)} caption="Picking work not yet closed on the floor" icon="assignment" tone="amber" />
-                    <MetricCard title="In Transit" value={formatNumber(summary.inTransitShipments)} caption="Shipments currently with carrier or ready to leave" icon="local_shipping" tone="blue" />
+                    <MetricCard title="Awaiting Courier" value={formatNumber(summary.awaitingCourier)} caption="Packed shipments still waiting on booking or pickup handoff" icon="inventory_2" tone="amber" />
+                    <MetricCard title="In Transit" value={formatNumber(summary.inTransitShipments)} caption="Shipments currently moving between warehouse and final-mile route" icon="local_shipping" tone="blue" />
+                    <MetricCard title="Out For Delivery" value={formatNumber(summary.outForDelivery)} caption="Final-mile drop attempts active today or in the latest sync cycle" icon="route" tone="blue" />
                     <MetricCard title="Delivered" value={formatNumber(summary.deliveredShipments)} caption="Shipments fully confirmed at customer handoff" icon="task_alt" tone="emerald" />
+                    <MetricCard title="Dispatch Issues" value={formatNumber(summary.dispatchExceptions)} caption="Failed attempts, returns, or cancelled courier movements" icon="warning" tone="rose" />
                     <MetricCard title="Open RMAs" value={formatNumber(summary.openRmas)} caption="Returns still moving through authorization and receipt" icon="assignment_return" tone="violet" />
                 </div>
+
+                <Card padding="none" className="overflow-hidden" title="Courier Pipeline" subtitle="Status-wise shipment, unit, and COD exposure across the dispatch board">
+                    <DataTable
+                        loading={loading}
+                        emptyMessage="No courier-stage activity yet."
+                        columns={[
+                            { key: 'label', header: 'Courier Stage', render: (value, row) => <Badge variant={getCourierDispatchVariant(row.key)}>{value}</Badge> },
+                            { key: 'shipments', header: 'Shipments', render: (value) => formatNumber(value) },
+                            { key: 'units', header: 'Units', render: (value) => formatNumber(value) },
+                            { key: 'codValue', header: 'COD Exposure', render: (value) => formatCurrency(value, 'BDT') },
+                        ]}
+                        data={shipmentPipelineRows}
+                    />
+                </Card>
 
                 <Card padding="none" className="overflow-hidden" title="Picking Register" subtitle="Wave and single-order picks currently active in the warehouse">
                     <DataTable
@@ -293,9 +380,13 @@ const Fulfillment = () => {
                         columns={[
                             { key: 'shipmentNumber', header: 'Shipment' },
                             { key: 'soNumber', header: 'Sales Order' },
-                            { key: 'carrier', header: 'Carrier', render: (value) => value || 'Pending' },
+                            { key: 'courierProvider', header: 'Courier', render: (value, row) => value || row.carrier || 'Pending' },
+                            { key: 'courierDispatchStatus', header: 'Courier Stage', render: (value) => <Badge variant={getCourierDispatchVariant(value)}>{value || 'UNASSIGNED'}</Badge> },
+                            { key: 'carrier', header: 'Carrier Label', render: (value) => value || '-' },
+                            { key: 'courierReference', header: 'Courier Ref', render: (value) => value || '-' },
                             { key: 'trackingNumber', header: 'Tracking', render: (value) => value || '-' },
                             { key: 'status', header: 'Status', render: (value) => <Badge variant={getShipmentStatusVariant(value)}>{value}</Badge> },
+                            { key: 'cashOnDeliveryAmount', header: 'COD', render: (value) => formatCurrency(value, 'BDT') },
                             { key: 'shippedDate', header: 'Shipped', render: (value) => formatDateTime(value) },
                         ]}
                         data={filteredShipments}

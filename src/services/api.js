@@ -1,5 +1,32 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const normalizeTenantUuid = (value) => {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    const normalized = value.trim();
+    return UUID_PATTERN.test(normalized) ? normalized : '';
+};
+
+const readTenantIdFromToken = (token) => {
+    if (!token) {
+        return '';
+    }
+
+    try {
+        const payload = token.split('.')[1];
+        if (!payload) {
+            return '';
+        }
+        const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        return normalizeTenantUuid(decoded?.tenantId);
+    } catch {
+        return '';
+    }
+};
 
 const getHeaders = (isAuthEndpoint = false) => {
     const headers = {
@@ -12,7 +39,10 @@ const getHeaders = (isAuthEndpoint = false) => {
     }
 
     if (!isAuthEndpoint) {
-        headers['X-Tenant-ID'] = TENANT_ID;
+        const tenantId = normalizeTenantUuid(localStorage.getItem('tenantId')) || readTenantIdFromToken(token);
+        if (tenantId) {
+            headers['X-Tenant-ID'] = tenantId;
+        }
     }
 
     return headers;

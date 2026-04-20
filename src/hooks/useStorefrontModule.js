@@ -1,57 +1,24 @@
-import { useEffect, useState } from 'react';
-import { request } from '../services/api';
+import { getCachedSetting, useSettings } from '../contexts/SettingsContext';
 
-const STORE_FRONT_CACHE_KEY = 'logistra.storefront.module.enabled';
+const STOREFRONT_MODULE_KEY = 'tenant.modules.storefront.enabled';
 
 const readCachedState = () => {
-  try {
-    const raw = window.localStorage.getItem(STORE_FRONT_CACHE_KEY);
-    if (raw === null) {
-      return null;
-    }
-    return raw === 'true';
-  } catch {
+  const raw = getCachedSetting(STOREFRONT_MODULE_KEY);
+  if (raw === undefined) {
     return null;
   }
-};
-
-const writeCachedState = (value) => {
-  try {
-    window.localStorage.setItem(STORE_FRONT_CACHE_KEY, String(Boolean(value)));
-  } catch {
-    // ignore cache failures
-  }
+  return raw === true || raw === 'true';
 };
 
 export const useStorefrontModule = () => {
-  const [enabled, setEnabled] = useState(() => readCachedState() ?? false);
-  const [resolved, setResolved] = useState(() => readCachedState() !== null);
+  const cachedState = readCachedState();
+  const { loading, getBooleanSetting } = useSettings();
 
-  useEffect(() => {
-    let active = true;
+  const enabled = loading
+    ? cachedState ?? false
+    : getBooleanSetting(STOREFRONT_MODULE_KEY, false);
 
-    request('/storefront/config')
-      .then((response) => {
-        const config = response?.data !== undefined ? response.data : response;
-        const nextEnabled = Boolean(config?.site?.enabled);
-        if (active) {
-          setEnabled(nextEnabled);
-          setResolved(true);
-        }
-        writeCachedState(nextEnabled);
-      })
-      .catch(() => {
-        if (active) {
-          setEnabled(false);
-          setResolved(true);
-        }
-        writeCachedState(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const resolved = !loading;
 
   return { storefrontEnabled: enabled, storefrontResolved: resolved };
 };

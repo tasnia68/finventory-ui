@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import AppLoadingScreen from './components/common/AppLoadingScreen';
 import { PERMISSIONS } from './constants/permissions';
+import { useStorefrontModule } from './hooks/useStorefrontModule';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Login = lazy(() => import('./pages/Login'));
@@ -40,6 +41,7 @@ const Customers = lazy(() => import('./pages/Customers'));
 const SalesOrders = lazy(() => import('./pages/SalesOrders'));
 const RefundsExchanges = lazy(() => import('./pages/RefundsExchanges'));
 const PromotionsPricing = lazy(() => import('./pages/PromotionsPricing'));
+const ControlTower = lazy(() => import('./pages/ControlTower'));
 const Fulfillment = lazy(() => import('./pages/Fulfillment'));
 const Accounting = lazy(() => import('./pages/Accounting'));
 const AccountingAccounts = lazy(() => import('./pages/Accounting/Accounts'));
@@ -62,6 +64,11 @@ const StorefrontTheme = lazy(() => import('./pages/Storefront/Theme'));
 const StorefrontPages = lazy(() => import('./pages/Storefront/Pages'));
 const StorefrontNavigation = lazy(() => import('./pages/Storefront/Navigation'));
 const StorefrontPublish = lazy(() => import('./pages/Storefront/Publish'));
+const StorefrontCustomers = lazy(() => import('./pages/Storefront/Customers'));
+const StorefrontMenus = lazy(() => import('./pages/Storefront/Menus'));
+const StorefrontAnalytics = lazy(() => import('./pages/Storefront/Analytics'));
+const StorefrontPagesManager = lazy(() => import('./pages/Storefront/PagesManager'));
+const SuperAdminTenants = lazy(() => import('./pages/SuperAdmin/Tenants'));
 const PluginsOverview = lazy(() => import('./pages/Plugins'));
 const ShopifyPlugin = lazy(() => import('./pages/Plugins/Shopify'));
 const PluginLogs = lazy(() => import('./pages/Plugins/Logs'));
@@ -77,8 +84,16 @@ const AnalyticsAutomation = lazy(() => import('./pages/Analytics/Automation'));
 const Settings = lazy(() => import('./pages/Settings'));
 
 // Protected Route Wrapper
-const ProtectedRoute = ({ children, permission }) => {
-  const { hasPermission } = useAuth();
+const ProtectedRoute = ({ children, permission, superAdminOnly = false }) => {
+  const { hasPermission, isSuperAdmin } = useAuth();
+
+  if (superAdminOnly && !isSuperAdmin) {
+    return (
+      <MainLayout>
+        <NotAuthorized />
+      </MainLayout>
+    );
+  }
 
   // If permission is required check it
   if (permission && !hasPermission(permission)) {
@@ -90,6 +105,25 @@ const ProtectedRoute = ({ children, permission }) => {
   }
 
   return <MainLayout>{children}</MainLayout>;
+};
+
+const StorefrontModuleRoute = ({ children }) => {
+  const { storefrontEnabled, storefrontResolved } = useStorefrontModule();
+
+  if (!storefrontResolved) {
+    return (
+      <AppLoadingScreen
+        message="Loading storefront access..."
+        caption="Checking tenant storefront licensing and workspace availability."
+      />
+    );
+  }
+
+  if (!storefrontEnabled) {
+    return <StorefrontModuleUnavailable />;
+  }
+
+  return children;
 };
 
 function App() {
@@ -248,27 +282,70 @@ function App() {
           } />
           <Route path="/storefront" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontOverview />
+              <StorefrontModuleRoute>
+                <StorefrontOverview />
+              </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
           <Route path="/storefront/theme" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontTheme />
+              <StorefrontModuleRoute>
+                <StorefrontTheme />
+              </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
           <Route path="/storefront/pages" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontPages />
+              <StorefrontModuleRoute>
+                <StorefrontPages />
+              </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
           <Route path="/storefront/navigation" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontNavigation />
+              <StorefrontModuleRoute>
+                <StorefrontNavigation />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/menus" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontModuleRoute>
+                <StorefrontMenus />
+              </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
           <Route path="/storefront/publish" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontPublish />
+              <StorefrontModuleRoute>
+                <StorefrontPublish />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/customers" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontModuleRoute>
+                <StorefrontCustomers />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/analytics" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontModuleRoute>
+                <StorefrontAnalytics />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/pages-manager" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontModuleRoute>
+                <StorefrontPagesManager />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/super-admin/tenants" element={
+            <ProtectedRoute superAdminOnly>
+              <SuperAdminTenants />
             </ProtectedRoute>
           } />
           <Route path="/plugins/shopify" element={
@@ -448,7 +525,14 @@ function App() {
 
           <Route path="/sales-orders/web" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
-              <SalesOrders mode="storefront" />
+              <StorefrontModuleRoute>
+                <SalesOrders mode="storefront" />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/control-tower" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <ControlTower />
             </ProtectedRoute>
           } />
           <Route path="/refunds-exchanges" element={
@@ -517,6 +601,20 @@ const NotAuthorized = () => (
     </h1>
     <p className="text-slate-500 dark:text-slate-400 max-w-md">
       You do not have permission to access this page. Please contact your administrator if you believe this is an error.
+    </p>
+  </div>
+);
+
+const StorefrontModuleUnavailable = () => (
+  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+    <span className="material-symbols-outlined mb-4 text-6xl text-slate-300 dark:text-slate-600">
+      storefront
+    </span>
+    <h1 className="mb-2 text-2xl font-bold text-slate-900 dark:text-white">
+      Storefront Module Disabled
+    </h1>
+    <p className="max-w-md text-slate-500 dark:text-slate-400">
+      This tenant does not currently have the storefront module enabled, so storefront workspaces and web-order routes are blocked.
     </p>
   </div>
 );

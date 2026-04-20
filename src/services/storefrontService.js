@@ -22,6 +22,14 @@ const toWorkbenchState = (config) => {
       ...(config.site || {}),
       templateKey: config.site?.templateKey || fallback.site.templateKey,
     },
+    domains: config.domains || {
+      platformFallbackHost: '',
+      platformFallbackUrl: '',
+      primaryHostname: config.site?.domain || '',
+      primaryUrl: config.site?.domain ? `https://${config.site.domain}` : '',
+      verificationTarget: '',
+      domains: [],
+    },
     theme: {
       ...fallback.theme,
       ...(config.theme || {}),
@@ -66,31 +74,20 @@ const toBackendPayload = (state) => ({
 });
 
 export const getStorefrontConfig = async () => {
-  try {
-    const config = await unwrap(request('/storefront/config'));
-    return toWorkbenchState(config);
-  } catch (error) {
-    console.error('Falling back to local storefront workbench state:', error);
-    return getStorefrontWorkbench();
-  }
+  const config = await unwrap(request('/storefront/config'));
+  return toWorkbenchState(config);
 };
 
 export const saveStorefrontConfig = async (state) => {
-  try {
-    const config = await unwrap(request('/storefront/config', {
-      method: 'PUT',
-      body: toBackendPayload(state),
-    }));
-    return toWorkbenchState(config);
-  } catch (error) {
-    console.error('Storefront backend save failed, using local fallback state:', error);
-    return state;
-  }
+  const config = await unwrap(request('/storefront/config', {
+    method: 'PUT',
+    body: toBackendPayload(state),
+  }));
+  return toWorkbenchState(config);
 };
 
 export const uploadStorefrontAsset = async (file, assetType = 'misc') => {
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-  const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
   const token = localStorage.getItem('accessToken');
   const formData = new FormData();
   formData.append('file', file);
@@ -99,7 +96,6 @@ export const uploadStorefrontAsset = async (file, assetType = 'misc') => {
   const response = await fetch(`${API_BASE_URL}/storefront/assets`, {
     method: 'POST',
     headers: {
-      'X-Tenant-ID': TENANT_ID,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: formData,
@@ -133,4 +129,50 @@ export const publishStorefrontTheme = async (payload = {}) => unwrap(request('/s
 export const restoreStorefrontThemeRevision = async (versionId, payload = {}) => unwrap(request(`/storefront/admin/theme/revisions/${versionId}/restore`, {
   method: 'POST',
   body: payload,
+}));
+
+export const getStorefrontDomainContext = async () => unwrap(request('/storefront/admin/domains'));
+
+export const addStorefrontDomain = async (hostname) => unwrap(request('/storefront/admin/domains', {
+  method: 'POST',
+  body: { hostname },
+}));
+
+export const verifyStorefrontDomain = async (domainId) => unwrap(request(`/storefront/admin/domains/${domainId}/verify`, {
+  method: 'POST',
+}));
+
+export const activateStorefrontDomain = async (domainId) => unwrap(request(`/storefront/admin/domains/${domainId}/activate`, {
+  method: 'POST',
+}));
+
+export const removeStorefrontDomain = async (domainId) => unwrap(request(`/storefront/admin/domains/${domainId}`, {
+  method: 'DELETE',
+}));
+
+export const getStorefrontCustomers = async () => unwrap(request('/storefront/admin/customers'));
+
+export const getStorefrontAnalytics = async (from, to) => {
+  const params = new URLSearchParams();
+  if (from) params.append('from', from);
+  if (to) params.append('to', to);
+  const qs = params.toString();
+  return unwrap(request(`/storefront/admin/analytics${qs ? '?' + qs : ''}`));
+};
+
+// CMS Pages
+export const getStorefrontCmsPages = async () => unwrap(request('/storefront/admin/pages'));
+
+export const createStorefrontCmsPage = async (data) => unwrap(request('/storefront/admin/pages', {
+  method: 'POST',
+  body: data,
+}));
+
+export const updateStorefrontCmsPage = async (id, data) => unwrap(request(`/storefront/admin/pages/${id}`, {
+  method: 'PUT',
+  body: data,
+}));
+
+export const deleteStorefrontCmsPage = async (id) => unwrap(request(`/storefront/admin/pages/${id}`, {
+  method: 'DELETE',
 }));

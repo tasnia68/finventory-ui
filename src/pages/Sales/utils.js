@@ -32,6 +32,27 @@ export const formatCurrency = (value, currency = 'USD') => {
 
 export const formatNumber = (value) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(value || 0));
 
+export const COURIER_PROVIDER_OPTIONS = [
+    { value: 'PATHAO', label: 'Pathao' },
+    { value: 'STEADFAST', label: 'Steadfast' },
+    { value: 'REDX', label: 'RedX' },
+    { value: 'PAPERFLY', label: 'Paperfly' },
+    { value: 'CUSTOM', label: 'Custom / Manual' },
+];
+
+export const COURIER_DISPATCH_OPTIONS = [
+    { value: 'UNASSIGNED', label: 'Unassigned' },
+    { value: 'BOOKED', label: 'Booked' },
+    { value: 'PICKUP_PENDING', label: 'Pickup Pending' },
+    { value: 'PICKED_UP', label: 'Picked Up' },
+    { value: 'IN_TRANSIT', label: 'In Transit' },
+    { value: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+    { value: 'DELIVERED', label: 'Delivered' },
+    { value: 'DELIVERY_FAILED', label: 'Delivery Failed' },
+    { value: 'RETURNED', label: 'Returned' },
+    { value: 'CANCELLED', label: 'Cancelled' },
+];
+
 export const downloadTextFile = (content, filename) => {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
@@ -101,6 +122,26 @@ export const getShipmentStatusVariant = (status) => {
             return 'danger';
         default:
             return 'warning';
+    }
+};
+
+export const getCourierDispatchVariant = (status) => {
+    switch (status) {
+        case 'DELIVERED':
+            return 'success';
+        case 'BOOKED':
+        case 'PICKED_UP':
+        case 'IN_TRANSIT':
+        case 'OUT_FOR_DELIVERY':
+            return 'info';
+        case 'DELIVERY_FAILED':
+        case 'RETURNED':
+        case 'CANCELLED':
+            return 'danger';
+        case 'PICKUP_PENDING':
+            return 'warning';
+        default:
+            return 'default';
     }
 };
 

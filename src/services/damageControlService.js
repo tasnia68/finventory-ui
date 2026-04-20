@@ -1,7 +1,6 @@
 import { request } from './api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
 
 const unwrap = async (promise) => {
     const response = await promise;
@@ -20,10 +19,7 @@ const buildQuery = (params = {}) => {
 };
 
 const authHeaders = () => {
-    const headers = {
-        'X-Tenant-ID': TENANT_ID,
-    };
-
+    const headers = {};
     const token = localStorage.getItem('accessToken');
     if (token) {
         headers.Authorization = `Bearer ${token}`;

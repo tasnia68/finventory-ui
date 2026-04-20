@@ -42,7 +42,6 @@ export const getPayrollPayslip = (id) => request(`/payroll/payslips/${id}`).then
 
 export const importAttendanceAdjustments = async (file) => {
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-  const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
   const token = localStorage.getItem('accessToken');
   const formData = new FormData();
   formData.append('file', file);
@@ -51,7 +50,6 @@ export const importAttendanceAdjustments = async (file) => {
     method: 'POST',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'X-Tenant-ID': TENANT_ID,
     },
     body: formData,
   });

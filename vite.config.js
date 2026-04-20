@@ -7,6 +7,9 @@ import autoprefixer from 'autoprefixer'
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
+  server: {
+    allowedHosts: true,
+  },
   css: {
     postcss: {
       plugins: [

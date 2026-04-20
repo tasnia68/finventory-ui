@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Input, Modal, Select } from '../../components/common';
-import { formatNumber } from '../Sales/utils';
+import { COURIER_PROVIDER_OPTIONS, formatNumber } from '../Sales/utils';
 
 const ShipmentFormModal = ({ isOpen, onClose, salesOrders, formData, setFormData, onSubmit, loading }) => {
     const selectedSalesOrder = salesOrders.find((order) => order.id === formData.salesOrderId);
@@ -10,6 +10,11 @@ const ShipmentFormModal = ({ isOpen, onClose, salesOrders, formData, setFormData
         setFormData({
             salesOrderId,
             carrier: '',
+            courierProvider: '',
+            courierService: '',
+            courierReference: '',
+            cashOnDeliveryAmount: '',
+            deliveryFee: '',
             notes: '',
             items: (nextSalesOrder?.items || [])
                 .map((item) => ({
@@ -34,7 +39,22 @@ const ShipmentFormModal = ({ isOpen, onClose, salesOrders, formData, setFormData
             <form className="space-y-5" onSubmit={onSubmit}>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Select label="Sales Order" value={formData.salesOrderId} onChange={(event) => handleSalesOrderChange(event.target.value)} options={salesOrders.map((order) => ({ value: order.id, label: `${order.soNumber} • ${order.customerName}` }))} required />
-                    <Input label="Carrier" value={formData.carrier} onChange={(event) => setFormData((current) => ({ ...current, carrier: event.target.value }))} />
+                    <Select
+                        label="Courier Provider"
+                        value={formData.courierProvider || ''}
+                        onChange={(event) => setFormData((current) => ({
+                            ...current,
+                            courierProvider: event.target.value,
+                            carrier: current.carrier || event.target.value,
+                        }))}
+                        options={COURIER_PROVIDER_OPTIONS}
+                        placeholder="Choose provider"
+                    />
+                    <Input label="Carrier Label" value={formData.carrier} onChange={(event) => setFormData((current) => ({ ...current, carrier: event.target.value }))} placeholder="Pathao courier, in-house van, etc." />
+                    <Input label="Courier Service" value={formData.courierService || ''} onChange={(event) => setFormData((current) => ({ ...current, courierService: event.target.value }))} placeholder="Standard, same day, COD" />
+                    <Input label="Courier Reference" value={formData.courierReference || ''} onChange={(event) => setFormData((current) => ({ ...current, courierReference: event.target.value }))} placeholder="Booking or consignment ref" />
+                    <Input label="COD Amount" type="number" min="0" step="0.01" value={formData.cashOnDeliveryAmount || ''} onChange={(event) => setFormData((current) => ({ ...current, cashOnDeliveryAmount: event.target.value }))} />
+                    <Input label="Delivery Fee" type="number" min="0" step="0.01" value={formData.deliveryFee || ''} onChange={(event) => setFormData((current) => ({ ...current, deliveryFee: event.target.value }))} />
                     <Input label="Notes" value={formData.notes} onChange={(event) => setFormData((current) => ({ ...current, notes: event.target.value }))} />
                 </div>
 

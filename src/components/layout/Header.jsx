@@ -4,6 +4,7 @@ import { ThemeContext } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { LanguageSwitcher } from '../common';
+import { useSidebar } from './Sidebar';
 
 const ROUTE_META = [
   { match: '/dashboard', titleKey: 'routes.dashboardOverview', sectionKey: 'sections.operations' },
@@ -34,6 +35,7 @@ const ROUTE_META = [
   { match: '/customers', titleKey: 'routes.customers', sectionKey: 'sections.salesFulfillment' },
   { match: '/sales-orders/web', titleKey: 'routes.webOrders', sectionKey: 'sections.salesFulfillment' },
   { match: '/sales-orders', titleKey: 'routes.salesOrders', sectionKey: 'sections.salesFulfillment' },
+  { match: '/control-tower', titleKey: 'routes.controlTower', sectionKey: 'sections.salesFulfillment' },
   { match: '/refunds-exchanges', titleKey: 'routes.refundsExchanges', sectionKey: 'sections.salesFulfillment' },
   { match: '/promotions-pricing', titleKey: 'routes.promotionsPricing', sectionKey: 'sections.salesFulfillment' },
   { match: '/fulfillment', titleKey: 'routes.fulfillmentControl', sectionKey: 'sections.salesFulfillment' },
@@ -82,16 +84,26 @@ const Header = () => {
   const { logout } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
+  const { toggle } = useSidebar();
   const routeMeta = getRouteMeta(location.pathname);
 
   return (
     <header className="flex-shrink-0 border-b border-slate-200 bg-white/90 px-8 py-5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
       <div className="flex items-center justify-between gap-6">
-        <div className="hidden min-w-0 md:flex md:flex-col">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-            {t(routeMeta.sectionKey)}
-          </p>
-          <h2 className="truncate text-xl font-black tracking-tight text-slate-900 dark:text-white">{t(routeMeta.titleKey)}</h2>
+        <div className="flex items-center gap-4 min-w-0">
+          <button
+            onClick={toggle}
+            className="rounded-2xl border border-slate-200 p-2.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            title={t('common.navigation')}
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <div className="hidden min-w-0 md:flex md:flex-col">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              {t(routeMeta.sectionKey)}
+            </p>
+            <h2 className="truncate text-xl font-black tracking-tight text-slate-900 dark:text-white">{t(routeMeta.titleKey)}</h2>
+          </div>
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-4 md:flex-none">

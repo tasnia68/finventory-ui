@@ -54,12 +54,9 @@ export const getProductImages = (templateId) => {
 
 export const getProductImageFile = async (imageId) => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-    const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
 
     const token = localStorage.getItem('accessToken');
-    const headers = {
-        'X-Tenant-ID': TENANT_ID,
-    };
+    const headers = {};
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -79,16 +76,13 @@ export const getProductImageFile = async (imageId) => {
 
 export const uploadProductImage = async (templateId, file, isMain = false) => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-    const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default-tenant';
     
     const formData = new FormData();
     formData.append('file', file);
     formData.append('isMain', isMain);
 
     const token = localStorage.getItem('accessToken');
-    const headers = {
-        'X-Tenant-ID': TENANT_ID,
-    };
+    const headers = {};
     
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -206,9 +200,7 @@ export const getProductHistory = (variantId, params = {}) => {
 };
 
 const getAuthHeaders = () => {
-    const headers = {
-        'X-Tenant-ID': import.meta.env.VITE_TENANT_ID || 'default-tenant',
-    };
+    const headers = {};
 
     const token = localStorage.getItem('accessToken');
     if (token) {

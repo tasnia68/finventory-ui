@@ -1,10 +1,13 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, createContext } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { PERMISSIONS } from '../../constants/permissions';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useStorefrontModule } from '../../hooks/useStorefrontModule';
+
+const SidebarContext = createContext({ isOpen: true, toggle: () => {}, close: () => {} });
+export const useSidebar = () => useContext(SidebarContext);
 
 const MENU_ITEMS = [
   {
@@ -78,6 +81,7 @@ const MENU_ITEMS = [
       { titleKey: 'navigation.customers', path: '/customers' },
       { titleKey: 'navigation.salesOrders', path: '/sales-orders' },
       { titleKey: 'navigation.webOrders', path: '/sales-orders/web', requiresStorefrontModule: true },
+      { titleKey: 'navigation.controlTower', path: '/control-tower' },
       { titleKey: 'navigation.refundsExchanges', path: '/refunds-exchanges' },
       { titleKey: 'navigation.promotionsPricing', path: '/promotions-pricing' },
       { titleKey: 'navigation.fulfillment', path: '/fulfillment' },
@@ -140,11 +144,15 @@ const MENU_ITEMS = [
     titleKey: 'navigation.storefront',
     icon: 'storefront',
     permission: PERMISSIONS.MENU_ANALYTICS,
+    requiresStorefrontModule: true,
     submenu: [
       { titleKey: 'navigation.storefrontOverview', path: '/storefront' },
       { titleKey: 'navigation.storefrontTheme', path: '/storefront/theme' },
       { titleKey: 'navigation.storefrontPages', path: '/storefront/pages' },
-      { titleKey: 'navigation.storefrontNavigation', path: '/storefront/navigation' },
+      { titleKey: 'navigation.storefrontPagesManager', path: '/storefront/pages-manager' },
+      { titleKey: 'navigation.storefrontNavigation', path: '/storefront/menus' },
+      { titleKey: 'navigation.storefrontCustomers', path: '/storefront/customers' },
+      { titleKey: 'navigation.storefrontAnalytics', path: '/storefront/analytics' },
       { titleKey: 'navigation.storefrontPublish', path: '/storefront/publish' },
     ]
   },
@@ -159,6 +167,12 @@ const MENU_ITEMS = [
     ]
   },
   {
+    titleKey: 'navigation.tenantControl',
+    path: '/super-admin/tenants',
+    icon: 'admin_panel_settings',
+    superAdminOnly: true,
+  },
+  {
     titleKey: 'navigation.settings',
     path: '/settings',
     icon: 'settings',
@@ -166,9 +180,13 @@ const MENU_ITEMS = [
   }
 ];
 
-const SidebarItem = ({ item, isExpanded, onToggle, hasPermission, storefrontEnabled }) => {
+const SidebarItem = ({ item, isExpanded, onToggle, hasPermission, storefrontEnabled, isSuperAdmin }) => {
   const location = useLocation();
   const { t } = useLanguage();
+
+  if (item.superAdminOnly && !isSuperAdmin) {
+    return null;
+  }
 
   // If item requests permission and user doesn't have it, don't render
   if (item.permission && !hasPermission(item.permission)) {
@@ -255,12 +273,19 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission, storefrontEnab
   );
 };
 
-const Sidebar = () => {
-  const { user, hasPermission } = useAuth();
+const SidebarContent = () => {
+  const { user, hasPermission, isSuperAdmin } = useAuth();
   const { theme } = useContext(ThemeContext);
   const { t } = useLanguage();
   const { storefrontEnabled } = useStorefrontModule();
+  const { close } = useSidebar();
   const [expandedMenus, setExpandedMenus] = useState({});
+  const location = useLocation();
+
+  // Close drawer on route change
+  useEffect(() => {
+    close();
+  }, [location.pathname]);
 
   const toggleMenu = (titleKey) => {
     setExpandedMenus(prev => ({
@@ -270,7 +295,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sticky top-0 flex h-screen w-80 flex-shrink-0 flex-col justify-between overflow-y-auto border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <>
       <div className="p-5">
         <div className="relative mb-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_45%),radial-gradient(circle_at_75%_20%,_rgba(249,115,22,0.16),_transparent_30%)]" />
@@ -301,6 +326,7 @@ const Sidebar = () => {
               onToggle={() => toggleMenu(item.titleKey)}
               hasPermission={hasPermission}
               storefrontEnabled={storefrontEnabled}
+              isSuperAdmin={isSuperAdmin}
             />
           ))}
         </nav>
@@ -321,8 +347,33 @@ const Sidebar = () => {
           </div>
         </Link>
       </div>
-    </aside>
+    </>
   );
 };
 
+const Sidebar = () => {
+  const { isOpen, close } = useSidebar();
+
+  return (
+    <>
+      {/* Backdrop overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity"
+          onClick={close}
+        />
+      )}
+      {/* Drawer */}
+      <aside
+        className={`fixed top-0 left-0 z-50 flex h-screen w-80 flex-col justify-between overflow-y-auto border-r border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <SidebarContent />
+      </aside>
+    </>
+  );
+};
+
+export { SidebarContext };
 export default Sidebar;

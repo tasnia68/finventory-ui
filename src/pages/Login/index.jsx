@@ -12,6 +12,7 @@ const FEATURE_KEYS = [
 ];
 
 const Login = () => {
+    const [workspace, setWorkspace] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -30,7 +31,7 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
+            await login(workspace, email, password);
             navigate(from, { replace: true });
         } catch (err) {
             setError(err.message || t('login.failedToSignIn'));
@@ -118,6 +119,15 @@ const Login = () => {
                         {error && (
                             <Alert type="error" message={error} onDismiss={() => setError('')} />
                         )}
+
+                        <Input
+                            label={t('login.workspace')}
+                            value={workspace}
+                            onChange={(e) => setWorkspace(e.target.value)}
+                            required
+                            placeholder={t('login.workspacePlaceholder')}
+                            icon="domain"
+                        />
 
                         <Input
                             label={t('login.emailAddress')}

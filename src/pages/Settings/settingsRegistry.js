@@ -477,6 +477,32 @@ export const SETTINGS_SECTIONS = [
         ],
     },
     {
+        id: 'modules',
+        title: 'Modules and Commerce Access',
+        description: 'Controls optional product surfaces and tenant-level feature access.',
+        icon: 'widgets',
+        accent: 'from-sky-500/15 via-transparent to-indigo-500/10',
+        groups: [
+            {
+                id: 'storefrontModule',
+                title: 'Storefront Module',
+                description: 'Licenses the storefront builder, web-order workspace, and public storefront APIs for this tenant.',
+                settings: [
+                    {
+                        key: 'tenant.modules.storefront.enabled',
+                        label: 'Enable storefront module',
+                        helpText: 'When disabled, storefront admin screens, web orders, and public storefront APIs are blocked for this tenant.',
+                        type: 'BOOLEAN',
+                        category: 'modules',
+                        control: 'boolean',
+                        defaultValue: false,
+                        risk: 'standard',
+                    },
+                ],
+            },
+        ],
+    },
+    {
         id: 'pos',
         title: 'POS and Counter Operations',
         description: 'Controls terminal behavior, receipts, offline flow, and cashier accountability.',

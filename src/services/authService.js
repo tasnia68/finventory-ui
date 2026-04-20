@@ -1,8 +1,8 @@
 import { request } from './api';
 
-export const login = (email, password) => {
+export const login = (workspace, email, password) => {
     return request('/auth/login', {
         method: 'POST',
-        body: { email, password },
+        body: { workspace, email, password },
     });
 };

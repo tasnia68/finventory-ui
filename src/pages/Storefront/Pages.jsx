@@ -9,8 +9,9 @@ import {
 } from '../../services/storefrontService';
 import { getProductTemplates } from '../../services/productService';
 import { getCategoryTree } from '../../services/categoryService';
+import { getWarehouses } from '../../services/warehouseService';
 
-const PREVIEW_URL = import.meta.env.VITE_STOREFRONT_PREVIEW_URL || 'http://localhost:5173/preview';
+const PREVIEW_URL = import.meta.env.VITE_STOREFRONT_PREVIEW_URL || 'http://localhost:5174/preview';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -105,6 +106,7 @@ const Pages = () => {
   const [selectedBlockId, setSelectedBlockId] = React.useState('');
   const [productOptions, setProductOptions] = React.useState([]);
   const [collectionOptions, setCollectionOptions] = React.useState([]);
+  const [warehouseOptions, setWarehouseOptions] = React.useState([]);
   const [dragSectionId, setDragSectionId] = React.useState('');
   const [dragBlockId, setDragBlockId] = React.useState('');
   const [viewport, setViewport] = React.useState('desktop');
@@ -117,7 +119,8 @@ const Pages = () => {
       getStorefrontThemePreview(),
       getProductTemplates().catch(() => []),
       getCategoryTree().catch(() => []),
-    ]).then(([editor, preview, templates, categories]) => {
+      getWarehouses().catch(() => []),
+    ]).then(([editor, preview, templates, categories, warehouses]) => {
       if (!active) return;
       readyRef.current = false;
       setDraft(editor.draftThemeDocument);
@@ -134,6 +137,12 @@ const Pages = () => {
         flattenCategoryTree(categories).map((category) => ({
           value: category.storefrontSlug || category.slug || category.name,
           label: category.name,
+        })).filter((item) => item.value),
+      );
+      setWarehouseOptions(
+        (Array.isArray(warehouses) ? warehouses : []).map((warehouse) => ({
+          value: warehouse.id,
+          label: warehouse.name,
         })).filter((item) => item.value),
       );
       setStatus('All changes auto-save to draft.');
@@ -381,6 +390,14 @@ const Pages = () => {
         <select value={value ?? ''} onChange={(event) => onChange(event.target.value)} className={commonClassName}>
           <option value="">Select a collection</option>
           {collectionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      );
+    }
+    if (field.type === 'entity_warehouse') {
+      return (
+        <select value={value ?? ''} onChange={(event) => onChange(event.target.value)} className={commonClassName}>
+          <option value="">Default warehouse</option>
+          {warehouseOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       );
     }

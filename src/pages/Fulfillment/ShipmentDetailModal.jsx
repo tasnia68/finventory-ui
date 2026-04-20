@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Badge, Button, Card, DataTable, Input, Modal } from '../../components/common';
-import { downloadTextFile, formatDateTime, formatNumber, getRmaStatusVariant, getShipmentStatusVariant } from '../Sales/utils';
+import { Badge, Button, Card, DataTable, Input, Modal, Select } from '../../components/common';
+import {
+    COURIER_DISPATCH_OPTIONS,
+    COURIER_PROVIDER_OPTIONS,
+    downloadTextFile,
+    formatCurrency,
+    formatDateTime,
+    formatNumber,
+    getCourierDispatchVariant,
+    getRmaStatusVariant,
+    getShipmentStatusVariant,
+} from '../Sales/utils';
 
 const createRmaItems = (shipment) => (shipment?.items || []).map((item) => ({
     salesOrderItemId: item.salesOrderItemId,
@@ -10,14 +20,32 @@ const createRmaItems = (shipment) => (shipment?.items || []).map((item) => ({
 }));
 
 const ShipmentDetailModal = ({ shipment, relatedRmas, isOpen, onClose, onUpdateTracking, onGenerateLabel, onConfirmDelivery, onDownloadDeliveryNote, onCreateRma, loading, onOpenRma }) => {
-    const [trackingForm, setTrackingForm] = useState({ trackingNumber: '', trackingUrl: '', status: '' });
+    const [trackingForm, setTrackingForm] = useState({
+        carrier: '',
+        courierProvider: '',
+        courierService: '',
+        courierReference: '',
+        courierDispatchStatus: '',
+        trackingNumber: '',
+        trackingUrl: '',
+        cashOnDeliveryAmount: '',
+        deliveryFee: '',
+        lastCourierEvent: '',
+    });
     const [rmaForm, setRmaForm] = useState({ reason: '', notes: '', items: [] });
 
     useEffect(() => {
         setTrackingForm({
+            carrier: shipment?.carrier || '',
+            courierProvider: shipment?.courierProvider || '',
+            courierService: shipment?.courierService || '',
+            courierReference: shipment?.courierReference || '',
+            courierDispatchStatus: shipment?.courierDispatchStatus || '',
             trackingNumber: shipment?.trackingNumber || '',
             trackingUrl: shipment?.trackingUrl || '',
-            status: shipment?.status || '',
+            cashOnDeliveryAmount: shipment?.cashOnDeliveryAmount ?? '',
+            deliveryFee: shipment?.deliveryFee ?? '',
+            lastCourierEvent: shipment?.lastCourierEvent || '',
         });
         setRmaForm({ reason: '', notes: '', items: createRmaItems(shipment) });
     }, [shipment]);
@@ -38,6 +66,23 @@ const ShipmentDetailModal = ({ shipment, relatedRmas, isOpen, onClose, onUpdateT
         downloadTextFile(data.note, `${shipment.shipmentNumber}-delivery-note.txt`);
     };
 
+    const saveCourierDesk = async (overrides = {}) => {
+        await onUpdateTracking(shipment.id, {
+            ...trackingForm,
+            ...overrides,
+            cashOnDeliveryAmount: trackingForm.cashOnDeliveryAmount === '' ? null : Number(trackingForm.cashOnDeliveryAmount),
+            deliveryFee: trackingForm.deliveryFee === '' ? null : Number(trackingForm.deliveryFee),
+            lastCourierSyncAt: new Date().toISOString(),
+        });
+    };
+
+    const quickStageActions = [
+        { label: 'Book Courier', status: 'BOOKED' },
+        { label: 'Mark Picked Up', status: 'PICKED_UP' },
+        { label: 'Out For Delivery', status: 'OUT_FOR_DELIVERY' },
+        { label: 'Delivery Failed', status: 'DELIVERY_FAILED', variant: 'secondary' },
+    ];
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={shipment.shipmentNumber} size="xl">
             <div className="space-y-6">
@@ -46,8 +91,11 @@ const ShipmentDetailModal = ({ shipment, relatedRmas, isOpen, onClose, onUpdateT
                         <div className="flex items-center gap-3">
                             <h3 className="text-2xl font-black text-slate-900 dark:text-white">{shipment.shipmentNumber}</h3>
                             <Badge variant={getShipmentStatusVariant(shipment.status)}>{shipment.status}</Badge>
+                            <Badge variant={getCourierDispatchVariant(shipment.courierDispatchStatus)}>{shipment.courierDispatchStatus || 'UNASSIGNED'}</Badge>
                         </div>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{shipment.soNumber} • {shipment.warehouseName} • {shipment.carrier || 'Carrier pending'}</p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                            {shipment.soNumber} • {shipment.warehouseName} • {shipment.courierProvider || shipment.carrier || 'Courier pending'}
+                        </p>
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Shipped {formatDateTime(shipment.shippedDate)} • Delivered {formatDateTime(shipment.deliveredDate)}</p>
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{shipment.notes || 'No shipment notes recorded.'}</p>
                     </div>
@@ -58,12 +106,87 @@ const ShipmentDetailModal = ({ shipment, relatedRmas, isOpen, onClose, onUpdateT
                     </div>
                 </div>
 
-                <Card title="Tracking" subtitle="Maintain the commercial and carrier traceability of the shipment">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                        <Input label="Tracking Number" value={trackingForm.trackingNumber} onChange={(event) => setTrackingForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
-                        <Input className="md:col-span-2" label="Tracking URL" value={trackingForm.trackingUrl} onChange={(event) => setTrackingForm((current) => ({ ...current, trackingUrl: event.target.value }))} />
-                        <div className="flex items-end">
-                            <Button onClick={() => onUpdateTracking(shipment.id, trackingForm)} disabled={loading}>Save Tracking</Button>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <Card>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Courier Provider</p>
+                        <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{shipment.courierProvider || '-'}</div>
+                    </Card>
+                    <Card>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Courier Reference</p>
+                        <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{shipment.courierReference || '-'}</div>
+                    </Card>
+                    <Card>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">COD Amount</p>
+                        <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(shipment.cashOnDeliveryAmount, 'BDT')}</div>
+                    </Card>
+                    <Card>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Delivery Fee</p>
+                        <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(shipment.deliveryFee, 'BDT')}</div>
+                    </Card>
+                </div>
+
+                <Card title="Courier Desk" subtitle="Run provider booking, dispatch stage, tracking, and COD data from one panel">
+                    <div className="space-y-5">
+                        <div className="flex flex-wrap gap-2">
+                            {quickStageActions.map((action) => (
+                                <Button
+                                    key={action.status}
+                                    variant={action.variant || 'secondary'}
+                                    disabled={loading}
+                                    onClick={() => saveCourierDesk({ courierDispatchStatus: action.status })}
+                                >
+                                    {action.label}
+                                </Button>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <Select
+                                label="Courier Provider"
+                                value={trackingForm.courierProvider}
+                                onChange={(event) => setTrackingForm((current) => ({ ...current, courierProvider: event.target.value }))}
+                                options={COURIER_PROVIDER_OPTIONS}
+                                placeholder="Choose provider"
+                            />
+                            <Input label="Carrier Label" value={trackingForm.carrier} onChange={(event) => setTrackingForm((current) => ({ ...current, carrier: event.target.value }))} />
+                            <Input label="Courier Service" value={trackingForm.courierService} onChange={(event) => setTrackingForm((current) => ({ ...current, courierService: event.target.value }))} />
+                            <Input label="Courier Reference" value={trackingForm.courierReference} onChange={(event) => setTrackingForm((current) => ({ ...current, courierReference: event.target.value }))} />
+                            <Select
+                                label="Dispatch Stage"
+                                value={trackingForm.courierDispatchStatus}
+                                onChange={(event) => setTrackingForm((current) => ({ ...current, courierDispatchStatus: event.target.value }))}
+                                options={COURIER_DISPATCH_OPTIONS}
+                                placeholder="Select stage"
+                            />
+                            <Input label="Tracking Number" value={trackingForm.trackingNumber} onChange={(event) => setTrackingForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
+                            <Input label="Tracking URL" value={trackingForm.trackingUrl} onChange={(event) => setTrackingForm((current) => ({ ...current, trackingUrl: event.target.value }))} />
+                            <Input label="Last Courier Event" value={trackingForm.lastCourierEvent} onChange={(event) => setTrackingForm((current) => ({ ...current, lastCourierEvent: event.target.value }))} />
+                            <Input label="COD Amount" type="number" min="0" step="0.01" value={trackingForm.cashOnDeliveryAmount} onChange={(event) => setTrackingForm((current) => ({ ...current, cashOnDeliveryAmount: event.target.value }))} />
+                            <Input label="Delivery Fee" type="number" min="0" step="0.01" value={trackingForm.deliveryFee} onChange={(event) => setTrackingForm((current) => ({ ...current, deliveryFee: event.target.value }))} />
+                            <div className="md:col-span-2 xl:col-span-2 flex items-end">
+                                <Button onClick={() => saveCourierDesk()} disabled={loading}>Save Courier Desk</Button>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card title="Dispatch Timeline" subtitle="Operational timestamps captured across booking, pickup, handoff, and proof of delivery">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pickup Requested</div>
+                            <div className="mt-2 font-semibold text-slate-900 dark:text-white">{formatDateTime(shipment.pickupRequestedAt)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Picked Up</div>
+                            <div className="mt-2 font-semibold text-slate-900 dark:text-white">{formatDateTime(shipment.pickedUpAt)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Out For Delivery</div>
+                            <div className="mt-2 font-semibold text-slate-900 dark:text-white">{formatDateTime(shipment.outForDeliveryAt)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Last Courier Sync</div>
+                            <div className="mt-2 font-semibold text-slate-900 dark:text-white">{formatDateTime(shipment.lastCourierSyncAt)}</div>
                         </div>
                     </div>
                 </Card>
