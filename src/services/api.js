@@ -1,5 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
+import { clearAuthSession, getAccessToken, getTenantId } from './authStorage';
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const normalizeTenantUuid = (value) => {
@@ -33,13 +35,13 @@ const getHeaders = (isAuthEndpoint = false) => {
         'Content-Type': 'application/json',
     };
 
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
     if (!isAuthEndpoint) {
-        const tenantId = normalizeTenantUuid(localStorage.getItem('tenantId')) || readTenantIdFromToken(token);
+        const tenantId = normalizeTenantUuid(getTenantId()) || readTenantIdFromToken(token);
         if (tenantId) {
             headers['X-Tenant-ID'] = tenantId;
         }
@@ -56,8 +58,7 @@ const handleResponse = async (response) => {
     if (!response.ok) {
         if (response.status === 401 && !window.location.pathname.includes('/login')) {
             // Auto logout on 401 (except when already on login page)
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            clearAuthSession();
             window.location.href = '/login';
         }
 

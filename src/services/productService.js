@@ -1,4 +1,5 @@
 import { request } from './api';
+import { getAuthorizationHeaders } from './authStorage';
 
 const unwrap = async (promise) => {
     const response = await promise;
@@ -55,16 +56,9 @@ export const getProductImages = (templateId) => {
 export const getProductImageFile = async (imageId) => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
-    const token = localStorage.getItem('accessToken');
-    const headers = {};
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const response = await fetch(`${API_BASE_URL}/product-images/${imageId}/file`, {
         method: 'GET',
-        headers,
+        headers: getAuthorizationHeaders(),
     });
 
     if (!response.ok) {
@@ -81,18 +75,11 @@ export const uploadProductImage = async (templateId, file, isMain = false) => {
     formData.append('file', file);
     formData.append('isMain', isMain);
 
-    const token = localStorage.getItem('accessToken');
-    const headers = {};
-    
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const response = await fetch(
         `${API_BASE_URL}/product-templates/${templateId}/images`,
         {
             method: 'POST',
-            headers,
+            headers: getAuthorizationHeaders(),
             body: formData,
         }
     );
@@ -200,14 +187,7 @@ export const getProductHistory = (variantId, params = {}) => {
 };
 
 const getAuthHeaders = () => {
-    const headers = {};
-
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    return headers;
+    return getAuthorizationHeaders();
 };
 
 export const importProductsCsv = async (file) => {

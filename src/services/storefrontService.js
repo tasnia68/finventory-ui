@@ -1,5 +1,6 @@
 import { request } from './api';
 import { getStorefrontWorkbench } from './storefrontWorkbench';
+import { getAuthorizationHeaders } from './authStorage';
 
 const unwrap = async (promise) => {
   const response = await promise;
@@ -88,16 +89,13 @@ export const saveStorefrontConfig = async (state) => {
 
 export const uploadStorefrontAsset = async (file, assetType = 'misc') => {
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-  const token = localStorage.getItem('accessToken');
   const formData = new FormData();
   formData.append('file', file);
   formData.append('assetType', assetType);
 
   const response = await fetch(`${API_BASE_URL}/storefront/assets`, {
     method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: getAuthorizationHeaders(),
     body: formData,
   });
 

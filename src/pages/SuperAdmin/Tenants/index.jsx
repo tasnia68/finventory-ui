@@ -19,6 +19,7 @@ const emptyForm = {
     name: '',
     subdomain: '',
     plan: 'BASIC',
+    storefrontEnabled: false,
     adminEmail: '',
     adminPassword: '',
     status: 'ACTIVE',
@@ -65,6 +66,7 @@ const TenantsPage = () => {
                 name: selectedTenant.name,
                 subdomain: selectedTenant.subdomain,
                 plan: selectedTenant.subscriptionPlan,
+                storefrontEnabled: Boolean(selectedTenant.storefrontEnabled),
                 adminEmail: '',
                 adminPassword: '',
                 status: selectedTenant.status,
@@ -95,6 +97,7 @@ const TenantsPage = () => {
                 name: form.name,
                 subdomain: form.subdomain,
                 plan: form.plan,
+                storefrontEnabled: form.storefrontEnabled,
                 adminEmail: form.adminEmail,
                 adminPassword: form.adminPassword,
             });
@@ -118,6 +121,7 @@ const TenantsPage = () => {
                 name: form.name,
                 subdomain: form.subdomain,
                 plan: form.plan,
+                storefrontEnabled: form.storefrontEnabled,
                 status: form.status,
             });
             setMessage(`Tenant ${updated.subdomain} updated.`);
@@ -189,6 +193,7 @@ const TenantsPage = () => {
                                     <th className="pb-3 pr-4">Tenant</th>
                                     <th className="pb-3 pr-4">Workspace</th>
                                     <th className="pb-3 pr-4">Plan</th>
+                                    <th className="pb-3 pr-4">Storefront</th>
                                     <th className="pb-3 pr-4">Status</th>
                                     <th className="pb-3">Actions</th>
                                 </tr>
@@ -206,6 +211,11 @@ const TenantsPage = () => {
                                         </td>
                                         <td className="py-4 pr-4 text-sm text-slate-700 dark:text-slate-300">{tenant.subdomain}</td>
                                         <td className="py-4 pr-4 text-sm text-slate-700 dark:text-slate-300">{tenant.subscriptionPlan}</td>
+                                        <td className="py-4 pr-4">
+                                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tenant.storefrontEnabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'}`}>
+                                                {tenant.storefrontEnabled ? 'Enabled' : 'Disabled'}
+                                            </span>
+                                        </td>
                                         <td className="py-4 pr-4">
                                             <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tenant.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : tenant.status === 'INACTIVE' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'}`}>
                                                 {tenant.status}
@@ -245,6 +255,20 @@ const TenantsPage = () => {
                         <Input label="Tenant name" value={form.name} onChange={(event) => updateField('name', event.target.value)} required />
                         <Input label="Workspace slug" value={form.subdomain} onChange={(event) => updateField('subdomain', event.target.value)} required />
                         <Select label="Plan" value={form.plan} onChange={(event) => updateField('plan', event.target.value)} options={PLAN_OPTIONS} required />
+                        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                            <input
+                                type="checkbox"
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                checked={form.storefrontEnabled}
+                                onChange={(event) => updateField('storefrontEnabled', event.target.checked)}
+                            />
+                            <span>
+                                <span className="block font-semibold text-slate-900 dark:text-white">Enable storefront module</span>
+                                <span className="block text-xs text-slate-500 dark:text-slate-400">
+                                    Allows this tenant to access storefront workspaces, public storefront routes, and web-order flows.
+                                </span>
+                            </span>
+                        </label>
 
                         {selectedTenant ? (
                             <Select label="Status" value={form.status} onChange={(event) => updateField('status', event.target.value)} options={STATUS_OPTIONS} required />

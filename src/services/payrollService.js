@@ -1,4 +1,5 @@
 import { request } from './api';
+import { getAuthorizationHeaders } from './authStorage';
 
 const unwrap = (response) => response?.data ?? response;
 
@@ -42,15 +43,12 @@ export const getPayrollPayslip = (id) => request(`/payroll/payslips/${id}`).then
 
 export const importAttendanceAdjustments = async (file) => {
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
-  const token = localStorage.getItem('accessToken');
   const formData = new FormData();
   formData.append('file', file);
 
   const response = await fetch(`${API_BASE_URL}/payroll/attendance-adjustments/import`, {
     method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: getAuthorizationHeaders(),
     body: formData,
   });
 

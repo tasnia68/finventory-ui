@@ -4,6 +4,7 @@ import { ThemeContext } from '../../contexts/ThemeContext';
 import { Button, Input, Alert, LanguageSwitcher } from '../../components/common';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getRememberedLogin } from '../../services/authStorage';
 
 const FEATURE_KEYS = [
     { icon: 'inventory_2', key: 'catalog' },
@@ -12,9 +13,11 @@ const FEATURE_KEYS = [
 ];
 
 const Login = () => {
-    const [workspace, setWorkspace] = useState('');
-    const [email, setEmail] = useState('');
+    const rememberedLogin = getRememberedLogin();
+    const [workspace, setWorkspace] = useState(rememberedLogin.workspace || '');
+    const [email, setEmail] = useState(rememberedLogin.email || '');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(Boolean(rememberedLogin.rememberMe));
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -31,7 +34,7 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await login(workspace, email, password);
+            await login(workspace, email, password, rememberMe);
             navigate(from, { replace: true });
         } catch (err) {
             setError(err.message || t('login.failedToSignIn'));
@@ -155,6 +158,8 @@ const Login = () => {
                                     id="remember-me"
                                     name="remember-me"
                                     type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
                                     className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
                                 />
                                 <span className="text-sm text-slate-600 dark:text-slate-400">{t('common.rememberMe')}</span>

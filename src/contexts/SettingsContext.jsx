@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { getSettings as fetchSettings, updateSettings as persistSettings } from '../services/settingsService';
+import { getAccessToken, getTenantId } from '../services/authStorage';
 
 const SETTINGS_CACHE_KEY_PREFIX = 'tenantSettingsCache';
 const TENANT_CONTEXT_CHANGED_EVENT = 'tenant-context-changed';
 
 const readCurrentTenantId = () => {
-    const tenantId = localStorage.getItem('tenantId');
+    const tenantId = getTenantId();
     return tenantId && tenantId.trim() ? tenantId.trim() : 'anonymous';
 };
 
@@ -65,7 +66,7 @@ export const SettingsProvider = ({ children }) => {
 
     useEffect(() => {
         const loadSettings = async () => {
-            const token = localStorage.getItem('accessToken');
+            const token = getAccessToken();
             if (!token || tenantId === 'anonymous') {
                 setSettings(readSettingsCache(tenantId));
                 setLoading(false);

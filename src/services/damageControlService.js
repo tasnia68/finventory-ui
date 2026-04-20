@@ -1,4 +1,5 @@
 import { request } from './api';
+import { getAuthorizationHeaders } from './authStorage';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
@@ -19,13 +20,7 @@ const buildQuery = (params = {}) => {
 };
 
 const authHeaders = () => {
-    const headers = {};
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    return headers;
+    return getAuthorizationHeaders();
 };
 
 const parseFilename = (contentDisposition, fallbackFilename) => {

@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
+import {
+    clearAuthSession,
+    getAccessToken,
+    getTenantId,
+    persistAuthSession,
+    persistRememberedLogin,
+    syncAuthSessionMetadata,
+} from '../services/authStorage';
 
 const AuthContext = createContext(null);
 const TENANT_CONTEXT_CHANGED_EVENT = 'tenant-context-changed';
@@ -18,26 +26,21 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const initAuth = async () => {
-            const token = localStorage.getItem('accessToken');
+            const token = getAccessToken();
             if (token) {
                 try {
                     // Verify token/get profile
                     const userProfile = await userService.getProfile();
-                    if (userProfile?.tenantId) {
-                        localStorage.setItem('tenantId', userProfile.tenantId);
-                    }
-                    if (userProfile?.tenantSubdomain) {
-                        localStorage.setItem('tenantSubdomain', userProfile.tenantSubdomain);
-                    }
+                    syncAuthSessionMetadata({
+                        tenantId: userProfile?.tenantId || '',
+                        tenantSubdomain: userProfile?.tenantSubdomain || '',
+                    });
                     setUser(userProfile);
                     setIsAuthenticated(true);
-                    notifyTenantContextChanged(userProfile?.tenantId || localStorage.getItem('tenantId'));
+                    notifyTenantContextChanged(userProfile?.tenantId || getTenantId());
                 } catch (error) {
                     console.error('Failed to restore session:', error);
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    localStorage.removeItem('tenantId');
-                    localStorage.removeItem('tenantSubdomain');
+                    clearAuthSession();
                     notifyTenantContextChanged(null);
                 }
             }
@@ -47,25 +50,21 @@ export const AuthProvider = ({ children }) => {
         initAuth();
     }, []);
 
-    const login = async (workspace, email, password) => {
+    const login = async (workspace, email, password, rememberMe = false) => {
         try {
             const response = await authService.login(workspace, email, password);
-            localStorage.setItem('accessToken', response.accessToken);
-            if (response.refreshToken) {
-                localStorage.setItem('refreshToken', response.refreshToken);
-            }
-            if (response.tenantId) {
-                localStorage.setItem('tenantId', response.tenantId);
-            }
-            if (response.tenantSubdomain) {
-                localStorage.setItem('tenantSubdomain', response.tenantSubdomain);
-            }
+            persistAuthSession(response, { rememberMe });
+            persistRememberedLogin({ workspace, email, rememberMe });
 
             // Fetch user profile immediately after login
             const userProfile = await userService.getProfile();
+            syncAuthSessionMetadata({
+                tenantId: userProfile?.tenantId || response?.tenantId || '',
+                tenantSubdomain: userProfile?.tenantSubdomain || response?.tenantSubdomain || '',
+            });
             setUser(userProfile);
             setIsAuthenticated(true);
-            notifyTenantContextChanged(response.tenantId || localStorage.getItem('tenantId'));
+            notifyTenantContextChanged(response.tenantId || userProfile?.tenantId || getTenantId());
             return userProfile;
         } catch (error) {
             throw error;
@@ -73,10 +72,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('tenantId');
-        localStorage.removeItem('tenantSubdomain');
+        clearAuthSession();
         notifyTenantContextChanged(null);
         setUser(null);
         setIsAuthenticated(false);
