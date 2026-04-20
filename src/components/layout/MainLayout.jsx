@@ -5,14 +5,47 @@ import Header from './Header';
 import AppLoadingScreen from '../common/AppLoadingScreen';
 import { useAuth } from '../../contexts/AuthContext';
 
+const DESKTOP_BREAKPOINT_QUERY = '(min-width: 1024px)';
+
 const MainLayout = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia(DESKTOP_BREAKPOINT_QUERY).matches : true
+  ));
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
 
-  const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(DESKTOP_BREAKPOINT_QUERY);
+    const handleChange = (event) => {
+      setIsDesktop(event.matches);
+      if (event.matches) {
+        setMobileSidebarOpen(false);
+      }
+    };
+
+    setIsDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    if (isDesktop) {
+      setDesktopSidebarCollapsed((prev) => !prev);
+      return;
+    }
+
+    setMobileSidebarOpen((prev) => !prev);
+  }, [isDesktop]);
+
+  const closeSidebar = useCallback(() => setMobileSidebarOpen(false), []);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -32,7 +65,15 @@ const MainLayout = ({ children }) => {
   if (!isAuthenticated) return null;
 
   return (
-    <SidebarContext.Provider value={{ isOpen: sidebarOpen, toggle: toggleSidebar, close: closeSidebar }}>
+    <SidebarContext.Provider
+      value={{
+        isDesktop,
+        isOpen: mobileSidebarOpen,
+        isCollapsed: desktopSidebarCollapsed,
+        toggle: toggleSidebar,
+        close: closeSidebar,
+      }}
+    >
       <div className="flex h-screen w-full bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden">
         <Sidebar />
         <main className="flex-1 flex flex-col h-full overflow-hidden w-full">

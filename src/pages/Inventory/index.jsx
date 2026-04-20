@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getStockLevels, getStockMovements, adjustStock } from '../../services/stockService';
 import { getWarehouses } from '../../services/warehouseService';
 import { searchProductVariants } from '../../services/productService';
+import { getBatches } from '../../services/batchService';
 import { Alert, Badge, Button, Card, DataTable, InfoTip, Input, MetricCard, Modal, Select } from '../../components/common';
 
 const ADJUSTMENT_TYPES = [
@@ -43,6 +44,8 @@ const Inventory = () => {
     const [variantLoading, setVariantLoading] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [filters, setFilters] = useState({ warehouseId: '', productVariantId: '' });
+    const [batches, setBatches] = useState([]);
+    const [batchesLoading, setBatchesLoading] = useState(false);
     const [adjustment, setAdjustment] = useState({
         productVariantId: '',
         warehouseId: '',
@@ -51,6 +54,7 @@ const Inventory = () => {
         type: 'IN',
         reason: '',
         referenceId: '',
+        batchId: '',
     });
 
     useEffect(() => {
@@ -144,17 +148,30 @@ const Inventory = () => {
             type: 'IN',
             reason: '',
             referenceId: '',
+            batchId: '',
         });
         setVariantQuery('');
         setVariantResults([]);
         setSelectedVariant(null);
+        setBatches([]);
     };
 
-    const handleSelectVariant = (variant) => {
+    const handleSelectVariant = async (variant) => {
         setSelectedVariant(variant);
-        setAdjustment((current) => ({ ...current, productVariantId: variant.id }));
+        setAdjustment((current) => ({ ...current, productVariantId: variant.id, batchId: '' }));
         setVariantQuery(variant.sku || variant.id);
         setVariantResults([]);
+        setBatches([]);
+        try {
+            setBatchesLoading(true);
+            const data = await getBatches({ productVariantId: variant.id });
+            const list = Array.isArray(data) ? data : (data?.content || data?.data || []);
+            setBatches(list);
+        } catch {
+            setBatches([]);
+        } finally {
+            setBatchesLoading(false);
+        }
     };
 
     const handleAdjustSubmit = async (event) => {
@@ -189,6 +206,7 @@ const Inventory = () => {
                 ...adjustment,
                 quantity,
                 unitCost,
+                batchId: adjustment.batchId || null,
                 reason: adjustment.reason.trim() || null,
                 referenceId: adjustment.referenceId.trim() || null,
             });
@@ -379,6 +397,19 @@ const Inventory = () => {
                         <Select label="Movement type" value={adjustment.type} onChange={(event) => setAdjustment((current) => ({ ...current, type: event.target.value }))} options={ADJUSTMENT_TYPES} required />
                         <Input label="Quantity" type="number" value={adjustment.quantity} onChange={(event) => setAdjustment((current) => ({ ...current, quantity: event.target.value }))} placeholder="Use negative only for net adjustments" required />
                         <Input label="Unit cost" type="number" min="0" value={adjustment.unitCost} onChange={(event) => setAdjustment((current) => ({ ...current, unitCost: event.target.value }))} placeholder="Optional unless costing is known" />
+                        {batches.length > 0 ? (
+                            <Select
+                                label="Batch / Lot"
+                                value={adjustment.batchId}
+                                onChange={(event) => setAdjustment((current) => ({ ...current, batchId: event.target.value }))}
+                                options={batches.map((b) => ({ value: b.id, label: `${b.batchNumber}${b.expiryDate ? ` — expires ${b.expiryDate}` : ''}` }))}
+                                placeholder="Select batch (optional)"
+                            />
+                        ) : batchesLoading ? (
+                            <div className="flex items-end"><span className="text-xs text-slate-500 dark:text-slate-400">Loading batches…</span></div>
+                        ) : selectedVariant ? (
+                            <div className="flex items-end"><span className="text-xs text-slate-500 dark:text-slate-400">No batches for this variant</span></div>
+                        ) : null}
                         <Input label="Reason" value={adjustment.reason} onChange={(event) => setAdjustment((current) => ({ ...current, reason: event.target.value }))} placeholder="Cycle count variance, receipt, damage, etc." />
                         <Input label="Reference" value={adjustment.referenceId} onChange={(event) => setAdjustment((current) => ({ ...current, referenceId: event.target.value }))} placeholder="PO, count sheet, incident number" />
                     </div>
