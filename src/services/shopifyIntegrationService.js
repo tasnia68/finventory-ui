@@ -13,6 +13,10 @@ export const testShopifyConnection = () => unwrap(request('/integrations/shopify
   method: 'POST',
 }));
 
+export const startShopifyOAuth = () => unwrap(request('/integrations/shopify/oauth/start', {
+  method: 'POST',
+}));
+
 export const syncShopifyProducts = () => unwrap(request('/integrations/shopify/sync/products', {
   method: 'POST',
 }));

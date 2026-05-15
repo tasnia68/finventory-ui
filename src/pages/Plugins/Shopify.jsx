@@ -3,6 +3,7 @@ import { Alert, Button, Card, Input } from '../../components/common';
 import {
   getShopifyConnection,
   saveShopifyConnection,
+  startShopifyOAuth,
   syncShopifyOrders,
   syncShopifyProducts,
   testShopifyConnection,
@@ -27,6 +28,8 @@ const ShopifyPluginPage = () => {
   const [alert, setAlert] = useState(null);
   const [form, setForm] = useState({
     storeDomain: '',
+    clientId: '',
+    clientSecret: '',
     adminApiToken: '',
     webhookSecret: '',
     enabled: false,
@@ -49,6 +52,8 @@ const ShopifyPluginPage = () => {
         setConnection(next);
         setForm({
           storeDomain: next.storeDomain || '',
+          clientId: '',
+          clientSecret: '',
           adminApiToken: '',
           webhookSecret: '',
           enabled: Boolean(next.enabled),
@@ -69,6 +74,8 @@ const ShopifyPluginPage = () => {
     setForm((current) => ({
       ...current,
       storeDomain: next.storeDomain || current.storeDomain || '',
+      clientId: '',
+      clientSecret: '',
       adminApiToken: '',
       webhookSecret: '',
       enabled: Boolean(next.enabled),
@@ -126,6 +133,26 @@ const ShopifyPluginPage = () => {
     }
   };
 
+  const handleInstall = async () => {
+    setSaving(true);
+    setAlert(null);
+    try {
+      const saved = await saveShopifyConnection(form);
+      applyConnection(saved);
+      const next = await startShopifyOAuth();
+      applyConnection(next);
+      if (next.installUrl) {
+        window.location.assign(next.installUrl);
+        return;
+      }
+      setAlert({ type: 'error', message: 'Shopify install URL could not be generated. Check store domain, client ID, and client secret.' });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.message || 'Failed to start Shopify install.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleProductSync = async () => {
     setSyncing(true);
     setAlert(null);
@@ -161,6 +188,7 @@ const ShopifyPluginPage = () => {
   };
 
   const health = connection?.health || 'NOT_CONFIGURED';
+  const canInstall = Boolean(form.storeDomain) && (Boolean(form.clientId) || Boolean(connection?.clientIdConfigured)) && (Boolean(form.clientSecret) || Boolean(connection?.clientSecretConfigured));
 
   if (loading) {
     return (
@@ -217,10 +245,22 @@ const ShopifyPluginPage = () => {
                 placeholder="my-store.myshopify.com"
               />
               <Input
+                label="Client ID"
+                value={form.clientId}
+                onChange={(event) => setForm((current) => ({ ...current, clientId: event.target.value }))}
+                placeholder={connection?.clientIdConfigured ? 'Saved - enter only to replace' : 'Shopify app client ID'}
+              />
+              <Input
+                label="Client secret"
+                value={form.clientSecret}
+                onChange={(event) => setForm((current) => ({ ...current, clientSecret: event.target.value }))}
+                placeholder={connection?.clientSecretConfigured ? 'Saved - enter only to replace' : 'Shopify app client secret'}
+              />
+              <Input
                 label="Admin API token"
                 value={form.adminApiToken}
                 onChange={(event) => setForm((current) => ({ ...current, adminApiToken: event.target.value }))}
-                placeholder={connection?.adminApiTokenConfigured ? 'Saved - enter only to replace' : 'shpat_...'}
+                placeholder={connection?.adminApiTokenConfigured ? 'OAuth token saved - enter only to replace manually' : 'Generated after Shopify install'}
               />
               <Input
                 label="Webhook secret"
@@ -252,6 +292,7 @@ const ShopifyPluginPage = () => {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button icon="save" onClick={handleSave} loading={saving}>Save config</Button>
+              <Button variant="secondary" icon="open_in_new" onClick={handleInstall} loading={saving} disabled={!canInstall}>Install Shopify app</Button>
               <Button variant="secondary" icon="published_with_changes" onClick={handleTest} loading={testing}>Test connection</Button>
               <Button variant="secondary" icon={form.enabled ? 'toggle_off' : 'toggle_on'} onClick={handleToggle} loading={saving}>
                 {form.enabled ? 'Disable plugin' : 'Enable plugin'}
@@ -264,6 +305,8 @@ const ShopifyPluginPage = () => {
               {[
                 ['Last sync', connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : 'Never'],
                 ['Last webhook', connection?.lastWebhookAt ? new Date(connection.lastWebhookAt).toLocaleString() : 'Never'],
+                ['OAuth app', connection?.clientIdConfigured && connection?.clientSecretConfigured ? 'Configured' : 'Missing'],
+                ['Access token', connection?.adminApiTokenConfigured ? 'Installed' : 'Not installed'],
                 ['Catalog sync', form.syncCatalog ? 'Enabled' : 'Disabled'],
                 ['Order sync', form.syncOrders ? 'Enabled' : 'Disabled'],
                 ['Inventory push', form.syncInventory ? 'Enabled' : 'Disabled'],
@@ -281,9 +324,10 @@ const ShopifyPluginPage = () => {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
             <div className="space-y-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {[
-                'Create or open a Shopify custom app with Admin API access.',
+                'Create the Shopify app in Shopify Dev Dashboard or Shopify CLI and copy its client ID and client secret.',
+                'Set this callback URL in Shopify app configuration, then save the app settings in Shopify.',
                 'Grant Admin API scopes: read_products and read_orders. Add read_inventory, write_inventory, and read_locations only when inventory push is enabled.',
-                'Copy the Admin API access token and save it above. Keep it server-side; the form clears it after save.',
+                'Enter store domain, client ID, and client secret above, then click Install Shopify app.',
                 'Copy the webhook signing secret and save it above.',
                 'Create an orders/create webhook in Shopify using the callback URL shown here.',
                 'Run Test connection, enable the plugin, then run Sync products.',
@@ -295,7 +339,13 @@ const ShopifyPluginPage = () => {
               ))}
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white dark:border-slate-700">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Webhook URL</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">OAuth callback URL</div>
+              <div className="mt-3 break-all rounded-xl bg-white/10 p-3 font-mono text-xs leading-5 text-slate-100">
+                {connection?.oauthCallbackUrl || '/api/v1/integrations/shopify/oauth/callback'}
+              </div>
+              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Admin API scopes</div>
+              <div className="mt-3 rounded-xl bg-white/10 p-3 font-mono text-xs text-slate-100">{connection?.oauthScopes || 'read_products,read_orders'}</div>
+              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Webhook URL</div>
               <div className="mt-3 break-all rounded-xl bg-white/10 p-3 font-mono text-xs leading-5 text-slate-100">
                 {connection?.webhookUrl || '/api/webhooks/shopify/{tenantId}/orders'}
               </div>
