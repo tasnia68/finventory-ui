@@ -23,3 +23,17 @@ export const getSalesOrder = (id) => unwrap(request(`/sales-orders/${id}`));
 export const createSalesOrder = (payload) => unwrap(request('/sales-orders', { method: 'POST', body: payload }));
 export const updateSalesOrder = (id, payload) => unwrap(request(`/sales-orders/${id}`, { method: 'PUT', body: payload }));
 export const updateSalesOrderStatus = (id, status) => unwrap(request(`/sales-orders/${id}/status?status=${encodeURIComponent(status)}`, { method: 'PATCH' }));
+
+// Granular lifecycle actions
+export const getAllowedTransitions = (id) => unwrap(request(`/sales-orders/${id}/allowed-transitions`));
+export const holdOrder = (id, reason) => unwrap(request(`/sales-orders/${id}/hold`, { method: 'POST', body: { reason } }));
+export const approveOrder = (id) => unwrap(request(`/sales-orders/${id}/approve`, { method: 'POST' }));
+export const confirmOrder = (id, { courierProfileId, deliveryZone } = {}) =>
+    unwrap(request(`/sales-orders/${id}/confirm`, { method: 'POST', body: { courierProfileId, deliveryZone } }));
+export const packComplete = (id) => unwrap(request(`/sales-orders/${id}/pack-complete`, { method: 'POST' }));
+export const shipOrder = (id) => unwrap(request(`/sales-orders/${id}/ship`, { method: 'POST' }));
+export const deliverOrder = (id) => unwrap(request(`/sales-orders/${id}/deliver`, { method: 'POST' }));
+export const partialDeliver = (id, lines) => unwrap(request(`/sales-orders/${id}/partial-deliver`, { method: 'POST', body: lines }));
+export const returnOrder = (id) => unwrap(request(`/sales-orders/${id}/return`, { method: 'POST' }));
+export const cancelOrder = (id) => unwrap(request(`/sales-orders/${id}/cancel`, { method: 'POST' }));
+export const updateSalesOrderItems = (id, items) => unwrap(request(`/sales-orders/${id}/items`, { method: 'PATCH', body: items }));

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Badge, Card, DataTable } from '../../components/common';
 import { getBalanceSheet, getProfitAndLoss, getTrialBalance } from '../../services/accountingService';
 import { formatNumber, toList } from './shared';
+import { AccountingPage } from './AccountingShell';
 
 const trialBalanceColumns = [
   { key: 'accountCode', header: 'Code' },
@@ -49,8 +50,7 @@ const Statements = () => {
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+    <AccountingPage title="Statements" subtitle="Trial balance, profit and loss, and balance sheet reports.">
         {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
         <Card padding="none" className="overflow-hidden" title="Trial Balance" subtitle="Posted-account balances grouped by chart account">
@@ -66,8 +66,7 @@ const Statements = () => {
             <DataTable columns={statementColumns} data={balanceSheet} loading={loading} emptyMessage="No balance sheet balances are available yet." />
           </Card>
         </div>
-      </div>
-    </div>
+    </AccountingPage>
   );
 };
 

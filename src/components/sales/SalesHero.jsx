@@ -1,18 +1,24 @@
 import React from 'react';
 
-const SalesHero = ({ eyebrow, title, description, actions, accent = 'from-rose-500/15 via-transparent to-sky-500/10' }) => {
+// Compact, professional ERP-style page header.
+// Used to be a gradient marketing-hero block; replaced with a tight one-row
+// layout (eyebrow + title + actions inline) so pages dive into their data.
+const SalesHero = ({ eyebrow, title, description, actions }) => {
     return (
-        <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-            <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-r ${accent}`} />
-            <div className="relative flex flex-col gap-6">
-                <div className="max-w-3xl space-y-3">
-                    <span className="inline-flex rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white dark:bg-white dark:text-slate-900">
-                        {eyebrow}
-                    </span>
-                    <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white xl:text-[2rem]">{title}</h1>
-                    <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{description}</p>
+        <div className="border-b border-slate-200 bg-white pb-4 dark:border-slate-700 dark:bg-transparent">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
+                    {eyebrow ? (
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            {eyebrow}
+                        </div>
+                    ) : null}
+                    <h1 className="mt-1 text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">{title}</h1>
+                    {description ? (
+                        <p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{description}</p>
+                    ) : null}
                 </div>
-                {actions ? <div className="flex w-full flex-col gap-3 xl:flex-row xl:flex-wrap xl:items-center">{actions}</div> : null}
+                {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
             </div>
         </div>
     );

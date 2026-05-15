@@ -82,8 +82,12 @@ export const getSalesOrderStatusVariant = (status) => {
         case 'APPROVED':
             return 'info';
         case 'BACKORDERED':
-        case 'PENDING_APPROVAL':
+        case 'PENDING':
+        case 'HOLD':
+        case 'PACKAGING':
         case 'PARTIALLY_SHIPPED':
+        case 'PARTIALLY_DELIVERED':
+        case 'PARTIALLY_CANCELLED':
             return 'warning';
         case 'SHIPPED':
         case 'DELIVERED':
@@ -140,6 +144,19 @@ export const getCourierDispatchVariant = (status) => {
             return 'danger';
         case 'PICKUP_PENDING':
             return 'warning';
+        default:
+            return 'default';
+    }
+};
+
+export const getDeliveryReviewVariant = (status) => {
+    switch (status) {
+        case 'APPROVED':
+            return 'success';
+        case 'PENDING':
+            return 'warning';
+        case 'DISPUTED':
+            return 'danger';
         default:
             return 'default';
     }

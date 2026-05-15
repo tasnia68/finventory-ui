@@ -29,6 +29,7 @@ const Replenishment = lazy(() => import('./pages/Replenishment'));
 const DamageControl = lazy(() => import('./pages/DamageControl'));
 const PurchaseRequisitions = lazy(() => import('./pages/PurchaseRequisitions'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
+const Procurement = lazy(() => import('./pages/Procurement'));
 const PurchaseOrders = lazy(() => import('./pages/PurchaseOrders'));
 const GoodsReceipts = lazy(() => import('./pages/GoodsReceipts'));
 const CycleCounts = lazy(() => import('./pages/CycleCounts'));
@@ -39,6 +40,9 @@ const Transactions = lazy(() => import('./pages/Transactions'));
 const Valuation = lazy(() => import('./pages/Valuation'));
 const Customers = lazy(() => import('./pages/Customers'));
 const SalesOrders = lazy(() => import('./pages/SalesOrders'));
+const Orders = lazy(() => import('./pages/Orders'));
+const Couriers = lazy(() => import('./pages/Couriers'));
+const OrderInbox = lazy(() => import('./pages/OrderInbox'));
 const RefundsExchanges = lazy(() => import('./pages/RefundsExchanges'));
 const PromotionsPricing = lazy(() => import('./pages/PromotionsPricing'));
 const ControlTower = lazy(() => import('./pages/ControlTower'));
@@ -69,6 +73,7 @@ const StorefrontMenus = lazy(() => import('./pages/Storefront/Menus'));
 const StorefrontAnalytics = lazy(() => import('./pages/Storefront/Analytics'));
 const StorefrontPagesManager = lazy(() => import('./pages/Storefront/PagesManager'));
 const SuperAdminTenants = lazy(() => import('./pages/SuperAdmin/Tenants'));
+const SuperAdminVirtualTryOn = lazy(() => import('./pages/SuperAdmin/VirtualTryOn'));
 const PluginsOverview = lazy(() => import('./pages/Plugins'));
 const ShopifyPlugin = lazy(() => import('./pages/Plugins/Shopify'));
 const PluginLogs = lazy(() => import('./pages/Plugins/Logs'));
@@ -187,7 +192,7 @@ function App() {
           } />
           <Route path="/orders" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
-              <Navigate to="/sales-orders" replace />
+              <Orders />
             </ProtectedRoute>
           } />
           <Route path="/analytics" element={
@@ -348,6 +353,11 @@ function App() {
               <SuperAdminTenants />
             </ProtectedRoute>
           } />
+          <Route path="/super-admin/virtual-try-on" element={
+            <ProtectedRoute superAdminOnly>
+              <SuperAdminVirtualTryOn />
+            </ProtectedRoute>
+          } />
           <Route path="/plugins/shopify" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <ShopifyPlugin />
@@ -495,6 +505,11 @@ function App() {
           } />
 
           {/* Procurement */}
+          <Route path="/procurement" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}>
+              <Procurement />
+            </ProtectedRoute>
+          } />
           <Route path="/suppliers" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_PROCUREMENT}>
               <Suppliers />
@@ -528,6 +543,16 @@ function App() {
               <StorefrontModuleRoute>
                 <SalesOrders mode="storefront" />
               </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/sales-orders/inbox" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <OrderInbox />
+            </ProtectedRoute>
+          } />
+          <Route path="/couriers" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_SALES}>
+              <Couriers />
             </ProtectedRoute>
           } />
           <Route path="/control-tower" element={

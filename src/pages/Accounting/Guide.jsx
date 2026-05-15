@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Card, Button } from '../../components/common';
+import { Card } from '../../components/common';
+import { AccountingPage } from './AccountingShell';
 
 const Section = ({ title, children }) => (
     <Card title={title} className="rounded-[24px]">
@@ -40,27 +40,11 @@ const Guide = () => {
     ];
 
     return (
-        <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
-            <div className="mx-auto flex max-w-7xl flex-col gap-8">
-                <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                    <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_42%),radial-gradient(circle_at_80%_20%,_rgba(249,115,22,0.14),_transparent_30%)]" />
-                    <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-                        <div className="max-w-4xl space-y-4">
-                            <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white dark:bg-white dark:text-slate-900">Accounting Guide</span>
-                            <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">What the accounting module does and how to use it.</h1>
-                            <p className="max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                                This page is the operating manual for the native accounting module. It explains what is available today, how the module fits with inventory and sales activity, and how a finance or operations user should work through the available flows.
-                            </p>
-                        </div>
-                        <div className="flex items-start">
-                            <Link to="/accounting">
-                                <Button icon="arrow_back">Open Accounting Console</Button>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <AccountingPage
+            title="Guide"
+            subtitle="Operating manual: what the accounting module does, what posts automatically, and how finance should work through it."
+        >
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <Section title="Module Overview">
                         <p>
                             The accounting module is the finance layer of the system. It receives operational activity from inventory, POS, supplier returns, refunds, and stock adjustments, then turns that activity into accounting records that finance users can review and manage.
@@ -160,8 +144,7 @@ const Guide = () => {
                         ))}
                     </ul>
                 </Section>
-            </div>
-        </div>
+        </AccountingPage>
     );
 };
 

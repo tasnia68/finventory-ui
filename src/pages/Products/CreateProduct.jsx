@@ -36,7 +36,7 @@ const CreateProduct = () => {
     categoryId: '',
     uomId: '',
     isActive: true,
-    publishedToStorefront: false,
+    publishedToStorefront: true,
     storefrontSlug: '',
     storefrontTitle: '',
     storefrontDescription: '',

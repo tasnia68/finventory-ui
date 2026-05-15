@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { generatePurchaseRequisition, getPurchaseRequisitions } from '../../services/purchaseRequisitionService';
+import { generatePurchaseRequisition, getPurchaseRequisitions, convertRequisitionToPurchaseOrder } from '../../services/purchaseRequisitionService';
 import { getWarehouses } from '../../services/warehouseService';
+import { getSuppliers } from '../../services/supplierService';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -29,6 +30,7 @@ const formatDate = (value) => {
 const PurchaseRequisitions = () => {
     const [requisitions, setRequisitions] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [alert, setAlert] = useState(null);
     const [showModal, setShowModal] = useState(false);
@@ -36,10 +38,14 @@ const PurchaseRequisitions = () => {
         warehouseId: '',
         notes: '',
     });
+    const [converting, setConverting] = useState(null); // { id, reference }
+    const [convertForm, setConvertForm] = useState({ supplierId: '', expectedDeliveryDate: '' });
+    const [convertBusy, setConvertBusy] = useState(false);
 
     useEffect(() => {
         fetchRequisitions();
         fetchWarehouses();
+        getSuppliers().then((d) => setSuppliers(toList(d))).catch(() => {});
     }, []);
 
     const fetchRequisitions = async () => {
@@ -89,6 +95,33 @@ const PurchaseRequisitions = () => {
         label: warehouse.name,
     }));
 
+    const openConvert = (row) => {
+        setConverting({ id: row.id, reference: row.reference });
+        setConvertForm({ supplierId: '', expectedDeliveryDate: '' });
+    };
+
+    const submitConvert = async () => {
+        if (!convertForm.supplierId) {
+            showAlert('error', 'Pick a supplier');
+            return;
+        }
+        try {
+            setConvertBusy(true);
+            const result = await convertRequisitionToPurchaseOrder(converting.id, {
+                supplierId: convertForm.supplierId,
+                expectedDeliveryDate: convertForm.expectedDeliveryDate || null,
+            });
+            const poId = result?.purchaseOrderId || result?.data?.purchaseOrderId;
+            showAlert('success', `PO created${poId ? ` (id ${String(poId).slice(0, 8)}…)` : ''}. Edit unit prices, then approve.`);
+            setConverting(null);
+            fetchRequisitions();
+        } catch (error) {
+            showAlert('error', error.message || 'Failed to convert requisition');
+        } finally {
+            setConvertBusy(false);
+        }
+    };
+
     const columns = [
         {
             key: 'reference',
@@ -104,10 +137,19 @@ const PurchaseRequisitions = () => {
             key: 'status',
             header: 'Status',
             render: (value) => (
-                <Badge variant={value === 'DRAFT' ? 'warning' : 'default'}>{value || 'DRAFT'}</Badge>
+                <Badge variant={value === 'DRAFT' ? 'warning' : value === 'APPROVED' ? 'success' : 'default'}>{value || 'DRAFT'}</Badge>
             ),
         },
         { key: 'requestedAt', header: 'Requested', render: (value) => formatDate(value) },
+        {
+            key: 'actions',
+            header: '',
+            render: (_, row) => row.status === 'APPROVED' && !row.convertedPurchaseOrderId ? (
+                <Button size="sm" variant="secondary" onClick={() => openConvert(row)}>Convert to PO</Button>
+            ) : row.convertedPurchaseOrderId ? (
+                <span className="text-xs text-slate-500">Converted</span>
+            ) : null,
+        },
     ];
 
     return (
@@ -168,6 +210,33 @@ const PurchaseRequisitions = () => {
                     </div>
                 </form>
             </Modal>
+
+            {converting ? (
+                <Modal isOpen onClose={() => setConverting(null)} title={`Convert ${converting.reference} to PO`} size="md">
+                    <div className="space-y-4">
+                        <p className="text-sm text-slate-500">
+                            A draft PO will be created with the requisition's lines. Unit prices default to 0 — fill them in on the PO before approval.
+                        </p>
+                        <Select
+                            label="Supplier"
+                            value={convertForm.supplierId}
+                            onChange={(e) => setConvertForm((c) => ({ ...c, supplierId: e.target.value }))}
+                            options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+                            required
+                        />
+                        <Input
+                            label="Expected delivery"
+                            type="date"
+                            value={convertForm.expectedDeliveryDate}
+                            onChange={(e) => setConvertForm((c) => ({ ...c, expectedDeliveryDate: e.target.value }))}
+                        />
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button variant="ghost" onClick={() => setConverting(null)} disabled={convertBusy}>Cancel</Button>
+                            <Button onClick={submitConvert} disabled={convertBusy}>{convertBusy ? 'Converting…' : 'Create PO'}</Button>
+                        </div>
+                    </div>
+                </Modal>
+            ) : null}
         </div>
     );
 };

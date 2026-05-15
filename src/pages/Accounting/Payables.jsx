@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, DataTable, Input } from '../../components/common';
+import { AccountingPage } from './AccountingShell';
 import {
   createAccountsPayableInvoice,
   getAccountsPayableAging,
@@ -39,6 +40,7 @@ const Payables = () => {
     currency: 'USD',
     totalAmount: '',
     notes: '',
+    force: false,
   });
 
   const loadPayables = async () => {
@@ -90,6 +92,7 @@ const Payables = () => {
         currency: apForm.currency,
         totalAmount: apForm.totalAmount === '' ? null : Number(apForm.totalAmount),
         notes: apForm.notes || null,
+        force: apForm.force,
       });
       setApForm({
         supplierId: '',
@@ -100,6 +103,7 @@ const Payables = () => {
         currency: 'USD',
         totalAmount: '',
         notes: '',
+        force: false,
       });
       setAlert({ type: 'success', message: 'Accounts payable invoice created.' });
       await loadPayables();
@@ -168,8 +172,7 @@ const Payables = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+    <AccountingPage title="Payables" subtitle="Supplier invoices, payments, and AP aging.">
         {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[28rem_minmax(0,1fr)]">
@@ -199,6 +202,17 @@ const Payables = () => {
               </div>
               <Input type="number" step="0.000001" label="Total amount" value={apForm.totalAmount} onChange={(event) => setApForm((current) => ({ ...current, totalAmount: event.target.value }))} placeholder="0.00" />
               <Input label="Notes" value={apForm.notes} onChange={(event) => setApForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional AP notes" />
+              <label className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-100">
+                <input
+                  type="checkbox"
+                  checked={apForm.force}
+                  onChange={(event) => setApForm((current) => ({ ...current, force: event.target.checked }))}
+                  className="mt-0.5"
+                />
+                <span>
+                  <strong>Allow price variance</strong> — bypass three-way match against PO + GRN. The override is logged in the invoice notes.
+                </span>
+              </label>
               <Button className="w-full" icon="request_quote" loading={submitting} onClick={handleCreateApInvoice}>Create AP invoice</Button>
             </div>
           </Card>
@@ -213,8 +227,7 @@ const Payables = () => {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+    </AccountingPage>
   );
 };
 

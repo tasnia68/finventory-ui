@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, DataTable, Input } from '../../components/common';
+import { AccountingPage } from './AccountingShell';
 import {
   completeTreasuryReconciliation,
   createTreasuryAccount,
@@ -169,8 +170,7 @@ const Treasury = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+    <AccountingPage title="Treasury" subtitle="Cash and bank accounts plus reconciliation runs.">
         {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -222,8 +222,7 @@ const Treasury = () => {
             <DataTable columns={treasuryReconciliationColumns} data={treasuryReconciliations} loading={loading} emptyMessage="No treasury reconciliations created yet." />
           </Card>
         </div>
-      </div>
-    </div>
+    </AccountingPage>
   );
 };
 

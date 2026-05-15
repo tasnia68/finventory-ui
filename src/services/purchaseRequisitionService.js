@@ -34,3 +34,6 @@ export const getPurchaseRequisitions = (params = {}) => {
 export const getPurchaseRequisitionsByWarehouse = (warehouseId) => {
     return unwrap(request(`/purchase-requisitions/by-warehouse?warehouseId=${warehouseId}`));
 };
+
+export const convertRequisitionToPurchaseOrder = (id, payload) =>
+    unwrap(request(`/purchase-requisitions/${id}/convert-to-po`, { method: 'POST', body: payload }));

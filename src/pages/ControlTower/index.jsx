@@ -26,9 +26,11 @@ const TAB_OPTIONS = [
 ];
 
 const ORDER_STAGE_CONFIG = [
-    { key: 'PENDING_APPROVAL', label: 'Pending Approval' },
+    { key: 'PENDING', label: 'Pending' },
+    { key: 'HOLD', label: 'Hold' },
     { key: 'APPROVED', label: 'Approved' },
     { key: 'CONFIRMED', label: 'Confirmed' },
+    { key: 'PACKAGING', label: 'Packaging' },
     { key: 'BACKORDERED', label: 'Backordered' },
     { key: 'PARTIALLY_SHIPPED', label: 'Partially Shipped' },
     { key: 'SHIPPED', label: 'Shipped' },
@@ -205,7 +207,7 @@ const ControlTower = () => {
     }, [goodsReceipts, filters]);
 
     const outboundSummary = useMemo(() => ({
-        approvalQueue: filteredSalesOrders.filter((order) => ['PENDING_APPROVAL', 'APPROVED'].includes(order.status)).length,
+        approvalQueue: filteredSalesOrders.filter((order) => ['PENDING', 'HOLD', 'APPROVED'].includes(order.status)).length,
         backorders: filteredSalesOrders.filter((order) => order.status === 'BACKORDERED').length,
         awaitingDispatch: filteredShipments.filter((shipment) => ['UNASSIGNED', 'BOOKED', 'PICKUP_PENDING'].includes(shipment.courierDispatchStatus || 'UNASSIGNED')).length,
         inTransit: filteredShipments.filter((shipment) => ['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(shipment.courierDispatchStatus)).length,
@@ -255,7 +257,7 @@ const ControlTower = () => {
         const rows = [];
 
         filteredSalesOrders
-            .filter((order) => ['PENDING_APPROVAL', 'BACKORDERED'].includes(order.status))
+            .filter((order) => ['PENDING', 'HOLD', 'BACKORDERED'].includes(order.status))
             .forEach((order) => {
                 rows.push({
                     kind: order.status === 'BACKORDERED' ? 'Backorder' : 'Approval Queue',

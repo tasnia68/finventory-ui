@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Alert, Badge, Button, Card, Input, Select } from '../../components/common';
 import { getSettings } from '../../services/settingsService';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -49,13 +50,30 @@ const riskToVariant = (risk) => {
 
 const SettingsPage = () => {
     const { saveSettings } = useSettings();
+    const [searchParams] = useSearchParams();
+    const requestedSection = searchParams.get('section');
     const [values, setValues] = useState(buildDefaultState);
     const [initialValues, setInitialValues] = useState(buildDefaultState);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState('');
-    const [activeSection, setActiveSection] = useState(SETTINGS_SECTIONS[0]?.id || 'general');
+    const [activeSection, setActiveSection] = useState(
+        (requestedSection && SETTINGS_SECTIONS.some((s) => s.id === requestedSection))
+            ? requestedSection
+            : (SETTINGS_SECTIONS[0]?.id || 'general')
+    );
     const [alert, setAlert] = useState(null);
+
+    useEffect(() => {
+        if (requestedSection && SETTINGS_SECTIONS.some((s) => s.id === requestedSection)) {
+            setActiveSection(requestedSection);
+            // Wait a tick so the section list is rendered, then scroll.
+            setTimeout(() => {
+                const target = document.getElementById(`settings-section-${requestedSection}`);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+        }
+    }, [requestedSection]);
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -209,6 +227,18 @@ const SettingsPage = () => {
                     rows={4}
                     placeholder={setting.placeholder}
                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                />
+            );
+        }
+
+        if (setting.control === 'password') {
+            return (
+                <Input
+                    type="password"
+                    value={value}
+                    onChange={(event) => handleValueChange(setting.key, event.target.value)}
+                    placeholder={setting.placeholder}
+                    autoComplete="off"
                 />
             );
         }

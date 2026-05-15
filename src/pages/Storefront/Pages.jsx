@@ -10,8 +10,23 @@ import {
 import { getProductTemplates } from '../../services/productService';
 import { getCategoryTree } from '../../services/categoryService';
 import { getWarehouses } from '../../services/warehouseService';
+import { useAuth } from '../../contexts/AuthContext';
 
-const PREVIEW_URL = import.meta.env.VITE_STOREFRONT_PREVIEW_URL || 'http://localhost:5174/preview';
+const PREVIEW_URL_FALLBACK = import.meta.env.VITE_STOREFRONT_PREVIEW_URL || 'http://localhost:5174/preview';
+
+const computePreviewUrl = (tenantSubdomain) => {
+    if (typeof window === 'undefined') return PREVIEW_URL_FALLBACK;
+    const { protocol, hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return PREVIEW_URL_FALLBACK;
+    }
+    const baseHost = hostname.startsWith('www.') ? hostname.slice(4) : hostname;
+    const platformHost = baseHost.split('.').slice(-2).join('.');
+    if (tenantSubdomain && tenantSubdomain !== 'platform') {
+        return `${protocol}//${tenantSubdomain}.${platformHost}/preview`;
+    }
+    return `${protocol}//${platformHost}/preview`;
+};
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -92,6 +107,8 @@ const derivePreviewBlocks = (previewConfig, templateId, sectionId) => {
 };
 
 const Pages = () => {
+  const { user } = useAuth();
+  const previewUrl = React.useMemo(() => computePreviewUrl(user?.tenantSubdomain), [user?.tenantSubdomain]);
   const [searchParams, setSearchParams] = useSearchParams();
   const iframeRef = React.useRef(null);
   const saveTimeoutRef = React.useRef(null);
@@ -710,7 +727,7 @@ const Pages = () => {
             >
               <div className="rounded-[22px] border border-slate-200 bg-slate-100 p-3 dark:border-slate-700 dark:bg-slate-950">
                 <div className={`mx-auto overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${viewport === 'mobile' ? 'max-w-[390px]' : 'max-w-full'}`}>
-                  <iframe ref={iframeRef} title="Storefront preview" src={PREVIEW_URL} className={`w-full border-0 ${viewport === 'mobile' ? 'h-[844px]' : 'h-[920px]'}`} />
+                  <iframe ref={iframeRef} title="Storefront preview" src={previewUrl} className={`w-full border-0 ${viewport === 'mobile' ? 'h-[844px]' : 'h-[920px]'}`} />
                 </div>
               </div>
             </ShopifyCard>

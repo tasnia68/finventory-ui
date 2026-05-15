@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, DataTable, Input } from '../../components/common';
+import { AccountingPage } from './AccountingShell';
 import {
   createManualJournalEntry,
   getAccounts,
@@ -182,8 +183,7 @@ const Entries = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+    <AccountingPage title="Journal Entries" subtitle="Create manual entries, post pending events, and reverse posted entries.">
         {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[28rem_minmax(0,1fr)]">
@@ -244,8 +244,7 @@ const Entries = () => {
             <DataTable columns={entryColumns} data={entries} loading={loading} emptyMessage="No journal entries have been posted yet." />
           </Card>
         </div>
-      </div>
-    </div>
+    </AccountingPage>
   );
 };
 

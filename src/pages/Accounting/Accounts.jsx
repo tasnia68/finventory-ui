@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, DataTable, Input } from '../../components/common';
 import { createAccount, getAccounts } from '../../services/accountingService';
 import { toList } from './shared';
+import { AccountingPage } from './AccountingShell';
 
 const accountColumns = [
   { key: 'accountCode', header: 'Code', render: (value) => <span className="font-semibold text-slate-900 dark:text-white">{value}</span> },
@@ -54,8 +55,7 @@ const Accounts = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background-light p-8 dark:bg-background-dark">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+    <AccountingPage title="Chart of Accounts" subtitle="Native chart accounts used for journal posting and trial balance reporting.">
         {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
@@ -80,8 +80,7 @@ const Accounts = () => {
             <DataTable columns={accountColumns} data={accounts} loading={loading} emptyMessage="No chart of accounts records created yet." />
           </Card>
         </div>
-      </div>
-    </div>
+    </AccountingPage>
   );
 };
 

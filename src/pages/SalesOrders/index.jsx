@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Alert, Badge, Button, Card, DataTable, Input, MetricCard, Select } from '../../components/common';
 import SalesHero from '../../components/sales/SalesHero';
 import { getCustomers } from '../../services/customerService';
-import { getSalesOrders, createSalesOrder, updateSalesOrder, updateSalesOrderStatus } from '../../services/salesOrderService';
+import { getSalesOrders, createSalesOrder, updateSalesOrder, updateSalesOrderItems, updateSalesOrderStatus } from '../../services/salesOrderService';
 import { getWarehouses } from '../../services/warehouseService';
 import SalesOrderDetailModal from './SalesOrderDetailModal';
 import SalesOrderFormModal from './SalesOrderFormModal';
@@ -12,7 +12,7 @@ import { generateUUID } from '../../utils/uuid';
 import { SALES_ORDER_SOURCES, getSalesOrderSource, getSalesOrderSourceBadgeVariant, getSalesOrderSourceLabel } from '../../utils/salesOrderSource';
 import { useStorefrontModule } from '../../hooks/useStorefrontModule';
 
-const STATUS_OPTIONS = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'BACKORDERED', 'PARTIALLY_SHIPPED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED'].map((value) => ({ value, label: value.replaceAll('_', ' ') }));
+const STATUS_OPTIONS = ['DRAFT', 'PENDING', 'HOLD', 'APPROVED', 'CONFIRMED', 'PACKAGING', 'BACKORDERED', 'PARTIALLY_SHIPPED', 'SHIPPED', 'DELIVERED', 'PARTIALLY_DELIVERED', 'PARTIALLY_CANCELLED', 'CANCELLED', 'RETURNED'].map((value) => ({ value, label: value.replaceAll('_', ' ') }));
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((value) => ({ value, label: value }));
 const SOURCE_OPTIONS = [
     { value: SALES_ORDER_SOURCES.STOREFRONT, label: 'Storefront' },
@@ -21,6 +21,17 @@ const SOURCE_OPTIONS = [
 ];
 
 const createEmptyForm = () => ({ customerId: '', warehouseId: '', expectedDeliveryDate: '', priority: 'MEDIUM', currency: 'USD', notes: '', items: [{ id: generateUUID(), variant: null, quantity: 1, unitPrice: '' }] });
+
+// Status sets that mirror SalesOrderServiceImpl edit policies.
+const FULL_EDIT_STATUSES = new Set(['DRAFT', 'PENDING']);
+const ITEMS_LOCKED_STATUSES = new Set(['SHIPPED', 'DELIVERED', 'PARTIALLY_DELIVERED', 'PARTIALLY_CANCELLED', 'RETURNED', 'CANCELLED', 'DELIVERY_FAILED']);
+
+const canEditOrder = (order) => {
+    if (!order || !order.status) return false;
+    return FULL_EDIT_STATUSES.has(order.status) || !ITEMS_LOCKED_STATUSES.has(order.status);
+};
+
+const isItemsOnlyEdit = (order) => order && order.status && !FULL_EDIT_STATUSES.has(order.status) && !ITEMS_LOCKED_STATUSES.has(order.status);
 
 const SalesOrders = ({ mode = 'all' }) => {
     const [salesOrders, setSalesOrders] = useState([]);
@@ -85,7 +96,7 @@ const SalesOrders = ({ mode = 'all' }) => {
 
     const summary = useMemo(() => ({
         total: salesOrders.length,
-        open: salesOrders.filter((order) => ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'BACKORDERED', 'PARTIALLY_SHIPPED'].includes(order.status)).length,
+        open: salesOrders.filter((order) => ['DRAFT', 'PENDING', 'HOLD', 'APPROVED', 'CONFIRMED', 'PACKAGING', 'BACKORDERED', 'PARTIALLY_SHIPPED'].includes(order.status)).length,
         backlog: salesOrders.filter((order) => order.status === 'BACKORDERED').length,
         totalValue: salesOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
         storefront: salesOrders.filter((order) => getSalesOrderSource(order) === SALES_ORDER_SOURCES.STOREFRONT).length,
@@ -155,8 +166,13 @@ const SalesOrders = ({ mode = 'all' }) => {
                 })),
             };
             if (editingOrder) {
-                await updateSalesOrder(editingOrder.id, payload);
-                showAlert('success', 'Sales order updated');
+                if (isItemsOnlyEdit(editingOrder)) {
+                    await updateSalesOrderItems(editingOrder.id, payload.items);
+                    showAlert('success', `Items updated on ${editingOrder.soNumber}`);
+                } else {
+                    await updateSalesOrder(editingOrder.id, payload);
+                    showAlert('success', 'Sales order updated');
+                }
             } else {
                 await createSalesOrder(payload);
                 showAlert('success', 'Sales order created');
@@ -251,7 +267,7 @@ const SalesOrders = ({ mode = 'all' }) => {
                 </Card>
             </div>
 
-            <SalesOrderFormModal isOpen={showFormModal} onClose={() => setShowFormModal(false)} customers={customers.filter((customer) => customer.status === 'ACTIVE' && customer.isActive)} warehouses={warehouses} formData={formData} setFormData={setFormData} onSubmit={handleSubmit} loading={saving} isEditing={Boolean(editingOrder)} />
+            <SalesOrderFormModal isOpen={showFormModal} onClose={() => setShowFormModal(false)} customers={customers.filter((customer) => customer.status === 'ACTIVE' && customer.isActive)} warehouses={warehouses} formData={formData} setFormData={setFormData} onSubmit={handleSubmit} loading={saving} isEditing={Boolean(editingOrder)} itemsOnly={isItemsOnlyEdit(editingOrder)} editingStatus={editingOrder?.status} />
 
             <SalesOrderDetailModal
                 salesOrder={selectedOrder}
@@ -261,7 +277,11 @@ const SalesOrders = ({ mode = 'all' }) => {
                     setSelectedOrder(null);
                     openEdit(order);
                 }}
-                onTransition={transitionOrder}
+                onRefresh={(message) => {
+                    if (message) showAlert('success', message);
+                    setSelectedOrder(null);
+                    loadPage();
+                }}
             />
         </div>
     );
