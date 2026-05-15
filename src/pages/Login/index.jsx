@@ -6,10 +6,82 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getRememberedLogin } from '../../services/authStorage';
 
+const InventoryIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 7.5 12 4l8 3.5L12 11 4 7.5Z" />
+        <path d="M4 12.5 12 16l8-3.5" />
+        <path d="M4 17.5 12 21l8-3.5" />
+        <path d="M12 11v10" />
+    </svg>
+);
+
+const WarehouseIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 10 12 4l9 6" />
+        <path d="M5 10.5V20h14v-9.5" />
+        <path d="M9 20v-5h6v5" />
+        <path d="M8 12h.01M12 12h.01M16 12h.01" />
+    </svg>
+);
+
+const MonitoringIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 5h16v11H4z" />
+        <path d="M8 19h8" />
+        <path d="M10 16v3M14 16v3" />
+        <path d="m7 12 2.5-2.5 2 2L15.5 8l1.5 1.5" />
+    </svg>
+);
+
+const LockIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="11" width="14" height="10" rx="2" />
+        <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+    </svg>
+);
+
+const DomainIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 21h18" />
+        <path d="M5 21V7l7-3 7 3v14" />
+        <path d="M9 10h.01M12 10h.01M15 10h.01M9 14h.01M12 14h.01M15 14h.01" />
+    </svg>
+);
+
+const MailIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m5 7 7 6 7-6" />
+    </svg>
+);
+
+const EncryptedIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3 5 6v5c0 4.6 2.9 8.9 7 10 4.1-1.1 7-5.4 7-10V6l-7-3Z" />
+        <path d="M12 10.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3Z" />
+        <path d="M12 13.5v2" />
+    </svg>
+);
+
+const VerifiedUserIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3 5 6v5c0 4.6 2.9 8.9 7 10 4.1-1.1 7-5.4 7-10V6l-7-3Z" />
+        <path d="m9.5 12 1.8 1.8 3.7-3.8" />
+    </svg>
+);
+
+const ShieldIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3 5 6v5c0 4.6 2.9 8.9 7 10 4.1-1.1 7-5.4 7-10V6l-7-3Z" />
+        <path d="M12 8v8" />
+        <path d="M9 11.5h6" />
+    </svg>
+);
+
 const FEATURE_KEYS = [
-    { icon: 'inventory_2', key: 'catalog' },
-    { icon: 'warehouse', key: 'oneWorkspace' },
-    { icon: 'monitoring', key: 'fasterDecisions' },
+    { icon: InventoryIcon, key: 'catalog' },
+    { icon: WarehouseIcon, key: 'oneWorkspace' },
+    { icon: MonitoringIcon, key: 'fasterDecisions' },
 ];
 
 const Login = () => {
@@ -72,9 +144,9 @@ const Login = () => {
                         </p>
 
                         <div className="mt-10 grid grid-cols-3 gap-3">
-                            {FEATURE_KEYS.map(({ icon, key }) => (
+                            {FEATURE_KEYS.map(({ icon: Icon, key }) => (
                                 <div key={key} className="rounded-2xl border border-white/8 bg-white/5 p-4 backdrop-blur-sm transition-colors hover:bg-white/8">
-                                    <span className="material-symbols-outlined text-[22px] text-blue-400">{icon}</span>
+                                    <span className="text-blue-400 [&_svg]:h-[22px] [&_svg]:w-[22px]" aria-hidden="true"><Icon /></span>
                                     <div className="mt-3 text-sm font-bold text-white">{t(`login.features.${key}.label`)}</div>
                                     <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{t(`login.features.${key}.desc`)}</p>
                                 </div>
@@ -106,7 +178,7 @@ const Login = () => {
                     {/* Form header */}
                     <div className="mb-8">
                         <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 dark:border-slate-700 dark:bg-slate-800/60">
-                            <span className="material-symbols-outlined text-[13px] text-emerald-500">lock</span>
+                            <span className="text-emerald-500 [&_svg]:h-[13px] [&_svg]:w-[13px]" aria-hidden="true"><LockIcon /></span>
                             <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{t('common.secureAccess')}</span>
                         </div>
                         <h2 className="text-[1.75rem] font-extrabold leading-tight text-slate-900 dark:text-white">
@@ -129,7 +201,7 @@ const Login = () => {
                             onChange={(e) => setWorkspace(e.target.value)}
                             required
                             placeholder={t('login.workspacePlaceholder')}
-                            icon="domain"
+                            icon={<DomainIcon />}
                         />
 
                         <Input
@@ -139,7 +211,7 @@ const Login = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             placeholder={t('login.emailPlaceholder')}
-                            icon="mail"
+                            icon={<MailIcon />}
                         />
 
                         <Input
@@ -149,7 +221,7 @@ const Login = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             placeholder={t('login.passwordPlaceholder')}
-                            icon="lock"
+                            icon={<LockIcon />}
                         />
 
                         <div className="flex items-center justify-between">
@@ -184,17 +256,17 @@ const Login = () => {
                     {/* Trust row */}
                     <div className="mt-8 flex items-center justify-center gap-4">
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <span className="material-symbols-outlined text-[13px]">encrypted</span>
+                            <span className="[&_svg]:h-[13px] [&_svg]:w-[13px]" aria-hidden="true"><EncryptedIcon /></span>
                             {t('login.trust.tls')}
                         </div>
                         <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <span className="material-symbols-outlined text-[13px]">verified_user</span>
+                            <span className="[&_svg]:h-[13px] [&_svg]:w-[13px]" aria-hidden="true"><VerifiedUserIcon /></span>
                             {t('login.trust.roles')}
                         </div>
                         <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <span className="material-symbols-outlined text-[13px]">shield</span>
+                            <span className="[&_svg]:h-[13px] [&_svg]:w-[13px]" aria-hidden="true"><ShieldIcon /></span>
                             {t('login.trust.audit')}
                         </div>
                     </div>

@@ -17,6 +17,7 @@ const Input = ({
     ...props
 }) => {
     const inputId = id || name;
+    const iconIsString = typeof icon === 'string';
 
     return (
         <div className={`flex flex-col gap-1.5 ${className}`}>
@@ -32,7 +33,11 @@ const Input = ({
             <div className="relative">
                 {icon && (
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="material-symbols-outlined text-slate-400 text-[20px]">{icon}</span>
+                        {iconIsString ? (
+                            <span className="material-symbols-outlined text-slate-400 text-[20px]">{icon}</span>
+                        ) : (
+                            <span className="text-slate-400 [&_svg]:h-5 [&_svg]:w-5" aria-hidden="true">{icon}</span>
+                        )}
                     </div>
                 )}
                 <input
