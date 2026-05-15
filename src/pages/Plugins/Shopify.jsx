@@ -282,7 +282,7 @@ const ShopifyPluginPage = () => {
             <div className="space-y-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {[
                 'Create or open a Shopify custom app with Admin API access.',
-                'Grant product read access for catalog sync. Add order read access if you later enable manual order pulls.',
+                'Grant Admin API scopes: read_products and read_orders. Add read_inventory, write_inventory, and read_locations only when inventory push is enabled.',
                 'Copy the Admin API access token and save it above. Keep it server-side; the form clears it after save.',
                 'Copy the webhook signing secret and save it above.',
                 'Create an orders/create webhook in Shopify using the callback URL shown here.',
@@ -301,6 +301,8 @@ const ShopifyPluginPage = () => {
               </div>
               <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Shopify event</div>
               <div className="mt-3 rounded-xl bg-white/10 p-3 font-mono text-xs text-slate-100">orders/create</div>
+              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Admin API version</div>
+              <div className="mt-3 rounded-xl bg-white/10 p-3 font-mono text-xs text-slate-100">2026-04</div>
               <p className="mt-5 text-sm leading-6 text-slate-300">
                 When a Shopify order is created, the backend verifies the HMAC signature, stores the payload as an inbound webhook event, and the operations team can materialize it into a sales order with SKU auto-mapping.
               </p>
