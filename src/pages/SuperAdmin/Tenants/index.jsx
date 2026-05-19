@@ -34,7 +34,55 @@ const TenantsPage = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
 
+    const emptyDs = { mode: 'SHARED', jdbcUrl: '', username: '', password: '', poolMaxSize: '' };
+    const [ds, setDs] = useState(emptyDs);
+    const [dsInfo, setDsInfo] = useState(null);
+    const [dsBusy, setDsBusy] = useState('');
+
     const selectedTenant = tenants.find((tenant) => tenant.id === selectedTenantId) || null;
+
+    const loadDatasource = async (tenantId) => {
+        try {
+            const info = await superAdminService.getTenantDatasource(tenantId);
+            setDsInfo(info);
+            setDs({ mode: info.mode || 'SHARED', jdbcUrl: '', username: '', password: '', poolMaxSize: '' });
+        } catch (err) {
+            setDsInfo(null);
+        }
+    };
+
+    const runDsAction = async (kind) => {
+        if (!selectedTenant) return;
+        setDsBusy(kind);
+        setError('');
+        setMessage('');
+        try {
+            if (kind === 'save') {
+                await superAdminService.saveTenantDatasource(selectedTenant.id, {
+                    mode: ds.mode,
+                    jdbcUrl: ds.jdbcUrl || null,
+                    username: ds.username || null,
+                    password: ds.password || null,
+                    poolMaxSize: ds.poolMaxSize ? Number(ds.poolMaxSize) : null,
+                });
+                setMessage('Datasource configuration saved.');
+            } else if (kind === 'test') {
+                const r = await superAdminService.testTenantDatasource(selectedTenant.id);
+                setMessage(r?.ok ? 'Connection succeeded.' : 'Connection failed.');
+            } else if (kind === 'migrate') {
+                const r = await superAdminService.migrateTenantDatasource(selectedTenant.id);
+                setMessage(`Dedicated DB migrated to schema ${r?.schemaVersion}.`);
+            } else if (kind === 'provision') {
+                await superAdminService.provisionTenantDatasource(selectedTenant.id);
+                setMessage('Cutover complete — tenant moved to its dedicated database.');
+            }
+            await loadDatasource(selectedTenant.id);
+        } catch (err) {
+            setError(err.message || 'Datasource action failed.');
+        } finally {
+            setDsBusy('');
+        }
+    };
 
     const loadTenants = async (tenantToSelect = selectedTenantId) => {
         setLoading(true);
@@ -71,8 +119,11 @@ const TenantsPage = () => {
                 adminPassword: '',
                 status: selectedTenant.status,
             });
+            loadDatasource(selectedTenant.id);
         } else {
             setForm(emptyForm);
+            setDsInfo(null);
+            setDs(emptyDs);
         }
     }, [selectedTenant, selectedTenantId]);
 
@@ -289,6 +340,93 @@ const TenantsPage = () => {
                         </div>
                     </form>
                 </Card>
+
+                {selectedTenant && (
+                    <Card
+                        title="Database / Tenant profile"
+                        subtitle="Most tenants share the database. Move a tenant to its own dedicated database (separate Postgres instance). Credentials are write-only and never shown."
+                    >
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span className="block text-xs text-slate-500">Mode</span>
+                                    <span className="font-semibold">{dsInfo?.mode || '—'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs text-slate-500">Status</span>
+                                    <span className="font-semibold">{dsInfo?.status || '—'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs text-slate-500">Schema version</span>
+                                    <span className="font-semibold">{dsInfo?.flywayVersion || '—'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs text-slate-500">DB host</span>
+                                    <span className="font-semibold">{dsInfo?.host || '—'}</span>
+                                </div>
+                            </div>
+                            {dsInfo?.lastError && (
+                                <Alert type="error" message={`Last error: ${dsInfo.lastError}`} />
+                            )}
+
+                            <Select
+                                label="Mode"
+                                value={ds.mode}
+                                onChange={(e) => setDs((c) => ({ ...c, mode: e.target.value }))}
+                                options={[
+                                    { value: 'SHARED', label: 'Shared (default)' },
+                                    { value: 'DEDICATED', label: 'Dedicated database' },
+                                ]}
+                            />
+                            {ds.mode === 'DEDICATED' && (
+                                <>
+                                    <Input
+                                        label="JDBC URL"
+                                        placeholder="jdbc:postgresql://host:5432/dbname"
+                                        value={ds.jdbcUrl}
+                                        onChange={(e) => setDs((c) => ({ ...c, jdbcUrl: e.target.value }))}
+                                    />
+                                    <Input
+                                        label="Username"
+                                        value={ds.username}
+                                        onChange={(e) => setDs((c) => ({ ...c, username: e.target.value }))}
+                                    />
+                                    <Input
+                                        label="Password"
+                                        type="password"
+                                        placeholder={dsInfo?.credentialsConfigured ? '•••••••• (leave blank to keep)' : ''}
+                                        value={ds.password}
+                                        onChange={(e) => setDs((c) => ({ ...c, password: e.target.value }))}
+                                    />
+                                </>
+                            )}
+
+                            <div className="flex flex-wrap gap-3">
+                                <Button type="button" loading={dsBusy === 'save'} onClick={() => runDsAction('save')}>
+                                    Save configuration
+                                </Button>
+                                {ds.mode === 'DEDICATED' && (
+                                    <>
+                                        <Button type="button" variant="secondary" loading={dsBusy === 'test'} onClick={() => runDsAction('test')}>
+                                            Test connection
+                                        </Button>
+                                        <Button type="button" variant="secondary" loading={dsBusy === 'migrate'} onClick={() => runDsAction('migrate')}>
+                                            Run migrations
+                                        </Button>
+                                        <Button type="button" variant="secondary" loading={dsBusy === 'provision'} onClick={() => runDsAction('provision')}>
+                                            Provision &amp; cut over from shared
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                Save the config, Test the connection, Run migrations to build the schema, then
+                                Provision to copy this tenant&apos;s data and atomically switch it over. A failed
+                                step leaves the tenant on the shared database (fails closed).
+                            </p>
+                        </div>
+                    </Card>
+                )}
             </div>
         </div>
     );

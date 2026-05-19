@@ -28,3 +28,19 @@ export const deactivateTenant = (tenantId) => unwrap(request(`/super-admin/tenan
 export const deleteTenant = (tenantId) => unwrap(request(`/super-admin/tenants/${tenantId}`, {
     method: 'DELETE',
 }));
+
+// --- Per-tenant dedicated database (gated by app.tenant.routing.enabled) ---
+export const getTenantDatasource = (tenantId) =>
+    unwrap(request(`/super-admin/tenants/${tenantId}/datasource`));
+
+export const saveTenantDatasource = (tenantId, payload) =>
+    unwrap(request(`/super-admin/tenants/${tenantId}/datasource`, { method: 'PUT', body: payload }));
+
+export const testTenantDatasource = (tenantId) =>
+    unwrap(request(`/super-admin/tenants/${tenantId}/datasource/test`, { method: 'POST' }));
+
+export const migrateTenantDatasource = (tenantId) =>
+    unwrap(request(`/super-admin/tenants/${tenantId}/datasource/migrate`, { method: 'POST' }));
+
+export const provisionTenantDatasource = (tenantId) =>
+    unwrap(request(`/super-admin/tenants/${tenantId}/datasource/provision`, { method: 'POST' }));
