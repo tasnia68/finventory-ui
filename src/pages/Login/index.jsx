@@ -130,7 +130,7 @@ const Login = () => {
                     {/* Logo */}
                     <div>
                         <div className="inline-flex rounded-[50px] border border-white/10 bg-white/8 p-5 backdrop-blur-sm xl:p-6">
-                            <img src="/logistra-nightmode.svg" alt="Logistra" className="h-104 w-auto xl:h-40" />
+                            <img src={`${import.meta.env.BASE_URL}logistra-nightmode.svg`} alt="Logistra" className="h-24 w-auto xl:h-40" />
                         </div>
                     </div>
 
@@ -168,7 +168,7 @@ const Login = () => {
                 {/* Mobile logo */}
                 <div className="mb-10 lg:hidden">
                     <img
-                        src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'}
+                        src={`${import.meta.env.BASE_URL}${theme === 'dark' ? 'logistra-nightmode.svg' : 'logistra.svg'}`}
                         alt="Logistra"
                         className="h-14 w-auto"
                     />

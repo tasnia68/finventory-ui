@@ -15,8 +15,8 @@ const AppLoadingScreen = ({ message = 'Loading workspace...', caption = 'Prepari
         <div className="relative">
           <div className="absolute inset-0 animate-ping rounded-full bg-primary/10 blur-xl" />
           <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-slate-200/80 bg-white/88 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/88">
-            <img src="/logistra.svg" alt="Logistra" className="h-10 w-auto dark:hidden" />
-            <img src="/logistra-nightmode.svg" alt="Logistra" className="hidden h-10 w-auto dark:block" />
+            <img src={`${import.meta.env.BASE_URL}logistra.svg`} alt="Logistra" className="h-10 w-auto dark:hidden" />
+            <img src={`${import.meta.env.BASE_URL}logistra-nightmode.svg`} alt="Logistra" className="hidden h-10 w-auto dark:block" />
           </div>
         </div>
 

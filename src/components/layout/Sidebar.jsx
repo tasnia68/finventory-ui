@@ -327,7 +327,7 @@ const SidebarContent = () => {
           <div className="relative flex items-start gap-3">
             <div className="h-10 flex items-center">
             <img 
-              src={theme === 'dark' ? '/logistra-nightmode.svg' : '/logistra.svg'} 
+              src={`${import.meta.env.BASE_URL}${theme === 'dark' ? 'logistra-nightmode.svg' : 'logistra.svg'}`}
               alt="Logistra" 
               className="h-8"
             />
