@@ -1,0 +1,74 @@
+{
+	email ops@logistra.me
+	on_demand_tls {
+		ask http://backend:8080/api/v1/storefront/domains/caddy/validate
+	}
+}
+
+# Platform domain — automatic Let's Encrypt cert; HTTP auto-redirects to HTTPS.
+logistra.me, www.logistra.me {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	redir /inventory /inventory/ 308
+
+	# index.html files must never be cached — they reference hashed bundle filenames
+	# that change every deploy. Hashed assets in /assets/* are immutable so they get
+	# a long max-age.
+	@html {
+		path *.html
+		path /
+		path /inventory/
+	}
+	header @html Cache-Control "no-cache, no-store, must-revalidate"
+	header /assets/* Cache-Control "public, max-age=31536000, immutable"
+	header *.mp4 Cache-Control "public, max-age=604800"
+	header *.jpg Cache-Control "public, max-age=604800"
+
+	handle /inventory/* {
+		root * /srv
+		try_files {path} /inventory/index.html
+		file_server
+	}
+
+	# Apex / www = platform marketing landing page (tenant stores live on subdomains).
+	handle {
+		root * /srv/landing
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# Tenant subdomains and custom storefront domains — cert provisioned on demand
+# (Caddy calls /api/v1/storefront/domains/caddy/validate to authorise each host).
+https:// {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+
+	@html {
+		path *.html
+		path /
+	}
+	header @html Cache-Control "no-cache, no-store, must-revalidate"
+	header /assets/* Cache-Control "public, max-age=31536000, immutable"
+
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		root * /srv/storefront
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# HTTP fallback for any host not already auto-HTTPS'd — redirect to HTTPS.
+http:// {
+	redir https://{host}{uri} 308
+}

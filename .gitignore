@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# --- Deploy secrets (deploy/ moved under finventory-ui): live SSH root
+#     password + DB/admin creds. Never commit. Example envs are tracked. ---
+deploy/run-hardcoded-deploy.sh
+deploy/*.env
+!deploy/*.env.example

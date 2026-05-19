@@ -1,0 +1,22 @@
+FROM maven:3.9.9-eclipse-temurin-17 AS build
+
+WORKDIR /app/inventory
+
+COPY inventory/.mvn .mvn
+COPY inventory/mvnw ./mvnw
+COPY inventory/pom.xml ./pom.xml
+COPY inventory/src ./src
+
+RUN chmod +x ./mvnw && ./mvnw -Dmaven.test.skip=true clean package
+
+FROM eclipse-temurin:17-jre-jammy
+
+WORKDIR /app
+
+COPY --from=build /app/inventory/target/*.jar /app/inventory-system.jar
+
+ENV JAVA_OPTS="-Xms256m -Xmx1024m"
+
+EXPOSE 8080
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/inventory-system.jar"]
