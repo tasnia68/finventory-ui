@@ -36,8 +36,9 @@ export const getTenantDatasource = (tenantId) =>
 export const saveTenantDatasource = (tenantId, payload) =>
     unwrap(request(`/super-admin/tenants/${tenantId}/datasource`, { method: 'PUT', body: payload }));
 
-export const testTenantDatasource = (tenantId) =>
-    unwrap(request(`/super-admin/tenants/${tenantId}/datasource/test`, { method: 'POST' }));
+export const testTenantDatasource = (tenantId, probe) =>
+    unwrap(request(`/super-admin/tenants/${tenantId}/datasource/test`,
+        { method: 'POST', body: probe || {} }));
 
 export const migrateTenantDatasource = (tenantId) =>
     unwrap(request(`/super-admin/tenants/${tenantId}/datasource/migrate`, { method: 'POST' }));

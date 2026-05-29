@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Button, Card, Input, Select } from '../../../components/common';
+import { Alert, Button, Card, Input, Modal, Select } from '../../../components/common';
 import * as superAdminService from '../../../services/superAdminService';
 
 const PLAN_OPTIONS = [
@@ -38,9 +38,11 @@ const TenantsPage = () => {
     const [ds, setDs] = useState(emptyDs);
     const [dsInfo, setDsInfo] = useState(null);
     const [dsBusy, setDsBusy] = useState('');
+    const [dsModalOpen, setDsModalOpen] = useState(false);
 
     const selectedTenant = tenants.find((tenant) => tenant.id === selectedTenantId) || null;
 
+    // Full load (resets the form): use on tenant switch.
     const loadDatasource = async (tenantId) => {
         try {
             const info = await superAdminService.getTenantDatasource(tenantId);
@@ -48,6 +50,16 @@ const TenantsPage = () => {
             setDs({ mode: info.mode || 'SHARED', jdbcUrl: '', username: '', password: '', poolMaxSize: '' });
         } catch (err) {
             setDsInfo(null);
+        }
+    };
+
+    // Status-only refresh: leaves the form fields the user typed intact.
+    const refreshDsInfo = async (tenantId) => {
+        try {
+            const info = await superAdminService.getTenantDatasource(tenantId);
+            setDsInfo(info);
+        } catch (err) {
+            /* keep current dsInfo */
         }
     };
 
@@ -67,8 +79,14 @@ const TenantsPage = () => {
                 });
                 setMessage('Datasource configuration saved.');
             } else if (kind === 'test') {
-                const r = await superAdminService.testTenantDatasource(selectedTenant.id);
+                // If the user has filled in the form, test those creds directly
+                // (lets them validate BEFORE saving). Otherwise test the saved row.
+                const probe = ds.mode === 'DEDICATED' && ds.jdbcUrl
+                    ? { mode: ds.mode, jdbcUrl: ds.jdbcUrl, username: ds.username, password: ds.password }
+                    : null;
+                const r = await superAdminService.testTenantDatasource(selectedTenant.id, probe);
                 setMessage(r?.ok ? 'Connection succeeded.' : 'Connection failed.');
+                return; // nothing persisted — leave the form intact, no refresh
             } else if (kind === 'migrate') {
                 const r = await superAdminService.migrateTenantDatasource(selectedTenant.id);
                 setMessage(`Dedicated DB migrated to schema ${r?.schemaVersion}.`);
@@ -76,7 +94,8 @@ const TenantsPage = () => {
                 await superAdminService.provisionTenantDatasource(selectedTenant.id);
                 setMessage('Cutover complete — tenant moved to its dedicated database.');
             }
-            await loadDatasource(selectedTenant.id);
+            // Status panel only — preserve whatever the operator has typed.
+            await refreshDsInfo(selectedTenant.id);
         } catch (err) {
             setError(err.message || 'Datasource action failed.');
         } finally {
@@ -298,6 +317,7 @@ const TenantsPage = () => {
                     </div>
                 </Card>
 
+                <div className="flex flex-col gap-6">
                 <Card
                     title={selectedTenant ? 'Tenant configuration' : 'Create tenant'}
                     subtitle={selectedTenant ? 'Edit the selected tenant and control its operational status.' : 'Provision a new tenant and its first admin user.'}
@@ -337,16 +357,32 @@ const TenantsPage = () => {
                             <Button type="button" variant="secondary" onClick={resetCreateForm}>
                                 New tenant form
                             </Button>
+                            {selectedTenant && (
+                                <Button type="button" variant="secondary" onClick={() => setDsModalOpen(true)}>
+                                    Database / Tenant profile
+                                </Button>
+                            )}
                         </div>
                     </form>
                 </Card>
 
-                {selectedTenant && (
-                    <Card
-                        title="Database / Tenant profile"
-                        subtitle="Most tenants share the database. Move a tenant to its own dedicated database (separate Postgres instance). Credentials are write-only and never shown."
-                    >
-                        <div className="space-y-4">
+                <Modal
+                    isOpen={dsModalOpen && !!selectedTenant}
+                    onClose={() => setDsModalOpen(false)}
+                    title="Database / Tenant profile"
+                >
+                    <p className="-mt-1 mb-4 text-sm text-slate-500 dark:text-slate-400">
+                        Most tenants share the database. Move a tenant to its own dedicated Postgres
+                        instance. Credentials are write-only and never shown.
+                    </p>
+                    {(message || error) && (
+                        <div className="mb-4">
+                            {error
+                                ? <Alert type="error" message={error} onDismiss={() => setError('')} />
+                                : <Alert type="success" message={message} onDismiss={() => setMessage('')} />}
+                        </div>
+                    )}
+                    <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-3 text-sm">
                                 <div>
                                     <span className="block text-xs text-slate-500">Mode</span>
@@ -424,9 +460,9 @@ const TenantsPage = () => {
                                 Provision to copy this tenant&apos;s data and atomically switch it over. A failed
                                 step leaves the tenant on the shared database (fails closed).
                             </p>
-                        </div>
-                    </Card>
-                )}
+                    </div>
+                </Modal>
+                </div>
             </div>
         </div>
     );
