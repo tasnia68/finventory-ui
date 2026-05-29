@@ -20,6 +20,16 @@ export const createUser = (userData) => {
     }));
 };
 
+export const createStaff = (payload) => unwrap(request('/users', {
+    method: 'POST',
+    body: payload,
+}));
+
+export const changePassword = (currentPassword, newPassword) => unwrap(request('/auth/change-password', {
+    method: 'POST',
+    body: { currentPassword, newPassword },
+}));
+
 export const updateUser = (id, userData) => {
     return unwrap(request(`/users/${id}`, {
         method: 'PUT',

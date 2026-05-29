@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [mustChangePassword, setMustChangePassword] = useState(false);
 
     useEffect(() => {
         const initAuth = async () => {
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }) => {
                     });
                     setUser(userProfile);
                     setIsAuthenticated(true);
+                    setMustChangePassword(Boolean(userProfile?.forcePasswordChange));
                     notifyTenantContextChanged(userProfile?.tenantId || getTenantId());
                 } catch (error) {
                     console.error('Failed to restore session:', error);
@@ -64,8 +66,10 @@ export const AuthProvider = ({ children }) => {
             });
             setUser(userProfile);
             setIsAuthenticated(true);
+            const mustChange = Boolean(response?.mustChangePassword || userProfile?.forcePasswordChange);
+            setMustChangePassword(mustChange);
             notifyTenantContextChanged(response.tenantId || userProfile?.tenantId || getTenantId());
-            return userProfile;
+            return { ...userProfile, mustChangePassword: mustChange };
         } catch (error) {
             throw error;
         }
@@ -76,6 +80,7 @@ export const AuthProvider = ({ children }) => {
         notifyTenantContextChanged(null);
         setUser(null);
         setIsAuthenticated(false);
+        setMustChangePassword(false);
         window.location.href = '/login';
     };
 
@@ -117,7 +122,9 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateProfile,
-        hasPermission
+        hasPermission,
+        mustChangePassword,
+        clearMustChangePassword: () => setMustChangePassword(false),
     };
 
     return (

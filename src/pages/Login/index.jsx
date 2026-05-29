@@ -106,8 +106,12 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await login(workspace, email, password, rememberMe);
-            navigate(from, { replace: true });
+            const result = await login(workspace, email, password, rememberMe);
+            if (result?.mustChangePassword) {
+                navigate('/change-password', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             setError(err.message || t('login.failedToSignIn'));
         } finally {

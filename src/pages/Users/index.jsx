@@ -133,13 +133,22 @@ const Users = () => {
                             Manage team members and their roles
                         </p>
                     </div>
-                    <Button
-                        variant="primary"
-                        icon="person_add"
-                        onClick={() => setIsInviteModalOpen(true)}
-                    >
-                        Invite User
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            variant="secondary"
+                            icon="mail"
+                            onClick={() => setIsInviteModalOpen(true)}
+                        >
+                            Invite by email
+                        </Button>
+                        <Button
+                            variant="primary"
+                            icon="person_add"
+                            onClick={() => navigate('/users/new')}
+                        >
+                            Create staff
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Content */}
