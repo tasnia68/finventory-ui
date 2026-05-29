@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Alert, Badge, Button, Card, Input, Select } from '../../components/common';
 import { getSettings } from '../../services/settingsService';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -48,32 +48,93 @@ const riskToVariant = (risk) => {
     }
 };
 
-const SettingsPage = () => {
+const renderSettingControl = (setting, value, handleValueChange) => {
+    if (setting.control === 'boolean') {
+        return (
+            <button
+                type="button"
+                onClick={() => handleValueChange(setting.key, !value)}
+                className={`inline-flex min-w-[104px] items-center justify-between rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors ${value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                    }`}
+            >
+                <span>{value ? 'Enabled' : 'Disabled'}</span>
+                <span className={`size-5 rounded-full ${value ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'}`} />
+            </button>
+        );
+    }
+
+    if (setting.control === 'select') {
+        return (
+            <Select
+                value={String(value)}
+                onChange={(event) => handleValueChange(setting.key, setting.type === 'NUMBER' ? Number(event.target.value) : event.target.value)}
+                options={setting.options}
+                placeholder="Select an option"
+            />
+        );
+    }
+
+    if (setting.control === 'textarea') {
+        return (
+            <textarea
+                value={value}
+                onChange={(event) => handleValueChange(setting.key, event.target.value)}
+                rows={4}
+                placeholder={setting.placeholder}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+        );
+    }
+
+    if (setting.control === 'password') {
+        return (
+            <Input
+                type="password"
+                value={value}
+                onChange={(event) => handleValueChange(setting.key, event.target.value)}
+                placeholder={setting.placeholder}
+                autoComplete="off"
+            />
+        );
+    }
+
+    return (
+        <Input
+            type={setting.type === 'NUMBER' ? 'number' : 'text'}
+            value={value}
+            onChange={(event) => handleValueChange(setting.key, setting.type === 'NUMBER' ? Number(event.target.value) : event.target.value)}
+            placeholder={setting.placeholder}
+            min={setting.min}
+            max={setting.max}
+            step={setting.step}
+        />
+    );
+};
+
+export { riskToVariant, renderSettingControl };
+
+const SettingsShell = () => {
     const { saveSettings } = useSettings();
+    const navigate = useNavigate();
+    const params = useParams();
     const [searchParams] = useSearchParams();
-    const requestedSection = searchParams.get('section');
     const [values, setValues] = useState(buildDefaultState);
     const [initialValues, setInitialValues] = useState(buildDefaultState);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState('');
-    const [activeSection, setActiveSection] = useState(
-        (requestedSection && SETTINGS_SECTIONS.some((s) => s.id === requestedSection))
-            ? requestedSection
-            : (SETTINGS_SECTIONS[0]?.id || 'general')
-    );
     const [alert, setAlert] = useState(null);
 
+    // Backward compat: redirect `/settings?section=foo` → `/settings/foo` once on mount.
     useEffect(() => {
+        const requestedSection = searchParams.get('section');
         if (requestedSection && SETTINGS_SECTIONS.some((s) => s.id === requestedSection)) {
-            setActiveSection(requestedSection);
-            // Wait a tick so the section list is rendered, then scroll.
-            setTimeout(() => {
-                const target = document.getElementById(`settings-section-${requestedSection}`);
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 50);
+            navigate(`/settings/${requestedSection}`, { replace: true });
         }
-    }, [requestedSection]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -132,11 +193,7 @@ const SettingsPage = () => {
         }).filter((section) => section.groups.length > 0);
     }, [search]);
 
-    useEffect(() => {
-        if (!filteredSections.some((section) => section.id === activeSection)) {
-            setActiveSection(filteredSections[0]?.id || SETTINGS_SECTIONS[0]?.id || 'general');
-        }
-    }, [activeSection, filteredSections]);
+    const activeSection = params.sectionId;
 
     const sectionDirtyCount = (sectionId) => SETTINGS_INDEX.filter((setting) => setting.sectionId === sectionId && dirtyLookup.has(setting.key)).length;
 
@@ -181,79 +238,15 @@ const SettingsPage = () => {
         }
     };
 
-    const scrollToSection = (sectionId) => {
-        setActiveSection(sectionId);
-        const target = document.getElementById(`settings-section-${sectionId}`);
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    };
-
-    const renderSettingControl = (setting) => {
-        const value = values[setting.key];
-
-        if (setting.control === 'boolean') {
-            return (
-                <button
-                    type="button"
-                    onClick={() => handleValueChange(setting.key, !value)}
-                    className={`inline-flex min-w-[104px] items-center justify-between rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors ${value
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
-                        }`}
-                >
-                    <span>{value ? 'Enabled' : 'Disabled'}</span>
-                    <span className={`size-5 rounded-full ${value ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                </button>
-            );
-        }
-
-        if (setting.control === 'select') {
-            return (
-                <Select
-                    value={String(value)}
-                    onChange={(event) => handleValueChange(setting.key, setting.type === 'NUMBER' ? Number(event.target.value) : event.target.value)}
-                    options={setting.options}
-                    placeholder="Select an option"
-                />
-            );
-        }
-
-        if (setting.control === 'textarea') {
-            return (
-                <textarea
-                    value={value}
-                    onChange={(event) => handleValueChange(setting.key, event.target.value)}
-                    rows={4}
-                    placeholder={setting.placeholder}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-            );
-        }
-
-        if (setting.control === 'password') {
-            return (
-                <Input
-                    type="password"
-                    value={value}
-                    onChange={(event) => handleValueChange(setting.key, event.target.value)}
-                    placeholder={setting.placeholder}
-                    autoComplete="off"
-                />
-            );
-        }
-
-        return (
-            <Input
-                type={setting.type === 'NUMBER' ? 'number' : 'text'}
-                value={value}
-                onChange={(event) => handleValueChange(setting.key, setting.type === 'NUMBER' ? Number(event.target.value) : event.target.value)}
-                placeholder={setting.placeholder}
-                min={setting.min}
-                max={setting.max}
-                step={setting.step}
-            />
-        );
+    const outletContext = {
+        values,
+        handleValueChange,
+        dirtyLookup,
+        loading,
+        filteredSections,
+        sectionDirtyCount,
+        riskToVariant,
+        renderSettingControl: (setting) => renderSettingControl(setting, values[setting.key], handleValueChange),
     };
 
     return (
@@ -270,7 +263,7 @@ const SettingsPage = () => {
                                 Centralized tenant configuration for operations, controls, and defaults.
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                                All configurable rules live here in one page. Use the section index to move between business areas, review policy-level changes, and save updates in one flow.
+                                All configurable rules live here. Use the section index to move between business areas, review policy-level changes, and save updates per section.
                             </p>
                         </div>
 
@@ -306,12 +299,12 @@ const SettingsPage = () => {
                             <div className="space-y-2">
                                 {filteredSections.map((section) => {
                                     const dirtyCount = sectionDirtyCount(section.id);
+                                    const isActive = activeSection === section.id;
                                     return (
-                                        <button
+                                        <NavLink
                                             key={section.id}
-                                            type="button"
-                                            onClick={() => scrollToSection(section.id)}
-                                            className={`flex w-full items-center justify-between rounded-2xl border px-3 py-3 text-left transition-colors ${activeSection === section.id
+                                            to={`/settings/${section.id}`}
+                                            className={`flex w-full items-center justify-between rounded-2xl border px-3 py-3 text-left transition-colors ${isActive
                                                 ? 'border-primary bg-primary/5 text-primary'
                                                 : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
                                                 }`}
@@ -321,85 +314,20 @@ const SettingsPage = () => {
                                                 <div className="mt-0.5 truncate text-xs text-slate-400">{section.groups.length} groups</div>
                                             </div>
                                             {dirtyCount ? <Badge variant="warning">{dirtyCount}</Badge> : null}
-                                        </button>
+                                        </NavLink>
                                     );
                                 })}
+                                {filteredSections.length === 0 ? (
+                                    <div className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                        No sections match your search.
+                                    </div>
+                                ) : null}
                             </div>
                         </Card>
                     </aside>
 
                     <div className="space-y-8">
-                        {loading ? (
-                            <Card className="flex items-center justify-center py-16">
-                                <span className="material-symbols-outlined animate-spin text-primary text-[36px]">progress_activity</span>
-                            </Card>
-                        ) : filteredSections.length ? filteredSections.map((section) => (
-                            <section
-                                key={section.id}
-                                id={`settings-section-${section.id}`}
-                                className="space-y-5 scroll-mt-8"
-                            >
-                                <div className={`overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800`}>
-                                    <div className={`h-2 bg-gradient-to-r ${section.accent}`} />
-                                    <div className="p-6">
-                                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="material-symbols-outlined rounded-2xl bg-slate-100 p-3 text-slate-700 dark:bg-slate-700 dark:text-slate-200">{section.icon}</span>
-                                                    <div>
-                                                        <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{section.title}</h2>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">{section.description}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {sectionDirtyCount(section.id) ? <Badge variant="warning">{sectionDirtyCount(section.id)} unsaved</Badge> : null}
-                                        </div>
-
-                                        <div className="mt-6 grid grid-cols-1 gap-4 2xl:grid-cols-2">
-                                            {section.groups.map((group) => (
-                                                <Card key={group.id} className="h-full">
-                                                    <div className="mb-4 space-y-1">
-                                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{group.title}</h3>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">{group.description}</p>
-                                                    </div>
-
-                                                    <div className="space-y-4">
-                                                        {group.settings.map((setting) => {
-                                                            const isDirty = dirtyLookup.has(setting.key);
-                                                            return (
-                                                                <div key={setting.key} className={`rounded-2xl border p-4 transition-colors ${isDirty
-                                                                    ? 'border-primary/40 bg-primary/5'
-                                                                    : 'border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/40'
-                                                                    }`}>
-                                                                    <div className="mb-3 flex items-start justify-between gap-3">
-                                                                        <div className="space-y-1">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{setting.label}</p>
-                                                                                {setting.risk ? <Badge variant={riskToVariant(setting.risk)}>{setting.risk}</Badge> : null}
-                                                                                {isDirty ? <Badge variant="primary">modified</Badge> : null}
-                                                                            </div>
-                                                                            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{setting.helpText}</p>
-                                                                            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">{setting.key}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    {renderSettingControl(setting)}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-                        )) : (
-                            <Card>
-                                <div className="rounded-2xl border border-dashed border-slate-200 px-6 py-12 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                                    No settings matched your search.
-                                </div>
-                            </Card>
-                        )}
+                        <Outlet context={outletContext} />
                     </div>
                 </div>
             </div>
@@ -409,7 +337,7 @@ const SettingsPage = () => {
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
                             <div className="text-sm font-semibold text-slate-900 dark:text-white">Unsaved settings changes</div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400">{dirtyKeys.length} setting{dirtyKeys.length > 1 ? 's' : ''} changed across the page.</div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">{dirtyKeys.length} setting{dirtyKeys.length > 1 ? 's' : ''} changed across settings.</div>
                         </div>
                         <div className="flex gap-3">
                             <Button variant="secondary" onClick={handleReset}>Reset changes</Button>
@@ -422,4 +350,4 @@ const SettingsPage = () => {
     );
 };
 
-export default SettingsPage;
+export default SettingsShell;

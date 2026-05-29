@@ -25,7 +25,7 @@ import {
     removeCartLine,
     cancelSuspendedPosSale,
 } from '../../services/posService';
-import { previewPricing } from '../../services/promotionService';
+import { previewPricing } from '../../services/discountService';
 import PosCartPanel from './PosCartPanel';
 import PosCheckoutModal from './PosCheckoutModal';
 import PosInvoiceModal from './PosInvoiceModal';
@@ -150,19 +150,18 @@ const PosTerminal = () => {
                 setPricingPreviewError('');
                 const result = await previewPricing({
                     customerId: selectedCustomerId || null,
-                    warehouseId: selectedWarehouseId,
-                    terminalId: selectedTerminalId || null,
                     salesChannel: 'POS',
-                    manualDiscountAmount: Number(checkout.discountAmount || 0),
-                    couponCodes: checkout.couponCodes
+                    discountCodes: checkout.couponCodes
                         .split(/[\n,]/)
                         .map((value) => value.trim())
                         .filter(Boolean),
+                    giftCardCodes: [],
+                    referralCode: null,
+                    shippingAmount: 0,
                     items: cart.map((line) => ({
                         productVariantId: line.productVariantId,
                         quantity: Number(line.quantity || 0),
                         unitPrice: Number(line.unitPrice || 0),
-                        manualLineDiscount: Number(line.lineDiscount || 0),
                     })),
                 });
 

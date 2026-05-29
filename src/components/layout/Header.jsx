@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { LanguageSwitcher } from '../common';
 import { useSidebar } from './Sidebar';
+import { SETTINGS_SECTIONS } from '../../pages/Settings/settingsRegistry';
 
 const ROUTE_META = [
   { match: '/dashboard', titleKey: 'routes.dashboardOverview', sectionKey: 'sections.operations' },
@@ -13,20 +14,31 @@ const ROUTE_META = [
   { match: '/products/', titleKey: 'routes.productDetail', sectionKey: 'sections.productCatalog' },
   { match: '/products', titleKey: 'routes.productOperationsHub', sectionKey: 'sections.productCatalog' },
   { match: '/templates', titleKey: 'routes.templateRegister', sectionKey: 'sections.productCatalog' },
+  { match: '/categories/', titleKey: 'routes.categoryEditor', sectionKey: 'sections.productCatalog' },
   { match: '/categories', titleKey: 'routes.categoryWorkspace', sectionKey: 'sections.productCatalog' },
   { match: '/uoms', titleKey: 'routes.unitGovernance', sectionKey: 'sections.productCatalog' },
+  { match: '/attributes/', titleKey: 'routes.attributeEdit', sectionKey: 'sections.productCatalog' },
   { match: '/attributes', titleKey: 'routes.attributeWorkspace', sectionKey: 'sections.productCatalog' },
   { match: '/attribute-groups', titleKey: 'routes.attributeGroups', sectionKey: 'sections.productCatalog' },
   { match: '/inventory', titleKey: 'routes.stockLevels', sectionKey: 'sections.inventoryCore' },
   { match: '/warehouses', titleKey: 'routes.warehouses', sectionKey: 'sections.inventoryCore' },
   { match: '/transactions', titleKey: 'routes.transactions', sectionKey: 'sections.inventoryCore' },
   { match: '/warehouse-transfers', titleKey: 'routes.warehouseTransfers', sectionKey: 'sections.inventoryCore' },
+  { match: '/batches/', titleKey: 'routes.batchDetail', sectionKey: 'sections.advancedInventory' },
   { match: '/batches', titleKey: 'routes.batchesLots', sectionKey: 'sections.advancedInventory' },
   { match: '/serials', titleKey: 'routes.serialNumbers', sectionKey: 'sections.advancedInventory' },
   { match: '/reservations', titleKey: 'routes.reservations', sectionKey: 'sections.advancedInventory' },
   { match: '/replenishment', titleKey: 'routes.replenishment', sectionKey: 'sections.advancedInventory' },
+  { match: '/cycle-counts/', titleKey: 'routes.cycleCountEntry', sectionKey: 'sections.advancedInventory' },
   { match: '/cycle-counts', titleKey: 'routes.cycleCounts', sectionKey: 'sections.advancedInventory' },
   { match: '/valuation', titleKey: 'routes.valuation', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/incidents/new', titleKey: 'routes.damageControlIncidentNew', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/incidents/', titleKey: 'routes.damageControlIncidentDetail', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/incidents', titleKey: 'routes.damageControlIncidents', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/claims/new', titleKey: 'routes.damageControlClaimNew', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/claims/', titleKey: 'routes.damageControlClaimDetail', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/claims', titleKey: 'routes.damageControlClaims', sectionKey: 'sections.advancedInventory' },
+  { match: '/damage-control/receiving', titleKey: 'routes.damageControlReceiving', sectionKey: 'sections.advancedInventory' },
   { match: '/damage-control', titleKey: 'routes.damageControl', sectionKey: 'sections.advancedInventory' },
   { match: '/procurement', titleKey: 'navigation.procurementOverview', sectionKey: 'sections.procurement' },
   { match: '/suppliers', titleKey: 'routes.suppliers', sectionKey: 'sections.procurement' },
@@ -36,12 +48,32 @@ const ROUTE_META = [
   { match: '/customers', titleKey: 'routes.customers', sectionKey: 'sections.salesFulfillment' },
   { match: '/sales-orders/web', titleKey: 'routes.webOrders', sectionKey: 'sections.salesFulfillment' },
   { match: '/sales-orders', titleKey: 'routes.salesOrders', sectionKey: 'sections.salesFulfillment' },
+  { match: '/control-tower/outbound', titleKey: 'routes.controlTowerOutbound', sectionKey: 'sections.salesFulfillment' },
+  { match: '/control-tower/inbound', titleKey: 'routes.controlTowerInbound', sectionKey: 'sections.salesFulfillment' },
+  { match: '/control-tower/exceptions', titleKey: 'routes.controlTowerExceptions', sectionKey: 'sections.salesFulfillment' },
   { match: '/control-tower', titleKey: 'routes.controlTower', sectionKey: 'sections.salesFulfillment' },
   { match: '/couriers', titleKey: 'navigation.couriers', sectionKey: 'sections.salesFulfillment' },
   { match: '/sales-orders/inbox', titleKey: 'navigation.orderInbox', sectionKey: 'sections.salesFulfillment' },
   { match: '/settings', titleKey: 'navigation.settings', sectionKey: 'sections.administration' },
+  { match: '/refunds-exchanges/new', titleKey: 'routes.refundsExchangesNew', sectionKey: 'sections.salesFulfillment' },
+  { match: '/refunds-exchanges/', titleKey: 'routes.refundsExchangesDetail', sectionKey: 'sections.salesFulfillment' },
   { match: '/refunds-exchanges', titleKey: 'routes.refundsExchanges', sectionKey: 'sections.salesFulfillment' },
-  { match: '/promotions-pricing', titleKey: 'routes.promotionsPricing', sectionKey: 'sections.salesFulfillment' },
+  { match: '/discounts/new', titleKey: 'routes.discountsNew', sectionKey: 'sections.salesFulfillment' },
+  { match: '/discounts/codes', titleKey: 'routes.discountsCodes', sectionKey: 'sections.salesFulfillment' },
+  { match: '/discounts/analytics', titleKey: 'routes.discountsAnalytics', sectionKey: 'sections.salesFulfillment' },
+  { match: '/discounts/preview', titleKey: 'routes.discountsPreview', sectionKey: 'sections.salesFulfillment' },
+  { match: '/discounts/', titleKey: 'routes.discountsEdit', sectionKey: 'sections.salesFulfillment' },
+  { match: '/discounts', titleKey: 'navigation.discounts', sectionKey: 'sections.salesFulfillment' },
+  { match: '/gift-cards/', titleKey: 'routes.giftCardDetail', sectionKey: 'sections.salesFulfillment' },
+  { match: '/gift-cards', titleKey: 'navigation.giftCards', sectionKey: 'sections.salesFulfillment' },
+  { match: '/referrals/codes/', titleKey: 'routes.referralCodeDetails', sectionKey: 'sections.salesFulfillment' },
+  { match: '/referrals/codes', titleKey: 'routes.referralCodes', sectionKey: 'sections.salesFulfillment' },
+  { match: '/referrals', titleKey: 'routes.referralProgram', sectionKey: 'sections.salesFulfillment' },
+  { match: '/fulfillment/shipments/', titleKey: 'routes.fulfillmentShipmentDetail', sectionKey: 'sections.salesFulfillment' },
+  { match: '/fulfillment/shipments', titleKey: 'routes.fulfillmentShipments', sectionKey: 'sections.salesFulfillment' },
+  { match: '/fulfillment/picking', titleKey: 'routes.fulfillmentPicking', sectionKey: 'sections.salesFulfillment' },
+  { match: '/fulfillment/exceptions', titleKey: 'routes.fulfillmentExceptions', sectionKey: 'sections.salesFulfillment' },
+  { match: '/fulfillment/returns', titleKey: 'routes.fulfillmentReturns', sectionKey: 'sections.salesFulfillment' },
   { match: '/fulfillment', titleKey: 'routes.fulfillmentControl', sectionKey: 'sections.salesFulfillment' },
   { match: '/pos/register', titleKey: 'routes.posRegisterControl', sectionKey: 'sections.pointOfSale' },
   { match: '/pos/settlement', titleKey: 'routes.posSettlement', sectionKey: 'sections.pointOfSale' },
@@ -70,13 +102,30 @@ const ROUTE_META = [
   { match: '/plugins/shopify', titleKey: 'routes.pluginsShopify', sectionKey: 'sections.plugins' },
   { match: '/plugins/logs', titleKey: 'routes.pluginsLogs', sectionKey: 'sections.plugins' },
   { match: '/plugins', titleKey: 'routes.pluginsOverview', sectionKey: 'sections.plugins' },
+  { match: '/orders/', titleKey: 'routes.salesOrders', sectionKey: 'sections.salesFulfillment' },
   { match: '/orders', titleKey: 'routes.salesOrders', sectionKey: 'sections.salesFulfillment' },
   { match: '/users', titleKey: 'routes.users', sectionKey: 'sections.userManagement' },
   { match: '/roles', titleKey: 'routes.roles', sectionKey: 'sections.userManagement' },
   { match: '/profile', titleKey: 'routes.profile', sectionKey: 'sections.account' },
 ];
 
+const SETTINGS_SECTION_TITLE_BY_ID = SETTINGS_SECTIONS.reduce((acc, section) => {
+  acc[section.id] = section.title;
+  return acc;
+}, {});
+
 const getRouteMeta = (pathname) => {
+  // Settings sub-route: /settings/:sectionId → "Settings — <Section Title>"
+  const settingsSectionMatch = pathname.match(/^\/settings\/([^/?#]+)/);
+  if (settingsSectionMatch) {
+    const sectionId = settingsSectionMatch[1];
+    const sectionTitle = SETTINGS_SECTION_TITLE_BY_ID[sectionId];
+    return {
+      title: sectionTitle ? `Settings — ${sectionTitle}` : 'Settings',
+      sectionKey: 'sections.administration',
+    };
+  }
+
   return ROUTE_META.find((item) => pathname.startsWith(item.match)) || {
     titleKey: 'routes.workspace',
     sectionKey: 'sections.logistra',
@@ -106,7 +155,7 @@ const Header = () => {
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               {t(routeMeta.sectionKey)}
             </p>
-            <h2 className="truncate text-xl font-black tracking-tight text-slate-900 dark:text-white">{t(routeMeta.titleKey)}</h2>
+            <h2 className="truncate text-xl font-black tracking-tight text-slate-900 dark:text-white">{routeMeta.title ?? t(routeMeta.titleKey)}</h2>
           </div>
         </div>
 

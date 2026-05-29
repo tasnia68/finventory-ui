@@ -81,6 +81,9 @@ const MENU_ITEMS = [
       { titleKey: 'navigation.cycleCounts', path: '/cycle-counts' },
       { titleKey: 'navigation.valuation', path: '/valuation' },
       { titleKey: 'navigation.damageControl', path: '/damage-control' },
+      { titleKey: 'navigation.damageControlIncidents', path: '/damage-control/incidents' },
+      { titleKey: 'navigation.damageControlReceiving', path: '/damage-control/receiving' },
+      { titleKey: 'navigation.damageControlClaims', path: '/damage-control/claims' },
     ]
   },
   {
@@ -102,8 +105,18 @@ const MENU_ITEMS = [
     submenu: [
       { titleKey: 'navigation.customers', path: '/customers' },
       { titleKey: 'navigation.refundsExchanges', path: '/refunds-exchanges' },
-      { titleKey: 'navigation.promotionsPricing', path: '/promotions-pricing' },
+      { titleKey: 'navigation.discounts', path: '/discounts' },
+      { titleKey: 'navigation.discountsCodes', path: '/discounts/codes' },
+      { titleKey: 'navigation.discountsAnalytics', path: '/discounts/analytics' },
+      { titleKey: 'navigation.discountsPreview', path: '/discounts/preview' },
+      { titleKey: 'navigation.giftCards', path: '/gift-cards' },
+      { titleKey: 'navigation.referrals', path: '/referrals' },
+      { titleKey: 'navigation.referralCodes', path: '/referrals/codes' },
       { titleKey: 'navigation.fulfillment', path: '/fulfillment' },
+      { titleKey: 'navigation.fulfillmentPicking', path: '/fulfillment/picking' },
+      { titleKey: 'navigation.fulfillmentShipments', path: '/fulfillment/shipments' },
+      { titleKey: 'navigation.fulfillmentExceptions', path: '/fulfillment/exceptions' },
+      { titleKey: 'navigation.fulfillmentReturns', path: '/fulfillment/returns' },
     ]
   },
   {
