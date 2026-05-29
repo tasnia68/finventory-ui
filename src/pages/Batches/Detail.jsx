@@ -122,7 +122,7 @@ const BatchDetail = () => {
     ];
 
     return (
-        <div className="space-y-6 p-6">
+        <div className="flex-1 overflow-y-auto space-y-6 p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-3">

@@ -267,7 +267,7 @@ const SidebarItem = ({ item, isExpanded, onToggle, hasPermission, storefrontEnab
           </span>
         </button>
 
-        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'mt-2 max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'mt-2 max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="ml-6 flex flex-col gap-1 border-l border-slate-200 pl-4 dark:border-slate-700">
             {visibleSubmenu.map((subItem, index) => (
               <NavLink

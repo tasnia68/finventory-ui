@@ -101,7 +101,7 @@ const RefundsExchangesDetail = () => {
 
     if (!refund) {
         return (
-            <div className="space-y-6 p-6">
+            <div className="flex-1 overflow-y-auto space-y-6 p-6">
                 {alert ? <Alert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} /> : null}
                 <Card title={t('refundsExchanges.detail.title')}>
                     <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -118,7 +118,7 @@ const RefundsExchangesDetail = () => {
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <div className="flex-1 overflow-y-auto space-y-6 p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('refundsExchanges.detail.title')}</h1>

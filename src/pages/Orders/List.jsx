@@ -1,9 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Badge, Button, Input } from '../../components/common';
+import { Alert, Badge, Button, Card, DataTable, Input } from '../../components/common';
 import { getSalesOrders } from '../../services/salesOrderService';
 import { formatCurrency, getSalesOrderStatusVariant } from '../Sales/utils';
 import { STATUS_TABS, ageLabel, toList } from './constants';
+
+const formatOrderDate = (iso) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
 
 const OrdersList = () => {
     const navigate = useNavigate();
@@ -48,6 +55,64 @@ const OrdersList = () => {
         for (const o of orders) counts[o.status] = (counts[o.status] || 0) + 1;
         return counts;
     }, [orders]);
+
+    const columns = useMemo(() => ([
+        {
+            key: 'soNumber',
+            header: 'SO #',
+            className: 'w-36',
+            render: (value) => (
+                <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">{value}</span>
+            ),
+        },
+        {
+            key: 'customerName',
+            header: 'Customer',
+            className: 'max-w-[260px]',
+            render: (value) => (
+                <span className="block truncate text-slate-800 dark:text-slate-100">{value || '—'}</span>
+            ),
+        },
+        {
+            key: 'channel',
+            header: 'Channel',
+            className: 'w-40',
+            render: (_, row) => (
+                <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {row.externalSource || row.salesChannel || 'SALES_ORDER'}
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            className: 'w-32',
+            render: (value) => (
+                <Badge variant={getSalesOrderStatusVariant(value)}>{value}</Badge>
+            ),
+        },
+        {
+            key: 'totalAmount',
+            header: 'Total',
+            className: 'w-32 text-right',
+            render: (value, row) => (
+                <span className="font-semibold tabular-nums text-slate-900 dark:text-white">
+                    {formatCurrency(value, row.currency)}
+                </span>
+            ),
+        },
+        {
+            key: 'orderDate',
+            header: 'Order date',
+            className: 'w-44',
+            render: (value) => (
+                <span className="text-sm text-slate-600 dark:text-slate-300">
+                    {formatOrderDate(value)}
+                    <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">· {ageLabel(value)} ago</span>
+                </span>
+            ),
+        },
+    ]), []);
 
     return (
         <div className="flex-1 overflow-hidden bg-background-light p-6 dark:bg-background-dark">
@@ -118,40 +183,17 @@ const OrdersList = () => {
                     })()}
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                    <div className="h-full overflow-y-auto">
-                        {loading ? (
-                            <div className="p-6 text-sm text-slate-500">Loading…</div>
-                        ) : filtered.length === 0 ? (
-                            <div className="p-6 text-sm text-slate-500">No orders match this filter.</div>
-                        ) : (
-                            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {filtered.map((o) => (
-                                    <li
-                                        key={o.id}
-                                        onClick={() => navigate(`/orders/${o.id}`)}
-                                        className="cursor-pointer px-4 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">{o.soNumber}</span>
-                                            <Badge variant={getSalesOrderStatusVariant(o.status)}>{o.status}</Badge>
-                                        </div>
-                                        <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
-                                            <span className="truncate">{o.customerName || '—'}</span>
-                                            <span>{ageLabel(o.orderDate)}</span>
-                                        </div>
-                                        <div className="mt-1 flex items-center justify-between text-xs">
-                                            <span className="text-slate-400">{o.externalSource || o.salesChannel || 'SALES_ORDER'}</span>
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200">
-                                                {formatCurrency(o.totalAmount, o.currency)}
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                <Card padding="none" className="flex-1 min-h-0 overflow-hidden">
+                    <div className="h-full overflow-auto">
+                        <DataTable
+                            columns={columns}
+                            data={filtered}
+                            loading={loading}
+                            emptyMessage="No orders match this filter."
+                            onRowClick={(row) => navigate(`/orders/${row.id}`)}
+                        />
                     </div>
-                </div>
+                </Card>
             </div>
         </div>
     );

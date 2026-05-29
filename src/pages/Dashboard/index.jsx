@@ -254,52 +254,51 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto flex flex-col gap-8">
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,_rgba(19,91,236,0.18),_transparent_36%),radial-gradient(circle_at_85%_0%,_rgba(16,185,129,0.18),_transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.75),rgba(248,250,252,0.2))] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_36%),radial-gradient(circle_at_85%_0%,_rgba(16,185,129,0.18),_transparent_28%)]" />
-          <div className="relative grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.5fr)_minmax(24rem,0.9fr)]">
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <div className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white dark:bg-white dark:text-slate-900">
-                  Operations cockpit
+      <div className="max-w-7xl mx-auto flex flex-col gap-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(22rem,0.9fr)]">
+            <div className="space-y-5">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Dashboard
                 </div>
-                <div>
-                  <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{t('dashboard.welcomeBack', { name: displayName })}</h1>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{t('dashboard.todaySummary')}</p>
-                </div>
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                  {t('dashboard.welcomeBack', { name: displayName })}
+                </h1>
+                <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{t('dashboard.todaySummary')}</p>
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 {quickActions.map((action) => (
-                  <Link key={action.to} to={action.to} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700">
-                    <span className="material-symbols-outlined text-[20px]">{action.icon}</span>
+                  <Link key={action.to} to={action.to} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700">
+                    <span className="material-symbols-outlined text-[18px]">{action.icon}</span>
                     <span>{action.label}</span>
                   </Link>
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {summaryHighlights.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{item.label}</div>
-                    <div className={`mt-2 text-2xl font-black ${item.tone}`}>{item.value}</div>
+                  <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                    <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{item.label}</div>
+                    <div className={`mt-1.5 text-xl font-semibold ${item.tone}`}>{item.value}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50/90 p-5 shadow-inner dark:border-slate-700 dark:bg-slate-950/40">
-              <div className="mb-5 flex items-start justify-between gap-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/60">
+              <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Dashboard scope</h2>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Refine the workspace without leaving the operations view.</p>
+                  <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Dashboard scope</h2>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Refine warehouse and time window.</p>
                 </div>
                 <Button icon="sync" loading={loading} onClick={() => setFilters((current) => ({ ...current }))} className="shrink-0">
                   {t('dashboard.refresh')}
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3">
                 <Select
                   label={t('dashboard.warehouseScope')}
                   value={filters.warehouseId}
@@ -316,21 +315,12 @@ const Dashboard = () => {
                 />
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-white p-4 dark:bg-slate-900">
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Warehouse</div>
-                  <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{warehouseLabel}</div>
+              <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Inventory value</div>
+                <div className="mt-1.5 text-2xl font-semibold tabular-nums text-slate-900 dark:text-white">
+                  {loading ? '...' : formatTaka(formatCurrency, summary?.totalInventoryValue || 0, { maximumFractionDigits: 0 })}
                 </div>
-                <div className="rounded-2xl bg-white p-4 dark:bg-slate-900">
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Window</div>
-                  <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{rangeLabel}</div>
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-2xl bg-slate-900 p-5 text-white dark:bg-slate-800">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Inventory value</div>
-                <div className="mt-2 text-3xl font-black">{loading ? '...' : formatTaka(formatCurrency, summary?.totalInventoryValue || 0, { maximumFractionDigits: 0 })}</div>
-                <div className="mt-2 text-sm text-slate-300">Current carrying value for the active scope and period context.</div>
+                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Current carrying value for {warehouseLabel} · {rangeLabel}.</div>
               </div>
             </div>
           </div>
@@ -342,15 +332,15 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           {operationalSignals.map((signal) => (
-            <div key={signal.title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="flex items-start justify-between gap-4">
+            <div key={signal.title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-slate-900 dark:text-white">{signal.title}</div>
-                  <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{signal.value}</div>
+                  <div className="text-sm font-medium text-slate-600 dark:text-slate-300">{signal.title}</div>
+                  <div className="mt-1.5 text-2xl font-semibold tabular-nums text-slate-900 dark:text-white">{signal.value}</div>
                 </div>
-                <span className="material-symbols-outlined rounded-2xl bg-slate-100 p-3 text-slate-600 dark:bg-slate-800 dark:text-slate-300">{signal.icon}</span>
+                <span className="material-symbols-outlined rounded-lg bg-slate-100 p-2 text-slate-600 dark:bg-slate-800 dark:text-slate-300">{signal.icon}</span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">{signal.caption}</p>
+              <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{signal.caption}</p>
             </div>
           ))}
         </div>

@@ -66,7 +66,7 @@ const ReferralCodeDetail = () => {
     const codeStatus = firstAttribution?.referralStatus || firstAttribution?.codeStatus || '—';
 
     return (
-        <div className="space-y-6 p-6">
+        <div className="flex-1 overflow-y-auto space-y-6 p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <Button size="sm" variant="secondary" onClick={() => navigate('/referrals/codes')}>
