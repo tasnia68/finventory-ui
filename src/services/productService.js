@@ -35,6 +35,22 @@ export const createSimpleProduct = (productData) => {
     }));
 };
 
+// v2 single-page editor — one POST/PUT creates/updates the entire product
+// (template + attributes + variants + initial per-warehouse stock).
+export const createProductBulk = (payload) => {
+    return unwrap(request('/products/bulk-create', {
+        method: 'POST',
+        body: payload,
+    }));
+};
+
+export const updateProductBulk = (templateId, payload) => {
+    return unwrap(request(`/products/${templateId}/bulk-update`, {
+        method: 'PUT',
+        body: payload,
+    }));
+};
+
 export const updateProductTemplate = (id, templateData) => {
     return unwrap(request(`/product-templates/${id}`, {
         method: 'PUT',
