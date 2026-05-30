@@ -139,6 +139,12 @@ export const activateStorefrontTheme = async (themeKey) => unwrap(request(`/stor
   method: 'POST',
 }));
 
+export const getStorefrontThemeUpgradeStatus = async () => unwrap(request('/storefront/admin/themes/active/upgrade'));
+
+export const applyStorefrontThemeUpgrade = async () => unwrap(request('/storefront/admin/themes/active/upgrade', {
+  method: 'POST',
+}));
+
 export const getStorefrontDomainContext = async () => unwrap(request('/storefront/admin/domains'));
 
 export const addStorefrontDomain = async (hostname) => unwrap(request('/storefront/admin/domains', {

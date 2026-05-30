@@ -5,6 +5,7 @@ import {
   getStorefrontThemeEditor,
   activateStorefrontTheme,
 } from '../../services/storefrontService';
+import ThemeUpgradeBanner from '../../components/storefront/ThemeUpgradeBanner';
 
 const TAG_COLORS = {
   minimal: 'bg-slate-100 text-slate-700',
@@ -129,6 +130,8 @@ const Themes = () => {
           Back to editor
         </button>
       </header>
+
+      <ThemeUpgradeBanner onApplied={() => setStatus('Theme upgraded — theme tokens refreshed from the latest defaults.')} />
 
       {status ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{status}</div>

@@ -8,6 +8,7 @@ import {
   verifyStorefrontDomain,
 } from '../../services/storefrontService';
 import { useStorefrontModule } from '../../hooks/useStorefrontModule';
+import ThemeUpgradeBanner from '../../components/storefront/ThemeUpgradeBanner';
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -124,7 +125,8 @@ const StorefrontOverview = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-slate-50 px-8 py-8 dark:bg-slate-950">
-      <section className="mx-auto max-w-7xl">
+      <section className="mx-auto max-w-7xl space-y-6">
+        <ThemeUpgradeBanner />
         <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="bg-[radial-gradient(circle_at_top_left,_rgba(15,90,229,0.15),_transparent_36%),radial-gradient(circle_at_80%_10%,_rgba(249,115,22,0.14),_transparent_26%)] px-8 py-8">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
