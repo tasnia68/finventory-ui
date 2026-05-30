@@ -6,136 +6,214 @@
 <title>Logistra — বাংলাদেশের ব্যবসার জন্য একটি কমার্স অপারেটিং সিস্টেম</title>
 <meta name="description" content="ইনভেন্টরি, স্টোরফ্রন্ট, কুরিয়ার ও অ্যাকাউন্টিং — Logistra বাংলাদেশের রিটেইল ও স্টার্টআপের জন্য একটি সম্পূর্ণ কমার্স প্ল্যাটফর্ম।" />
 <link rel="icon" type="image/svg+xml" href="/logistra.svg" />
+<link rel="preload" as="image" href="/img/hero-bd-business.webp" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --ink:#0f1113; --muted:#5b6166; --soft:#8a9097; --line:#e8e9eb; --bg:#fff; --paper:#fafafa;
-    --accent:#0f1113;
+    --ink:#0a0c10; --muted:#5b6166; --soft:#8a9097; --line:#e8e9eb; --bg:#fff; --paper:#f7f8f7;
+    --accent:#006a4e;       /* Bangladesh national green */
+    --accent-bright:#10b981;
+    --accent-soft:#e6f4ee;
+    --gold:#f9b234;
     --serif:"Fraunces",Georgia,"Times New Roman",serif;
     --bn:"Hind Siliguri",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  body{font-family:var(--sans);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.55;overflow-x:hidden}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-height:1.55;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%}
   .bn{font-family:var(--bn)}
-  .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
-  .eyebrow{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+  .eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
 
   /* ---- Nav ---- */
   nav{position:absolute;top:0;left:0;right:0;z-index:10}
   .nav-inner{display:flex;align-items:center;gap:38px;height:78px}
   .brand{display:inline-flex;align-items:center;gap:12px;font-weight:700;font-size:22px;color:#fff;letter-spacing:-.022em;line-height:1}
   .brand .mark{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);backdrop-filter:blur(4px);flex:none}
-  .brand .mark img{width:26px;height:26px;display:block}
+  .brand .mark img{width:26px;height:26px}
   footer .brand .mark{background:#fff;border:1px solid var(--line);backdrop-filter:none}
-  .nav-links{display:flex;gap:28px;font-size:14.5px;color:rgba(255,255,255,.9);font-weight:500}
-  .nav-links a{position:relative;padding:4px 0}
+  .nav-links{display:flex;gap:30px;font-size:14.5px;color:rgba(255,255,255,.92);font-weight:500}
+  .nav-links a{position:relative;padding:4px 0;transition:color .15s}
   .nav-links a:hover{color:#fff}
   .nav-right{margin-left:auto;display:flex;align-items:center;gap:20px}
   .nav-right .login{color:#fff;font-size:14.5px;font-weight:600}
-  .btn{display:inline-flex;align-items:center;gap:9px;border-radius:999px;font-weight:600;font-size:14.5px;padding:12px 24px;transition:transform .15s ease,opacity .15s ease,background .15s ease;cursor:pointer;border:0;white-space:nowrap}
-  .btn-light{background:#fff;color:var(--ink)}
-  .btn-light:hover{transform:translateY(-1px);opacity:.9}
-  .btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.4)}
-  .btn-ghost:hover{background:rgba(255,255,255,.18)}
-  .btn-dark{background:var(--ink);color:#fff}
-  .btn-dark:hover{transform:translateY(-1px);opacity:.9}
+  .btn{display:inline-flex;align-items:center;gap:9px;border-radius:999px;font-weight:600;font-size:14.5px;padding:13px 26px;transition:transform .15s ease,opacity .15s ease,background .15s ease,box-shadow .15s ease;cursor:pointer;border:0;white-space:nowrap}
+  .btn-light{background:#fff;color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04),0 8px 24px -10px rgba(0,0,0,.18)}
+  .btn-light:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(0,0,0,.06),0 14px 32px -10px rgba(0,0,0,.22)}
+  .btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.32);backdrop-filter:blur(4px)}
+  .btn-ghost:hover{background:rgba(255,255,255,.16)}
+  .btn-dark{background:var(--ink);color:#fff;box-shadow:0 8px 24px -10px rgba(0,0,0,.4)}
+  .btn-dark:hover{transform:translateY(-1px)}
+  .btn-accent{background:var(--accent);color:#fff;box-shadow:0 8px 24px -10px rgba(0,106,78,.4)}
+  .btn-accent:hover{background:#00563f;transform:translateY(-1px)}
 
-  /* ---- Hero ---- */
-  .hero{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:center;overflow:hidden;background:#0b0c0d}
-  .hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,8,9,.82) 0%,rgba(7,8,9,.55) 48%,rgba(7,8,9,.22) 100%)}
-  .hero-content{position:relative;z-index:2;padding:118px 0 92px;max-width:780px}
-  .hero .tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--bn);font-size:14px;font-weight:600;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);padding:7px 15px;border-radius:999px;margin-bottom:26px}
-  .hero .tag .dot{width:7px;height:7px;border-radius:99px;background:#46d39a}
-  .hero h1{font-family:var(--serif);color:#fff;font-size:clamp(44px,7.6vw,98px);line-height:1.02;letter-spacing:-.02em;font-weight:600}
+  /* ---- Hero (image, no video) ---- */
+  .hero{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:center;overflow:hidden;background:#080b0a}
+  .hero-bg{position:absolute;inset:0;background-image:url('/img/hero-bd-business.webp');background-size:cover;background-position:right center;filter:saturate(1.05)}
+  .hero::after{content:"";position:absolute;inset:0;background:
+    linear-gradient(95deg, rgba(7,12,10,.92) 0%, rgba(7,12,10,.66) 42%, rgba(7,12,10,.18) 75%, rgba(7,12,10,0) 100%),
+    linear-gradient(180deg, rgba(7,12,10,.35) 0%, rgba(7,12,10,0) 30%, rgba(7,12,10,0) 70%, rgba(7,12,10,.4) 100%)
+  }
+  .hero-content{position:relative;z-index:2;padding:140px 0 96px;max-width:780px}
+  .hero .tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--bn);font-size:13.5px;font-weight:600;color:#fff;background:rgba(0,106,78,.28);border:1px solid rgba(76,217,171,.45);padding:7px 15px;border-radius:999px;margin-bottom:28px;backdrop-filter:blur(6px)}
+  .hero .tag .dot{width:7px;height:7px;border-radius:99px;background:#4cd9ab;box-shadow:0 0 0 4px rgba(76,217,171,.18)}
+  .hero h1{font-family:var(--serif);color:#fff;font-size:clamp(46px,7.6vw,104px);line-height:1.00;letter-spacing:-.024em;font-weight:600}
+  .hero h1 .accent-word{color:#7cf2c4;font-style:italic;font-weight:500}
   .hero .h1bn{font-family:var(--bn);font-weight:700;font-size:clamp(26px,4vw,46px);line-height:1.25;color:#fff;margin-top:18px;letter-spacing:-.01em}
-  .hero p{font-family:var(--bn);color:rgba(255,255,255,.86);font-size:clamp(17px,1.9vw,21px);margin:22px 0 36px;max-width:560px;line-height:1.65}
+  .hero p{font-family:var(--bn);color:rgba(255,255,255,.84);font-size:clamp(17px,1.9vw,21px);margin:24px 0 38px;max-width:560px;line-height:1.65}
   .hero-cta{display:flex;gap:13px;flex-wrap:wrap;align-items:center}
-  .play-dot{width:24px;height:24px;border-radius:999px;background:rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center}
-  .play-dot svg{width:9px;height:9px}
+  .hero-meta{display:flex;align-items:center;gap:18px;margin-top:32px;font-family:var(--bn);color:rgba(255,255,255,.6);font-size:13.5px;flex-wrap:wrap}
+  .hero-meta .dot{width:4px;height:4px;border-radius:99px;background:rgba(255,255,255,.4)}
+  .hero-meta strong{color:#fff;font-weight:600}
+
+  /* Hero side stat card (visible on lg+) */
+  .hero-aside{position:absolute;right:max(28px,calc((100vw - 1240px) / 2 + 28px));top:50%;transform:translateY(-50%);z-index:2;width:260px;display:none}
+  @media(min-width:1200px){.hero-aside{display:block}}
+  .hero-aside .card{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-radius:18px;padding:20px;box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+  .hero-aside .card .lab{font-family:var(--bn);font-size:11.5px;color:var(--soft);font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .hero-aside .card .num{font-family:var(--serif);font-size:42px;line-height:1;letter-spacing:-.02em;color:var(--ink);margin:8px 0 6px}
+  .hero-aside .card .desc{font-family:var(--bn);color:var(--muted);font-size:13.5px;line-height:1.5}
+  .hero-aside .stat-stack{display:grid;gap:12px}
 
   /* ---- Capability pillars ---- */
-  .stats{border-bottom:1px solid var(--line);background:var(--bg)}
+  .stats{border-bottom:1px solid var(--line);background:var(--bg);position:relative;z-index:3}
   .stats .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:0}
-  .stat{padding:40px 30px;border-left:1px solid var(--line)}
+  .stat{padding:40px 30px;border-left:1px solid var(--line);transition:background .15s}
   .stat:first-child{border-left:0;padding-left:28px}
   .stat:last-child{padding-right:28px}
-  .stat .pi{width:38px;height:38px;border-radius:10px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .stat:hover{background:var(--paper)}
+  .stat .pi{width:40px;height:40px;border-radius:11px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 8px 16px -6px rgba(0,106,78,.4)}
   .stat .pi svg{width:18px;height:18px;stroke:#fff;fill:none}
   .stat .pt{font-family:var(--bn);font-weight:700;font-size:17px;letter-spacing:-.01em}
   .stat .ps{font-family:var(--bn);color:var(--muted);font-size:14px;margin-top:5px;line-height:1.6}
 
+  /* ---- Video section ("See it in action") ---- */
+  .demo{padding:104px 0;background:var(--paper);border-bottom:1px solid var(--line)}
+  .demo .head{text-align:center;max-width:680px;margin:0 auto 56px}
+  .demo h2{font-family:var(--serif);font-size:clamp(30px,3.5vw,46px);line-height:1.1;letter-spacing:-.02em;margin-top:14px}
+  .demo .h2bn{font-family:var(--bn);font-weight:700;font-size:clamp(20px,2.3vw,26px);color:var(--ink);margin-top:10px}
+  .demo .lead{font-family:var(--bn);color:var(--muted);font-size:17px;margin-top:18px;line-height:1.7}
+  .video-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:22px;max-width:1180px;margin:0 auto}
+  .video-card{position:relative;border-radius:22px;overflow:hidden;background:#080b0a;aspect-ratio:16/9;box-shadow:0 30px 70px -25px rgba(0,0,0,.35)}
+  .video-card video{width:100%;height:100%;object-fit:cover;display:block}
+  .video-card .play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.35));pointer-events:none;transition:opacity .25s}
+  .video-card.playing .play-overlay{opacity:0}
+  .video-card .play-btn{width:74px;height:74px;border-radius:999px;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;pointer-events:auto;box-shadow:0 20px 40px -12px rgba(0,0,0,.6)}
+  .video-card .play-btn svg{width:22px;height:22px;margin-left:3px;fill:var(--ink)}
+  .video-card .label{position:absolute;left:20px;bottom:20px;color:#fff;font-family:var(--bn);font-weight:600;font-size:15px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:8px 14px;border-radius:99px;letter-spacing:.01em}
+
   /* ---- Integrations strip ---- */
-  .strip{border-bottom:1px solid var(--line);padding:30px 0;background:var(--paper)}
+  .strip{border-bottom:1px solid var(--line);padding:32px 0;background:var(--bg)}
   .strip .wrap{display:flex;align-items:center;justify-content:center;gap:18px 30px;flex-wrap:wrap}
-  .strip .lab{font-family:var(--bn);color:var(--soft);font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .strip .lab{font-family:var(--bn);color:var(--soft);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
   .strip .names{display:flex;align-items:center;gap:14px 26px;flex-wrap:wrap}
   .strip .name{color:var(--ink);font-size:15.5px;font-weight:600;letter-spacing:.01em}
   .strip .sep{width:4px;height:4px;border-radius:50%;background:#c8cace}
-  .strip .cod{font-family:var(--bn);font-size:13px;font-weight:600;color:var(--muted);border:1px solid var(--line);background:var(--bg);padding:6px 14px;border-radius:999px}
+  .strip .cod{font-family:var(--bn);font-size:13px;font-weight:600;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);padding:7px 14px;border-radius:999px}
+
+  /* ---- Personas — "for every Bangladeshi business" ---- */
+  .personas{padding:104px 0;background:var(--bg)}
+  .personas .head{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:end;max-width:1240px;margin:0 auto;padding:0 28px}
+  .personas h2{font-family:var(--serif);font-size:clamp(30px,3.5vw,46px);line-height:1.1;letter-spacing:-.02em;margin-top:14px}
+  .personas .h2bn{font-family:var(--bn);font-weight:700;font-size:clamp(20px,2.3vw,26px);color:var(--ink);margin-top:10px}
+  .personas .lead{font-family:var(--bn);color:var(--muted);font-size:17px;line-height:1.7;padding-left:28px;border-left:2px solid var(--accent-soft)}
+  .persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:50px;max-width:1240px;margin-left:auto;margin-right:auto;padding:0 28px}
+  .persona{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;background:#eee;transition:transform .25s ease}
+  .persona:hover{transform:translateY(-4px)}
+  .persona img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+  .persona:hover img{transform:scale(1.06)}
+  .persona::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.75) 100%)}
+  .persona .meta{position:absolute;left:20px;bottom:18px;right:20px;color:#fff;z-index:2}
+  .persona .meta .tag{font-family:var(--bn);font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#7cf2c4;margin-bottom:6px}
+  .persona .meta h4{font-family:var(--serif);font-size:22px;letter-spacing:-.01em;font-weight:600}
+  .persona .meta .desc{font-family:var(--bn);font-size:13.5px;color:rgba(255,255,255,.85);margin-top:5px;line-height:1.55}
+  .persona.feature{grid-column:span 2}
 
   /* ---- Features ---- */
-  section.feat{padding:104px 0}
+  section.feat{padding:104px 0;background:var(--paper);border-top:1px solid var(--line)}
   .feat .head{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:end}
   .feat .head-l{max-width:560px}
   .feat h2{font-family:var(--serif);font-size:clamp(30px,3.5vw,46px);line-height:1.1;letter-spacing:-.02em;margin-top:14px}
   .feat .h2bn{font-family:var(--bn);font-weight:700;font-size:clamp(20px,2.3vw,26px);color:var(--ink);margin-top:10px}
-  .feat .lead{font-family:var(--bn);color:var(--muted);font-size:17.5px;line-height:1.75;padding-left:28px;border-left:2px solid var(--line)}
+  .feat .lead{font-family:var(--bn);color:var(--muted);font-size:17px;line-height:1.7;padding-left:28px;border-left:2px solid var(--accent-soft)}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:58px}
-  .card{border:1px solid var(--line);border-radius:18px;padding:32px 28px;background:var(--bg);transition:border-color .15s ease,transform .15s ease}
-  .card:hover{border-color:#cfd1d4;transform:translateY(-2px)}
-  .card .ic{width:44px;height:44px;border-radius:12px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+  .card{border:1px solid var(--line);border-radius:18px;padding:32px 28px;background:var(--bg);transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+  .card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 20px 40px -20px rgba(0,106,78,.18)}
+  .card .ic{width:46px;height:46px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 8px 16px -6px rgba(0,106,78,.4)}
   .card .ic svg{width:21px;height:21px;stroke:#fff;fill:none}
-  .card h3{font-size:20px;letter-spacing:-.01em}
+  .card h3{font-size:20px;letter-spacing:-.01em;color:var(--ink)}
   .card .h3bn{font-family:var(--bn);font-weight:600;font-size:16px;color:var(--ink);margin:5px 0 11px}
   .card p{font-family:var(--bn);color:var(--muted);font-size:15px;line-height:1.7}
 
+  /* ---- Made in Bangladesh band ---- */
+  .madein{position:relative;padding:120px 0;color:#fff;overflow:hidden}
+  .madein-bg{position:absolute;inset:0;background-image:url('/img/bd-lalbagh.webp');background-size:cover;background-position:center}
+  .madein::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(0,53,39,.92) 0%,rgba(0,106,78,.78) 60%,rgba(15,17,19,.7) 100%)}
+  .madein .wrap{position:relative;z-index:2;text-align:center}
+  .madein .flag{display:inline-flex;align-items:center;gap:10px;font-family:var(--bn);font-weight:700;color:#7cf2c4;letter-spacing:.14em;font-size:13px;text-transform:uppercase;margin-bottom:18px}
+  .madein .flag svg{width:18px;height:18px}
+  .madein h2{font-family:var(--serif);font-size:clamp(34px,4.6vw,58px);line-height:1.05;letter-spacing:-.02em;max-width:840px;margin:0 auto;font-weight:600}
+  .madein .h2bn{font-family:var(--bn);font-weight:700;font-size:clamp(19px,2.4vw,26px);margin:16px auto 0;color:rgba(255,255,255,.95)}
+  .madein p{font-family:var(--bn);color:rgba(255,255,255,.78);font-size:17px;margin:24px auto 0;max-width:580px;line-height:1.7}
+
   /* ---- CTA band ---- */
-  .band-wrap{padding:0 28px 104px}
-  .band{background:var(--ink);color:#fff;border-radius:26px;max-width:1200px;margin:0 auto;padding:88px 40px;text-align:center}
-  .band h2{font-family:var(--serif);font-size:clamp(32px,4.8vw,56px);line-height:1.06;letter-spacing:-.02em;max-width:740px;margin:0 auto}
-  .band .h2bn{font-family:var(--bn);font-weight:700;font-size:clamp(19px,2.4vw,26px);margin:14px auto 0;color:rgba(255,255,255,.92)}
-  .band p{font-family:var(--bn);color:rgba(255,255,255,.66);font-size:17px;margin:20px auto 34px;max-width:480px;line-height:1.65}
-  .band .hero-cta{justify-content:center}
+  .band-wrap{padding:104px 28px}
+  .band{background:linear-gradient(135deg,var(--ink) 0%,#1a2823 100%);color:#fff;border-radius:30px;max-width:1240px;margin:0 auto;padding:96px 40px;text-align:center;position:relative;overflow:hidden}
+  .band::before{content:"";position:absolute;top:-50%;right:-20%;width:60%;height:200%;background:radial-gradient(circle,rgba(76,217,171,.18) 0%,rgba(76,217,171,0) 60%);pointer-events:none}
+  .band h2{font-family:var(--serif);font-size:clamp(32px,4.8vw,58px);line-height:1.06;letter-spacing:-.02em;max-width:780px;margin:0 auto;position:relative;z-index:1;font-weight:600}
+  .band .h2bn{font-family:var(--bn);font-weight:700;font-size:clamp(19px,2.4vw,26px);margin:14px auto 0;color:rgba(255,255,255,.92);position:relative;z-index:1}
+  .band p{font-family:var(--bn);color:rgba(255,255,255,.68);font-size:17px;margin:22px auto 36px;max-width:500px;line-height:1.65;position:relative;z-index:1}
+  .band .hero-cta{justify-content:center;position:relative;z-index:1}
 
   /* ---- Footer ---- */
-  footer{border-top:1px solid var(--line);padding:48px 0;color:var(--muted);font-size:14px}
-  footer .top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px}
+  footer{border-top:1px solid var(--line);padding:52px 0;color:var(--muted);font-size:14px;background:var(--bg)}
+  footer .top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:28px}
   footer .brand{color:var(--ink)}
-  footer .fl{display:flex;gap:26px;font-family:var(--bn);font-weight:500}
-  footer a:hover{color:var(--ink)}
-  footer .made{font-family:var(--bn);margin-top:26px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:var(--soft);font-size:13.5px}
+  footer .fl{display:flex;gap:28px;font-family:var(--bn);font-weight:500;flex-wrap:wrap}
+  footer a:hover{color:var(--accent)}
+  footer .made{font-family:var(--bn);margin-top:30px;padding-top:24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:var(--soft);font-size:13.5px}
 
+  @media(max-width:1100px){
+    .video-grid{grid-template-columns:1fr}
+    .persona-grid{grid-template-columns:repeat(2,1fr)}
+    .persona.feature{grid-column:span 2}
+  }
   @media(max-width:880px){
     .nav-links{display:none}
     .nav-inner{height:66px;gap:16px}
-    .hero-content{padding:118px 0 76px}
+    .hero-content{padding:118px 0 80px}
     .stats .wrap{grid-template-columns:repeat(2,1fr)}
     .stat{padding:28px 24px;border-top:1px solid var(--line)}
     .stat,.stat:first-child,.stat:last-child{border-left:1px solid var(--line);padding-left:24px;padding-right:24px}
     .stat:nth-child(odd){border-left:0}
     .stat:nth-child(-n+2){border-top:0}
-    .feat .head{grid-template-columns:1fr;gap:22px}
-    .feat .lead{padding-left:18px}
-    section.feat{padding:72px 0}
+    .demo,section.feat,.personas{padding:72px 0}
+    .demo .head{margin-bottom:38px}
+    .feat .head,.personas .head{grid-template-columns:1fr;gap:22px}
+    .feat .lead,.personas .lead{padding-left:18px}
     .grid{grid-template-columns:1fr;gap:16px;margin-top:42px}
-    .band-wrap{padding:0 18px 72px}
-    .band{padding:60px 26px;border-radius:22px}
+    .persona-grid{grid-template-columns:1fr;margin-top:36px}
+    .persona,.persona.feature{grid-column:span 1;aspect-ratio:16/11}
+    .madein{padding:84px 0}
+    .band-wrap{padding:72px 18px}
+    .band{padding:62px 26px;border-radius:24px}
   }
   @media(max-width:560px){
     .wrap{padding:0 20px}
     .nav-inner{height:60px}
     .brand{font-size:19px}
     .nav-right{gap:12px}
-    .btn{padding:11px 18px;font-size:14px}
-    .hero-content{padding:104px 0 64px}
+    .btn{padding:11px 20px;font-size:14px}
+    .hero{background-position:65% center}
+    .hero::after{background:linear-gradient(180deg,rgba(7,12,10,.85) 0%,rgba(7,12,10,.55) 60%,rgba(7,12,10,.8) 100%)}
+    .hero-content{padding:104px 0 68px}
     .hero .tag{margin-bottom:20px;font-size:13px}
-    .hero h1{font-size:clamp(40px,12vw,52px)}
+    .hero h1{font-size:clamp(40px,12vw,54px)}
     .hero .h1bn{font-size:clamp(22px,6.5vw,28px);margin-top:14px}
     .hero p{font-size:16px;margin:18px 0 28px}
     .hero-cta{gap:10px}
@@ -143,17 +221,17 @@
     .stats .wrap{grid-template-columns:1fr}
     .stat,.stat:nth-child(odd){padding:22px 20px;border-left:0;border-top:1px solid var(--line)}
     .stat:first-child{border-top:0}
-    .strip{padding:22px 0}
+    .strip{padding:24px 0}
     .strip .wrap{gap:14px 18px}
     .strip .lab{font-size:11.5px}
     .strip .name{font-size:14.5px}
     .strip .names{gap:10px 18px}
-    section.feat{padding:56px 0}
-    .feat h2{font-size:clamp(27px,8vw,34px)}
-    .feat .h2bn{font-size:clamp(18px,5.5vw,22px)}
-    .feat .lead{font-size:16px;padding-left:16px}
+    section.feat,.demo,.personas{padding:56px 0}
+    .feat h2,.demo h2,.personas h2,.madein h2{font-size:clamp(27px,8vw,34px)}
+    .feat .h2bn,.demo .h2bn,.personas .h2bn{font-size:clamp(18px,5.5vw,22px)}
+    .feat .lead,.personas .lead{font-size:16px;padding-left:16px}
     .card{padding:26px 22px}
-    .band{padding:52px 22px}
+    .band{padding:54px 22px}
     .band p{font-size:16px}
     footer{padding:38px 0}
     footer .made{flex-direction:column;gap:6px}
@@ -162,26 +240,9 @@
 </head>
 <body>
 
+<!-- HERO with Bangladeshi business image background (no video) -->
 <div class="hero">
-  <video id="heroVideo" autoplay muted playsinline preload="auto" poster="/intro-poster.jpg">
-    <source src="/intro.mp4" type="video/mp4" />
-  </video>
-  <script>
-    (function(){
-      var v=document.getElementById('heroVideo');
-      if(!v) return;
-      var swapped=false;
-      v.addEventListener('ended',function(){
-        if(swapped){return;}            /* intro done -> switch to looping hero */
-        swapped=true;
-        v.loop=true;
-        v.setAttribute('src','/hero.mp4');
-        v.load();
-        var p=v.play();
-        if(p&&p.catch){p.catch(function(){});}
-      });
-    })();
-  </script>
+  <div class="hero-bg" aria-hidden="true"></div>
 
   <nav>
     <div class="wrap nav-inner">
@@ -192,7 +253,7 @@
       <div class="nav-links bn">
         <a href="#platform">প্ল্যাটফর্ম</a>
         <a href="#features">ফিচার</a>
-        <a href="#pricing">প্রাইসিং</a>
+        <a href="#personas">কারা ব্যবহার করেন</a>
         <a href="/track">অর্ডার ট্র্যাক</a>
       </div>
       <div class="nav-right">
@@ -203,20 +264,46 @@
   </nav>
 
   <div class="wrap hero-content">
-    <span class="tag"><span class="dot"></span>বাংলাদেশের ব্যবসার জন্য তৈরি</span>
-    <h1>Run your<br/>entire store</h1>
+    <span class="tag"><span class="dot"></span>বাংলাদেশের ব্যবসার জন্য তৈরি · Made for Bangladesh</span>
+    <h1>Run your<br/>entire <span class="accent-word">store</span>.</h1>
     <div class="h1bn">আপনার পুরো ব্যবসা, একটাই জায়গায়।</div>
     <p>ইনভেন্টরি, অনলাইন স্টোর, কুরিয়ার আর হিসাব — সব এক প্ল্যাটফর্মে। প্রথম অর্ডার থেকে হাজারতম অর্ডার পর্যন্ত স্কেল করার জন্য তৈরি।</p>
     <div class="hero-cta">
       <a class="btn btn-light bn" href="/inventory/">ফ্রি শুরু করুন</a>
-      <a class="btn btn-ghost bn" href="#platform">
-        <span class="play-dot"><svg viewBox="0 0 8 8" fill="#fff"><path d="M0 0l8 4-8 4z"/></svg></span>
+      <a class="btn btn-ghost bn" href="#demo">
+        <span style="width:22px;height:22px;border-radius:99px;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 8 8" width="9" height="9" fill="#fff"><path d="M0 0l8 4-8 4z"/></svg>
+        </span>
         কীভাবে কাজ করে দেখুন
       </a>
     </div>
+    <div class="hero-meta bn">
+      <span>কোনো কার্ড লাগবে না</span>
+      <span class="dot"></span>
+      <span><strong>Steadfast · Pathao · RedX</strong> ইন্টিগ্রেটেড</span>
+      <span class="dot"></span>
+      <span>বাংলা ও ইংরেজি সাপোর্ট</span>
+    </div>
   </div>
+
+  <!-- Floating stat card on lg+ -->
+  <aside class="hero-aside" aria-hidden="true">
+    <div class="stat-stack">
+      <div class="card">
+        <div class="lab">আজকের অর্ডার</div>
+        <div class="num">৳ 2,18,400</div>
+        <div class="desc">আজ ৫২টি অর্ডার, ৩টি ওয়্যারহাউস থেকে শিপ হচ্ছে।</div>
+      </div>
+      <div class="card">
+        <div class="lab">স্টক রিজার্ভড</div>
+        <div class="num">1,284 <span style="font-size:18px;color:var(--accent)">▲</span></div>
+        <div class="desc">রিয়েল-টাইমে — ৪টি চ্যানেলে সিঙ্ক হচ্ছে।</div>
+      </div>
+    </div>
+  </aside>
 </div>
 
+<!-- CAPABILITY PILLARS -->
 <div class="stats">
   <div class="wrap">
     <div class="stat">
@@ -242,6 +329,43 @@
   </div>
 </div>
 
+<!-- VIDEO DEMO ("See it in action" — videos moved here from hero) -->
+<section class="demo" id="demo">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">DEMO · কাজের দৃশ্য</div>
+      <h2>See it in action.</h2>
+      <div class="h2bn">আসল ব্যবসায় Logistra।</div>
+      <p class="lead bn">৪০ সেকেন্ডে বুঝুন — ইনভেন্টরি থেকে কুরিয়ার পর্যন্ত পুরো ফ্লো।</p>
+    </div>
+    <div class="video-grid">
+      <div class="video-card" data-video="primary">
+        <video preload="metadata" poster="/intro-poster.jpg" playsinline>
+          <source src="/intro.mp4" type="video/mp4" />
+        </video>
+        <div class="play-overlay">
+          <button class="play-btn" aria-label="Play demo">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+        <span class="label bn">ইনভেন্টরি ও অর্ডার ফ্লো</span>
+      </div>
+      <div class="video-card" data-video="secondary">
+        <video preload="metadata" poster="/hero-poster.jpg" playsinline>
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+        <div class="play-overlay">
+          <button class="play-btn" aria-label="Play demo">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+        <span class="label bn">স্টোরফ্রন্ট প্রিভিউ</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COURIER INTEGRATIONS STRIP -->
 <div class="strip">
   <div class="wrap">
     <span class="lab">কুরিয়ার ইন্টিগ্রেশন</span>
@@ -255,59 +379,139 @@
   </div>
 </div>
 
-<section class="feat wrap" id="platform">
+<!-- PERSONAS — "for every Bangladeshi business" -->
+<section class="personas" id="personas">
   <div class="head">
-    <div class="head-l">
-      <div class="eyebrow bn">প্ল্যাটফর্ম · THE PLATFORM</div>
-      <h2>One platform. Every part of the operation.</h2>
-      <div class="h2bn">একটাই প্ল্যাটফর্ম, অপারেশনের প্রতিটি অংশ।</div>
+    <div>
+      <div class="eyebrow">কারা ব্যবহার করেন · WHO USES IT</div>
+      <h2>From neighborhood tailors to multi-warehouse brands.</h2>
+      <div class="h2bn">ছোট দোকান থেকে বড় ব্র্যান্ড — সবার জন্য।</div>
     </div>
-    <p class="lead">আলাদা আলাদা টুল জোড়া দেওয়া বন্ধ করুন। আপনি কী বিক্রি করছেন, কীভাবে ডেলিভারি হচ্ছে আর কীভাবে হিসাব হচ্ছে — Logistra সব রিয়েল-টাইমে এক করে দেয়।</p>
+    <p class="lead bn">যেকোনো বাংলাদেশি ব্যবসা — ফ্যাশন, ফুড, গ্রোসারি, অটোমোটিভ, বুটিক — যদি স্টক থাকে আর কাস্টমার থাকে, Logistra আপনার জন্য।</p>
   </div>
-
-  <div class="grid" id="features">
-    <div class="card">
-      <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg></div>
-      <h3>Live inventory</h3>
-      <div class="h3bn">লাইভ ইনভেন্টরি</div>
-      <p>একাধিক ওয়্যারহাউস, ভ্যারিয়েন্ট, ব্যাচ আর রিজার্ভেশন — প্রতিটি চ্যানেলে স্টক সবসময় নির্ভুল থাকে।</p>
+  <div class="persona-grid">
+    <div class="persona feature">
+      <img src="/img/persona-tailor.webp" alt="Bangladeshi tailor at sewing machine using smartphone" loading="lazy" />
+      <div class="meta">
+        <div class="tag">টেইলরিং · ফ্যাশন</div>
+        <h4>The corner tailor going digital</h4>
+        <div class="desc bn">মোবাইল থেকেই অর্ডার নিন, স্টক রাখুন, কাস্টমার যোগ রাখুন।</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4z"/><path d="M4 8v12h16V8"/><path d="M9 12h6"/></svg></div>
-      <h3>Hosted storefront</h3>
-      <div class="h3bn">নিজস্ব অনলাইন স্টোর</div>
-      <p>নিজের ডোমেইনে দ্রুত, থিমেবল অনলাইন দোকান — ডেভেলপার ছাড়াই পাবলিশ, প্রিভিউ ও রোলব্যাক।</p>
+    <div class="persona">
+      <img src="/img/persona-apparel.webp" alt="Boutique clothing display" loading="lazy" />
+      <div class="meta">
+        <div class="tag">অ্যাপারেল</div>
+        <h4>Boutiques & multi-brand</h4>
+        <div class="desc bn">সাইজ, কালার আর ভ্যারিয়েন্ট সহ পুরো ক্যাটালগ।</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h11V6H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></div>
-      <h3>Courier dispatch</h3>
-      <div class="h3bn">কুরিয়ার ডিসপ্যাচ</div>
-      <p>Steadfast, Pathao সহ একাধিক কুরিয়ারে বুকিং — জোন-ভিত্তিক চার্জ আর COD রিকনসিলিয়েশন স্বয়ংক্রিয়।</p>
+    <div class="persona">
+      <img src="/img/persona-grocery.webp" alt="Fresh produce" loading="lazy" />
+      <div class="meta">
+        <div class="tag">গ্রোসারি · ফ্রেশ</div>
+        <h4>Grocery & fresh produce</h4>
+        <div class="desc bn">ব্যাচ ও মেয়াদ ট্র্যাকিং সহ — দ্রুত-চলতি পণ্যের জন্য।</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 4v16"/><path d="M12 9h5"/><path d="M12 13h5"/></svg></div>
-      <h3>Built-in accounting</h3>
-      <div class="h3bn">বিল্ট-ইন অ্যাকাউন্টিং</div>
-      <p>সেলস, পারচেজ আর পে-রোল সরাসরি ডাবল-এন্ট্রি লেজারে পোস্ট হয় — ভ্যাট, পিরিয়ড ক্লোজ ও রিপোর্টিং সহ।</p>
+    <div class="persona">
+      <img src="/img/persona-food.webp" alt="Sandwich and food platter" loading="lazy" />
+      <div class="meta">
+        <div class="tag">ফুড সার্ভিস</div>
+        <h4>Cafés, cloud kitchens & bakers</h4>
+        <div class="desc bn">প্যাক করা পণ্য বা প্রতিদিনের মেনু — দু'টোতেই কাজ করে।</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 4v6h-6"/></svg></div>
-      <h3>Procurement</h3>
-      <div class="h3bn">প্রকিউরমেন্ট</div>
-      <p>রিকুইজিশন থেকে পারচেজ অর্ডার, থ্রি-ওয়ে ম্যাচসহ — PO অনুযায়ী রিসিভ করলে স্টক ও হিসাব মিলে থাকে।</p>
+    <div class="persona">
+      <img src="/img/persona-boutique.webp" alt="Colorful retail shop interior" loading="lazy" />
+      <div class="meta">
+        <div class="tag">কনসেপ্ট রিটেইল</div>
+        <h4>Concept stores & lifestyle brands</h4>
+        <div class="desc bn">নিজস্ব ডোমেইনে সুন্দর স্টোরফ্রন্ট, পুরোপুরি কাস্টমাইজেবল।</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.5 7.1 18l.9-5.5-4-3.9L9.5 8z"/></svg></div>
-      <h3>Virtual try-on</h3>
-      <div class="h3bn">ভার্চুয়াল ট্রাই-অন</div>
-      <p>AI ট্রাই-অনে ক্রেতারা নিজের ছবিতে পণ্য দেখতে পারেন — দোকান অনুযায়ী চালু, কোটা-নিয়ন্ত্রিত।</p>
+    <div class="persona">
+      <img src="/img/persona-auto.webp" alt="Automotive detail" loading="lazy" />
+      <div class="meta">
+        <div class="tag">অটোমোটিভ · পার্টস</div>
+        <h4>Auto parts & accessories</h4>
+        <div class="desc bn">SKU হাজার পার হয়ে গেলেও — সিরিয়াল, ব্যাচ, ও ব্যারকোড সাপোর্ট।</div>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- PLATFORM FEATURES -->
+<section class="feat" id="platform">
+  <div class="wrap">
+    <div class="head">
+      <div class="head-l">
+        <div class="eyebrow">প্ল্যাটফর্ম · THE PLATFORM</div>
+        <h2>One platform. Every part of the operation.</h2>
+        <div class="h2bn">একটাই প্ল্যাটফর্ম, অপারেশনের প্রতিটি অংশ।</div>
+      </div>
+      <p class="lead bn">আলাদা আলাদা টুল জোড়া দেওয়া বন্ধ করুন। আপনি কী বিক্রি করছেন, কীভাবে ডেলিভারি হচ্ছে আর কীভাবে হিসাব হচ্ছে — Logistra সব রিয়েল-টাইমে এক করে দেয়।</p>
+    </div>
+
+    <div class="grid" id="features">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg></div>
+        <h3>Live inventory</h3>
+        <div class="h3bn">লাইভ ইনভেন্টরি</div>
+        <p>একাধিক ওয়্যারহাউস, ভ্যারিয়েন্ট, ব্যাচ আর রিজার্ভেশন — প্রতিটি চ্যানেলে স্টক সবসময় নির্ভুল থাকে।</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4z"/><path d="M4 8v12h16V8"/><path d="M9 12h6"/></svg></div>
+        <h3>Hosted storefront</h3>
+        <div class="h3bn">নিজস্ব অনলাইন স্টোর</div>
+        <p>নিজের ডোমেইনে দ্রুত, থিমেবল অনলাইন দোকান — ডেভেলপার ছাড়াই পাবলিশ, প্রিভিউ ও রোলব্যাক।</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h11V6H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></div>
+        <h3>Courier dispatch</h3>
+        <div class="h3bn">কুরিয়ার ডিসপ্যাচ</div>
+        <p>Steadfast, Pathao সহ একাধিক কুরিয়ারে বুকিং — জোন-ভিত্তিক চার্জ আর COD রিকনসিলিয়েশন স্বয়ংক্রিয়।</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 4v16"/><path d="M12 9h5"/><path d="M12 13h5"/></svg></div>
+        <h3>Built-in accounting</h3>
+        <div class="h3bn">বিল্ট-ইন অ্যাকাউন্টিং</div>
+        <p>সেলস, পারচেজ আর পে-রোল সরাসরি ডাবল-এন্ট্রি লেজারে পোস্ট হয় — ভ্যাট, পিরিয়ড ক্লোজ ও রিপোর্টিং সহ।</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 4v6h-6"/></svg></div>
+        <h3>Procurement</h3>
+        <div class="h3bn">প্রকিউরমেন্ট</div>
+        <p>রিকুইজিশন থেকে পারচেজ অর্ডার, থ্রি-ওয়ে ম্যাচসহ — PO অনুযায়ী রিসিভ করলে স্টক ও হিসাব মিলে থাকে।</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.5 7.1 18l.9-5.5-4-3.9L9.5 8z"/></svg></div>
+        <h3>Virtual try-on</h3>
+        <div class="h3bn">ভার্চুয়াল ট্রাই-অন</div>
+        <p>AI ট্রাই-অনে ক্রেতারা নিজের ছবিতে পণ্য দেখতে পারেন — দোকান অনুযায়ী চালু, কোটা-নিয়ন্ত্রিত।</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MADE IN BANGLADESH band (Lalbagh fort backdrop) -->
+<section class="madein">
+  <div class="madein-bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="flag">
+      <svg viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="3" fill="#006a4e"/><circle cx="11" cy="12" r="6" fill="#f42a41"/></svg>
+      বাংলাদেশে তৈরি · MADE IN BANGLADESH
+    </span>
+    <h2>Built in Bangladesh, for Bangladesh.</h2>
+    <div class="h2bn">বাংলাদেশের জন্য, বাংলাদেশেই তৈরি।</div>
+    <p>লোকাল কুরিয়ার, বাংলা ভাষা, ক্যাশ-অন-ডেলিভারি, ভ্যাট রিপোর্টিং — প্রথম দিন থেকেই আপনার দেশের নিয়মে চলে।</p>
+  </div>
+</section>
+
+<!-- CTA -->
 <div class="band-wrap" id="pricing">
   <div class="band">
-    <h2>Start selling today.<br/>Scale when you’re ready.</h2>
+    <h2>Start selling today.<br/>Scale when you're ready.</h2>
     <div class="h2bn">আজই বিক্রি শুরু করুন। প্রস্তুত হলে স্কেল করুন।</div>
     <p class="bn">কয়েক মিনিটেই দোকান চালু। শুরুতে কোনো কার্ড লাগবে না — বড় হলে আপগ্রেড করুন।</p>
     <div class="hero-cta">
@@ -328,6 +532,7 @@
         <a href="/inventory/">ব্যাকঅফিস</a>
         <a href="/track">অর্ডার ট্র্যাকিং</a>
         <a href="#features">ফিচার</a>
+        <a href="#personas">কাস্টমার</a>
         <a href="#pricing">প্রাইসিং</a>
       </div>
     </div>
@@ -338,6 +543,23 @@
   </div>
 </footer>
 
-<script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+<script>
+  document.getElementById('y').textContent = new Date().getFullYear();
+
+  // Click-to-play for the demo videos (lazy by default; no auto-loading multiple MP4s on page load)
+  document.querySelectorAll('.video-card').forEach(function(card){
+    var video = card.querySelector('video');
+    var btn = card.querySelector('.play-btn');
+    if(!video || !btn) return;
+    btn.addEventListener('click', function(){
+      var others = document.querySelectorAll('.video-card video');
+      others.forEach(function(o){ if(o !== video){ o.pause(); o.parentNode.classList.remove('playing'); } });
+      card.classList.add('playing');
+      video.controls = true;
+      var p = video.play();
+      if(p && p.catch) p.catch(function(){});
+    });
+  });
+</script>
 </body>
 </html>
