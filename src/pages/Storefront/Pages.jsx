@@ -323,11 +323,46 @@ const Pages = () => {
         label: definition?.label || type,
         variant: 'default',
         enabled: true,
+        groupType: definition?.group || 'body',
         settings: {},
         blocks: [],
       });
       return current;
     });
+  };
+
+  const moveSectionToGroup = (templateId, sectionId, newGroupType) => {
+    updateDraft((current) => {
+      current.templates[templateId].sections = current.templates[templateId].sections.map((section) =>
+        section.id === sectionId ? { ...section, groupType: newGroupType } : section
+      );
+      return current;
+    });
+  };
+
+  const getSectionGroupType = (section) => section?.groupType
+    || sectionDefinitions[section?.type]?.group
+    || 'body';
+
+  const GROUP_ORDER = ['header', 'body', 'footer', 'aside'];
+  const GROUP_LABEL = { header: 'Header', body: 'Body', footer: 'Footer', aside: 'Aside' };
+  const GROUP_TINT = {
+    header: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+    body: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+    footer: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    aside: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  };
+
+  const bucketSectionsByGroup = (sections = []) => {
+    const buckets = new Map(GROUP_ORDER.map((g) => [g, []]));
+    sections.forEach((section) => {
+      const groupType = getSectionGroupType(section);
+      if (!buckets.has(groupType)) buckets.set(groupType, []);
+      buckets.get(groupType).push(section);
+    });
+    return Array.from(buckets.entries())
+      .filter(([, items]) => items.length > 0)
+      .map(([groupType, items]) => ({ groupType, items }));
   };
 
   const duplicateSection = (templateId, section) => {
@@ -483,40 +518,73 @@ const Pages = () => {
                         <span className="text-sm font-bold text-slate-950 dark:text-white">{node.label}</span>
                         <span className="text-xs text-slate-400">{template?.sections?.length || 0} sections</span>
                       </button>
-                      <div className="mt-3 space-y-2">
-                        {(template?.sections || []).map((section, index) => (
-                          <button
-                            key={section.id}
-                            type="button"
-                            draggable
-                            onDragStart={() => setDragSectionId(section.id)}
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={() => {
-                              if (!dragSectionId || dragSectionId === section.id) return;
-                              updateDraft((current) => {
-                                const templateState = current.templates[node.id];
-                                const fromIndex = templateState.sections.findIndex((item) => item.id === dragSectionId);
-                                const toIndex = templateState.sections.findIndex((item) => item.id === section.id);
-                                templateState.sections = reorderList(templateState.sections, fromIndex, toIndex);
-                                return current;
-                              });
-                              setDragSectionId('');
-                            }}
-                            onClick={() => {
-                              setSelectedTemplateId(node.id);
-                              setSelectedSectionId(section.id);
-                              setSelectedBlockId('');
-                            }}
-                            className={`flex w-full items-center justify-between rounded-[16px] border px-3 py-3 text-left ${selectedSectionId === section.id && selectedTemplateId === node.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}
-                          >
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900 dark:text-white">{section.label}</div>
-                              <div className="text-xs uppercase tracking-[0.16em] text-slate-400">#{index + 1} · {section.type}</div>
+                      <div className="mt-3 space-y-4">
+                        {bucketSectionsByGroup(template?.sections || []).map(({ groupType, items }) => (
+                          <div key={groupType}>
+                            <div className={`mb-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${GROUP_TINT[groupType] || 'bg-slate-100 text-slate-600'}`}>
+                              <span>{GROUP_LABEL[groupType] || groupType}</span>
+                              <span className="opacity-60">·</span>
+                              <span>{items.length}</span>
                             </div>
-                            <div className={`rounded-full px-2 py-1 text-[11px] font-semibold ${section.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
-                              {section.enabled ? 'ON' : 'OFF'}
+                            <div className="space-y-2">
+                              {items.map((section, indexInGroup) => (
+                                <div key={section.id} className="group relative">
+                                  <button
+                                    type="button"
+                                    draggable
+                                    onDragStart={() => setDragSectionId(section.id)}
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={() => {
+                                      if (!dragSectionId || dragSectionId === section.id) return;
+                                      updateDraft((current) => {
+                                        const templateState = current.templates[node.id];
+                                        const fromIndex = templateState.sections.findIndex((item) => item.id === dragSectionId);
+                                        const toIndex = templateState.sections.findIndex((item) => item.id === section.id);
+                                        // Crossing groups: assign target's groupType to the dragged section.
+                                        const dragged = templateState.sections[fromIndex];
+                                        if (dragged && getSectionGroupType(dragged) !== groupType) {
+                                          dragged.groupType = groupType;
+                                        }
+                                        templateState.sections = reorderList(templateState.sections, fromIndex, toIndex);
+                                        return current;
+                                      });
+                                      setDragSectionId('');
+                                    }}
+                                    onClick={() => {
+                                      setSelectedTemplateId(node.id);
+                                      setSelectedSectionId(section.id);
+                                      setSelectedBlockId('');
+                                    }}
+                                    className={`flex w-full items-center justify-between rounded-[16px] border px-3 py-3 text-left ${selectedSectionId === section.id && selectedTemplateId === node.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <div className="truncate text-sm font-semibold text-slate-900 dark:text-white">{section.label}</div>
+                                      <div className="text-xs uppercase tracking-[0.16em] text-slate-400">#{indexInGroup + 1} · {section.type}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <select
+                                        value={getSectionGroupType(section)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          moveSectionToGroup(node.id, section.id, e.target.value);
+                                        }}
+                                        title="Move to group"
+                                        className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600 opacity-0 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-950"
+                                      >
+                                        {GROUP_ORDER.map((g) => (
+                                          <option key={g} value={g}>{GROUP_LABEL[g]}</option>
+                                        ))}
+                                      </select>
+                                      <div className={`rounded-full px-2 py-1 text-[11px] font-semibold ${section.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                                        {section.enabled ? 'ON' : 'OFF'}
+                                      </div>
+                                    </div>
+                                  </button>
+                                </div>
+                              ))}
                             </div>
-                          </button>
+                          </div>
                         ))}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
