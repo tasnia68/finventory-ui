@@ -6,8 +6,8 @@
 <title>Logistra — বাংলাদেশের ব্যবসার জন্য একটি কমার্স অপারেটিং সিস্টেম</title>
 <meta name="description" content="ইনভেন্টরি, স্টোরফ্রন্ট, কুরিয়ার ও অ্যাকাউন্টিং — Logistra বাংলাদেশের রিটেইল ও স্টার্টআপের জন্য একটি সম্পূর্ণ কমার্স প্ল্যাটফর্ম।" />
 <link rel="icon" type="image/svg+xml" href="/logistra.svg" />
-<link rel="preload" as="image" href="/img/hero-bd-business.webp" />
-<link rel="prefetch" as="image" href="/img/persona-tailor.webp" />
+<link rel="preload" as="image" href="/img/persona-tailor.webp" />
+<link rel="prefetch" as="image" href="/img/hero-bd-business.webp" />
 <link rel="prefetch" as="image" href="/img/persona-boutique.webp" />
 <link rel="prefetch" as="image" href="/img/persona-grocery.webp" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -58,11 +58,11 @@
   /* ---- Hero (rotating image slideshow, no video) ---- */
   .hero{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:center;overflow:hidden;background:#080b0a}
   .hero-slides{position:absolute;inset:0;overflow:hidden}
-  .hero-slide{position:absolute;inset:0;background-size:cover;background-position:right center;opacity:0;animation:heroFade 28s infinite cubic-bezier(.4,0,.2,1);will-change:opacity,transform;filter:saturate(1.05)}
-  .hero-slide:nth-child(1){animation-delay:0s;background-image:url('/img/hero-bd-business.webp')}
-  .hero-slide:nth-child(2){animation-delay:7s;background-image:url('/img/persona-tailor.webp');background-position:center}
-  .hero-slide:nth-child(3){animation-delay:14s;background-image:url('/img/persona-boutique.webp');background-position:center}
-  .hero-slide:nth-child(4){animation-delay:21s;background-image:url('/img/persona-grocery.webp');background-position:center}
+  .hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;animation:heroFade 20s infinite cubic-bezier(.4,0,.2,1);will-change:opacity,transform;filter:saturate(1.05)}
+  .hero-slide:nth-child(1){animation-delay:0s;background-image:url('/img/persona-tailor.webp')}
+  .hero-slide:nth-child(2){animation-delay:5s;background-image:url('/img/hero-bd-business.webp');background-position:right center}
+  .hero-slide:nth-child(3){animation-delay:10s;background-image:url('/img/persona-boutique.webp')}
+  .hero-slide:nth-child(4){animation-delay:15s;background-image:url('/img/persona-grocery.webp')}
   @keyframes heroFade{
     0%   { opacity:0; transform:scale(1.05) }
     4%   { opacity:1 }
@@ -73,11 +73,11 @@
   /* Slide indicator dots */
   .hero-dots{position:absolute;left:50%;bottom:34px;z-index:3;transform:translateX(-50%);display:flex;gap:8px;padding:8px 14px;border-radius:99px;background:rgba(0,0,0,.28);backdrop-filter:blur(8px)}
   .hero-dots .d{width:24px;height:3px;border-radius:99px;background:rgba(255,255,255,.28);overflow:hidden;position:relative}
-  .hero-dots .d::after{content:"";position:absolute;inset:0;background:#fff;transform-origin:left;transform:scaleX(0);animation:dotFill 28s infinite linear}
+  .hero-dots .d::after{content:"";position:absolute;inset:0;background:#fff;transform-origin:left;transform:scaleX(0);animation:dotFill 20s infinite linear}
   .hero-dots .d:nth-child(1)::after{animation-delay:0s}
-  .hero-dots .d:nth-child(2)::after{animation-delay:7s}
-  .hero-dots .d:nth-child(3)::after{animation-delay:14s}
-  .hero-dots .d:nth-child(4)::after{animation-delay:21s}
+  .hero-dots .d:nth-child(2)::after{animation-delay:5s}
+  .hero-dots .d:nth-child(3)::after{animation-delay:10s}
+  .hero-dots .d:nth-child(4)::after{animation-delay:15s}
   @keyframes dotFill{
     0%   { transform:scaleX(0) }
     4%   { transform:scaleX(0) }
