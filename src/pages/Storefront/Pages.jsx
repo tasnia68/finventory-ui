@@ -480,14 +480,14 @@ const Pages = () => {
   };
 
   if (!draft || !schema) {
-    return <div className="h-full overflow-y-auto bg-slate-50 px-8 py-8 dark:bg-slate-950" />;
+    return <div className="h-full overflow-hidden bg-slate-50 dark:bg-slate-950" />;
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50 px-8 py-8 dark:bg-slate-950">
-      <section className="mx-auto max-w-[1720px]">
-        <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_540px]">
-          <div className="space-y-5">
+    <div className="flex h-full flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+      <section className="flex flex-1 overflow-hidden">
+        <div className="mx-auto flex w-full max-w-[1920px] flex-1 overflow-hidden xl:grid xl:gap-0 xl:grid-cols-[320px_minmax(0,1fr)_minmax(420px,560px)]">
+          <div className="space-y-5 overflow-y-auto border-r border-slate-200 px-6 py-6 dark:border-slate-800">
             <ShopifyCard title="Theme editor" subtitle={status}>
               <div className="space-y-3">
                 <button
@@ -674,7 +674,7 @@ const Pages = () => {
             </ShopifyCard>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-5 overflow-y-auto px-6 py-6">
             {selectedTemplateId === 'settings' ? (
               <ShopifyCard title="Theme settings" subtitle="Brand, theme tokens, and storefront-wide behavior">
                 <div className="space-y-6">
@@ -825,7 +825,7 @@ const Pages = () => {
             ) : null}
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-5 overflow-y-auto border-l border-slate-200 px-6 py-6 dark:border-slate-800">
             <ShopifyCard
               title="Live preview"
               subtitle="Real storefront iframe powered by the draft theme document"
@@ -835,7 +835,7 @@ const Pages = () => {
             >
               <div className="rounded-[22px] border border-slate-200 bg-slate-100 p-3 dark:border-slate-700 dark:bg-slate-950">
                 <div className={`mx-auto overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${viewport === 'mobile' ? 'max-w-[390px]' : viewport === 'tablet' ? 'max-w-[820px]' : 'max-w-full'}`}>
-                  <iframe ref={iframeRef} title="Storefront preview" src={previewUrl} className={`w-full border-0 ${viewport === 'mobile' ? 'h-[844px]' : viewport === 'tablet' ? 'h-[900px]' : 'h-[920px]'}`} />
+                  <iframe ref={iframeRef} title="Storefront preview" src={previewUrl} className="w-full border-0 h-[calc(100vh-220px)] min-h-[600px]" />
                 </div>
               </div>
             </ShopifyCard>
