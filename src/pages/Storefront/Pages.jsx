@@ -608,41 +608,39 @@ const Pages = () => {
             <ShopifyCard
               title="Revisions"
               subtitle="Immutable published snapshots"
-              actions={(
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={undoRedo.undo}
-                    disabled={!undoRedo.canUndo}
-                    title="Undo (⌘Z)"
-                    className="rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    ↶ Undo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={undoRedo.redo}
-                    disabled={!undoRedo.canRedo}
-                    title="Redo (⌘⇧Z)"
-                    className="rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    ↷ Redo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const published = await publishStorefrontTheme({ note: 'Published from theme editor' });
-                      const next = await getStorefrontThemeEditor();
-                      setRevisions(next.revisions || []);
-                      setStatus(`Published ${published.label}.`);
-                    }}
-                    className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
-                  >
-                    Publish draft
-                  </button>
-                </div>
-              )}
             >
+              <div className="mb-4 grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={undoRedo.undo}
+                  disabled={!undoRedo.canUndo}
+                  title="Undo (⌘Z)"
+                  className="rounded-full bg-slate-100 px-2 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  ↶
+                </button>
+                <button
+                  type="button"
+                  onClick={undoRedo.redo}
+                  disabled={!undoRedo.canRedo}
+                  title="Redo (⌘⇧Z)"
+                  className="rounded-full bg-slate-100 px-2 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  ↷
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const published = await publishStorefrontTheme({ note: 'Published from theme editor' });
+                    const next = await getStorefrontThemeEditor();
+                    setRevisions(next.revisions || []);
+                    setStatus(`Published ${published.label}.`);
+                  }}
+                  className="rounded-full bg-primary px-3 py-2 text-sm font-semibold text-white"
+                >
+                  Publish
+                </button>
+              </div>
               <div className="space-y-3">
                 {revisions.map((revision) => (
                   <div key={revision.id} className="rounded-[18px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
