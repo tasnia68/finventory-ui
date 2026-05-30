@@ -103,6 +103,7 @@ const StorefrontCustomers = lazy(() => import('./pages/Storefront/Customers'));
 const StorefrontMenus = lazy(() => import('./pages/Storefront/Menus'));
 const StorefrontAnalytics = lazy(() => import('./pages/Storefront/Analytics'));
 const StorefrontPagesManager = lazy(() => import('./pages/Storefront/PagesManager'));
+const StorefrontThemes = lazy(() => import('./pages/Storefront/Themes'));
 const SuperAdminTenants = lazy(() => import('./pages/SuperAdmin/Tenants'));
 const SuperAdminVirtualTryOn = lazy(() => import('./pages/SuperAdmin/VirtualTryOn'));
 const PluginsOverview = lazy(() => import('./pages/Plugins'));
@@ -383,6 +384,13 @@ function App() {
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <StorefrontModuleRoute>
                 <StorefrontPages />
+              </StorefrontModuleRoute>
+            </ProtectedRoute>
+          } />
+          <Route path="/storefront/themes" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
+              <StorefrontModuleRoute>
+                <StorefrontThemes />
               </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
