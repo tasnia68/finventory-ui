@@ -11,6 +11,10 @@ import { getProductTemplates } from '../../services/productService';
 import { getCategoryTree } from '../../services/categoryService';
 import { getWarehouses } from '../../services/warehouseService';
 import { useAuth } from '../../contexts/AuthContext';
+import ImageField from '../../components/storefront/ImageField';
+import RichTextField from '../../components/storefront/RichTextField';
+import ViewportToggle from '../../components/storefront/ViewportToggle';
+import useUndoRedo from '../../hooks/useUndoRedo';
 
 const PREVIEW_URL_FALLBACK = import.meta.env.VITE_STOREFRONT_PREVIEW_URL || 'http://localhost:5174/preview';
 
@@ -214,6 +218,13 @@ const Pages = () => {
     iframeRef.current?.contentWindow?.postMessage(message, '*');
   }, []);
 
+  const handleViewportChange = React.useCallback((id, width) => {
+    setViewport(id);
+    postPreviewMessage({ type: 'STOREFRONT_PREVIEW_VIEWPORT', viewport: id, width });
+  }, [postPreviewMessage]);
+
+  const undoRedo = useUndoRedo(draft, setDraft);
+
   React.useEffect(() => {
     const handleMessage = (event) => {
       const payload = event.data || {};
@@ -394,6 +405,18 @@ const Pages = () => {
     if (field.type === 'number') {
       return <input type="number" value={value ?? ''} onChange={(event) => onChange(Number(event.target.value) || 0)} className={commonClassName} />;
     }
+    if (field.type === 'image') {
+      return <ImageField value={value ?? ''} onChange={onChange} />;
+    }
+    if (field.type === 'richtext') {
+      return <RichTextField value={value ?? ''} onChange={onChange} />;
+    }
+    if (field.type === 'url') {
+      return <input type="url" value={value ?? ''} onChange={(event) => onChange(event.target.value)} placeholder="https://…" className={commonClassName} />;
+    }
+    if (field.type === 'video') {
+      return <input type="url" value={value ?? ''} onChange={(event) => onChange(event.target.value)} placeholder="https://…/video.mp4 or youtube URL" className={commonClassName} />;
+    }
     if (field.type === 'entity_product') {
       return (
         <select value={value ?? ''} onChange={(event) => onChange(event.target.value)} className={commonClassName}>
@@ -518,18 +541,38 @@ const Pages = () => {
               title="Revisions"
               subtitle="Immutable published snapshots"
               actions={(
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const published = await publishStorefrontTheme({ note: 'Published from theme editor' });
-                    const next = await getStorefrontThemeEditor();
-                    setRevisions(next.revisions || []);
-                    setStatus(`Published ${published.label}.`);
-                  }}
-                  className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Publish draft
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={undoRedo.undo}
+                    disabled={!undoRedo.canUndo}
+                    title="Undo (⌘Z)"
+                    className="rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    ↶ Undo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={undoRedo.redo}
+                    disabled={!undoRedo.canRedo}
+                    title="Redo (⌘⇧Z)"
+                    className="rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    ↷ Redo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const published = await publishStorefrontTheme({ note: 'Published from theme editor' });
+                      const next = await getStorefrontThemeEditor();
+                      setRevisions(next.revisions || []);
+                      setStatus(`Published ${published.label}.`);
+                    }}
+                    className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Publish draft
+                  </button>
+                </div>
               )}
             >
               <div className="space-y-3">
@@ -719,15 +762,12 @@ const Pages = () => {
               title="Live preview"
               subtitle="Real storefront iframe powered by the draft theme document"
               actions={(
-                <>
-                  <button type="button" onClick={() => setViewport('desktop')} className={`rounded-full px-4 py-2 text-sm font-semibold ${viewport === 'desktop' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'}`}>Desktop</button>
-                  <button type="button" onClick={() => setViewport('mobile')} className={`rounded-full px-4 py-2 text-sm font-semibold ${viewport === 'mobile' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'}`}>Mobile</button>
-                </>
+                <ViewportToggle value={viewport} onChange={handleViewportChange} />
               )}
             >
               <div className="rounded-[22px] border border-slate-200 bg-slate-100 p-3 dark:border-slate-700 dark:bg-slate-950">
-                <div className={`mx-auto overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${viewport === 'mobile' ? 'max-w-[390px]' : 'max-w-full'}`}>
-                  <iframe ref={iframeRef} title="Storefront preview" src={previewUrl} className={`w-full border-0 ${viewport === 'mobile' ? 'h-[844px]' : 'h-[920px]'}`} />
+                <div className={`mx-auto overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${viewport === 'mobile' ? 'max-w-[390px]' : viewport === 'tablet' ? 'max-w-[820px]' : 'max-w-full'}`}>
+                  <iframe ref={iframeRef} title="Storefront preview" src={previewUrl} className={`w-full border-0 ${viewport === 'mobile' ? 'h-[844px]' : viewport === 'tablet' ? 'h-[900px]' : 'h-[920px]'}`} />
                 </div>
               </div>
             </ShopifyCard>
