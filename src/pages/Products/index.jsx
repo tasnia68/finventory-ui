@@ -436,11 +436,11 @@ const Products = () => {
       render: (value, row) => (
         <div className="flex items-center gap-2">
           <Link
-            to={`/products/${row.templateId}`}
+            to={`/products/${row.templateId}/edit`}
             className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
-            title="View template"
+            title="Edit product"
           >
-            <span className="material-symbols-outlined text-[20px]">visibility</span>
+            <span className="material-symbols-outlined text-[20px]">edit</span>
           </Link>
           <button
             onClick={() => openHistory(row)}

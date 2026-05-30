@@ -521,15 +521,23 @@ function App() {
           <Route path="/products/create" element={<Navigate to="/products/new" replace />} />
           <Route path="/products/create/simple" element={<Navigate to="/products/new" replace />} />
 
+          {/* Shopify-style: clicking a product opens the editor directly */}
           <Route path="/products/:id" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
-              <ProductDetails />
+              <ProductEditor />
             </ProtectedRoute>
           } />
 
           <Route path="/products/:id/edit" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
               <ProductEditor />
+            </ProtectedRoute>
+          } />
+
+          {/* Legacy read-only details page, kept for bookmarks */}
+          <Route path="/products/:id/legacy" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
+              <ProductDetails />
             </ProtectedRoute>
           } />
 
