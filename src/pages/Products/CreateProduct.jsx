@@ -1,3 +1,8 @@
+// DEPRECATED — superseded by ProductEditor.jsx (the v2 single-page editor).
+// Routes that pointed here (/products/create, /products/:id/edit) now redirect
+// to /products/new and /products/:id/edit on ProductEditor respectively.
+// Kept on disk so any direct imports keep working; remove in a follow-up PR
+// after the new editor has been live for ~2 weeks without regressions.
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createProductTemplate, updateProductTemplate, getProductTemplate, uploadProductImage, createProductVariant, getProductImages, getProductImageFile, getProductVariants, updateProductVariant } from '../../services/productService';

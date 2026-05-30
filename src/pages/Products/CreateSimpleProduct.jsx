@@ -1,3 +1,7 @@
+// DEPRECATED — the v2 ProductEditor handles simple products inline (no options
+// declared = a single "Default" variant created with template-level pricing).
+// /products/create/simple now redirects to /products/new. Remove this file in
+// a follow-up PR after the new editor has settled in production.
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSimpleProduct } from '../../services/productService';
