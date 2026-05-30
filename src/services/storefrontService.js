@@ -129,6 +129,16 @@ export const restoreStorefrontThemeRevision = async (versionId, payload = {}) =>
   body: payload,
 }));
 
+// Theme registry — Shopify-style folder-based themes registered via backend manifests.
+// Used by the (Phase 6) /storefront/themes gallery page; safe to call earlier.
+export const getStorefrontThemeRegistry = async () => unwrap(request('/storefront/admin/themes/registry'));
+
+export const getStorefrontThemeManifest = async (themeKey) => unwrap(request(`/storefront/admin/themes/${themeKey}`));
+
+export const activateStorefrontTheme = async (themeKey) => unwrap(request(`/storefront/admin/themes/${themeKey}/activate`, {
+  method: 'POST',
+}));
+
 export const getStorefrontDomainContext = async () => unwrap(request('/storefront/admin/domains'));
 
 export const addStorefrontDomain = async (hostname) => unwrap(request('/storefront/admin/domains', {
