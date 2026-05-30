@@ -22,6 +22,7 @@ const Products = lazy(() => import('./pages/Products'));
 const CreateProduct = lazy(() => import('./pages/Products/CreateProduct'));
 const CreateSimpleProduct = lazy(() => import('./pages/Products/CreateSimpleProduct'));
 const ProductDetails = lazy(() => import('./pages/Products/ProductDetails'));
+const ProductEditor = lazy(() => import('./pages/Products/ProductEditor'));
 const AttributesList = lazy(() => import('./pages/Attributes/List'));
 const AttributesEditor = lazy(() => import('./pages/Attributes/Editor'));
 const AttributeGroups = lazy(() => import('./pages/AttributeGroups'));
@@ -509,17 +510,16 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/products/create" element={
+          {/* v2 single-page product editor */}
+          <Route path="/products/new" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
-              <CreateProduct />
+              <ProductEditor />
             </ProtectedRoute>
           } />
 
-          <Route path="/products/create/simple" element={
-            <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
-              <CreateSimpleProduct />
-            </ProtectedRoute>
-          } />
+          {/* Legacy wizard routes redirect to the new editor */}
+          <Route path="/products/create" element={<Navigate to="/products/new" replace />} />
+          <Route path="/products/create/simple" element={<Navigate to="/products/new" replace />} />
 
           <Route path="/products/:id" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
@@ -529,7 +529,7 @@ function App() {
 
           <Route path="/products/:id/edit" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_CATALOG}>
-              <CreateProduct />
+              <ProductEditor />
             </ProtectedRoute>
           } />
 

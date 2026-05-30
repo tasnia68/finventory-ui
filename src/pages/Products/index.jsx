@@ -480,51 +480,9 @@ const Products = () => {
                 Bulk Update
               </Button>
               <div className="relative" ref={menuRef}>
-                <Button
-                  onClick={() => setShowCreateMenu(!showCreateMenu)}
-                  icon="add"
-                >
-                  Create Template
-                  <span className="material-symbols-outlined text-[16px] ml-1">
-                    {showCreateMenu ? 'expand_less' : 'expand_more'}
-                  </span>
-                </Button>
-                {showCreateMenu && (
-                  <div className="absolute right-0 top-full z-30 mt-2 w-80 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                    <div className="p-2">
-                      <Link
-                        to="/products/create/simple"
-                        onClick={() => setShowCreateMenu(false)}
-                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                      >
-                        <div className="mt-1">
-                          <span className="material-symbols-outlined text-primary text-[24px]">inventory</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-slate-900 dark:text-white">Simple Product</div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                            Best for single SKU items without variants.
-                          </div>
-                        </div>
-                      </Link>
-                      <Link
-                        to="/products/create"
-                        onClick={() => setShowCreateMenu(false)}
-                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                      >
-                        <div className="mt-1">
-                          <span className="material-symbols-outlined text-primary text-[24px]">category</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-slate-900 dark:text-white">Product with Variants</div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                            Use when SKU behavior differs by color, size, or material.
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                <Link to="/products/new">
+                  <Button icon="add">Add product</Button>
+                </Link>
               </div>
             </div>
           }
