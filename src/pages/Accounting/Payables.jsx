@@ -5,32 +5,24 @@ import {
   createAccountsPayableInvoice,
   getAccountsPayableAging,
   getAccountsPayableInvoices,
+  getTaxRates,
   recordAccountsPayablePayment,
 } from '../../services/accountingService';
 import { getPurchaseOrders } from '../../services/purchaseOrderService';
 import { getSuppliers } from '../../services/supplierService';
 import { emptyPayment, formatNumber, toList } from './shared';
 
-const agingColumns = [
-  { key: 'partyName', header: 'Party' },
-  { key: 'invoiceCount', header: 'Invoices' },
-  { key: 'totalOpenAmount', header: 'Open', render: (value) => formatNumber(value) },
-  { key: 'currentAmount', header: 'Current', render: (value) => formatNumber(value) },
-  { key: 'days1To30Amount', header: '1-30', render: (value) => formatNumber(value) },
-  { key: 'days31To60Amount', header: '31-60', render: (value) => formatNumber(value) },
-  { key: 'days61To90Amount', header: '61-90', render: (value) => formatNumber(value) },
-  { key: 'over90Amount', header: '90+', render: (value) => formatNumber(value) },
-];
-
 const Payables = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [taxRates, setTaxRates] = useState([]);
   const [apInvoices, setApInvoices] = useState([]);
   const [apAging, setApAging] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [alert, setAlert] = useState(null);
   const [apPaymentForms, setApPaymentForms] = useState({});
+  const [agingDrilldown, setAgingDrilldown] = useState(null);
   const [apForm, setApForm] = useState({
     supplierId: '',
     purchaseOrderId: '',
@@ -39,6 +31,7 @@ const Payables = () => {
     dueDate: '',
     currency: 'USD',
     totalAmount: '',
+    taxRateId: '',
     notes: '',
     force: false,
   });
@@ -46,14 +39,16 @@ const Payables = () => {
   const loadPayables = async () => {
     try {
       setLoading(true);
-      const [suppliersResponse, purchaseOrdersResponse, apInvoicesResponse, apAgingResponse] = await Promise.all([
+      const [suppliersResponse, purchaseOrdersResponse, taxRatesResponse, apInvoicesResponse, apAgingResponse] = await Promise.all([
         getSuppliers(),
         getPurchaseOrders({ page: 0, size: 100 }),
+        getTaxRates(),
         getAccountsPayableInvoices(),
         getAccountsPayableAging(),
       ]);
       setSuppliers(toList(suppliersResponse));
       setPurchaseOrders(toList(purchaseOrdersResponse));
+      setTaxRates(toList(taxRatesResponse).filter((taxRate) => taxRate.active !== false));
       setApInvoices(toList(apInvoicesResponse));
       setApAging(toList(apAgingResponse));
     } catch (error) {
@@ -68,6 +63,36 @@ const Payables = () => {
   }, []);
 
   const activeSuppliers = useMemo(() => suppliers.filter((supplier) => supplier.isActive !== false), [suppliers]);
+
+  const invoiceBucket = (invoice) => {
+    const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : new Date();
+    const ageDays = Math.floor((new Date() - dueDate) / 86400000);
+    if (ageDays <= 0) return 'current';
+    if (ageDays <= 30) return 'days1To30';
+    if (ageDays <= 60) return 'days31To60';
+    if (ageDays <= 90) return 'days61To90';
+    return 'over90';
+  };
+
+  const drilldownInvoices = useMemo(() => {
+    if (!agingDrilldown) return [];
+    return apInvoices.filter((invoice) => (
+      invoice.supplierId === agingDrilldown.partyId
+      && Number(invoice.balanceDue || 0) > 0
+      && invoiceBucket(invoice) === agingDrilldown.bucket
+    ));
+  }, [agingDrilldown, apInvoices]);
+
+  const agingBucketButton = (row, bucket, value) => (
+    <button
+      type="button"
+      className="font-semibold text-primary hover:underline disabled:text-slate-400 disabled:no-underline"
+      disabled={Number(value || 0) <= 0}
+      onClick={() => setAgingDrilldown({ partyId: row.partyId, partyName: row.partyName, bucket })}
+    >
+      {formatNumber(value)}
+    </button>
+  );
 
   const handlePurchaseOrderChange = (purchaseOrderId) => {
     const purchaseOrder = purchaseOrders.find((entry) => entry.id === purchaseOrderId);
@@ -91,6 +116,7 @@ const Payables = () => {
         dueDate: apForm.dueDate || null,
         currency: apForm.currency,
         totalAmount: apForm.totalAmount === '' ? null : Number(apForm.totalAmount),
+        taxRateId: apForm.taxRateId || null,
         notes: apForm.notes || null,
         force: apForm.force,
       });
@@ -102,6 +128,7 @@ const Payables = () => {
         dueDate: '',
         currency: 'USD',
         totalAmount: '',
+        taxRateId: '',
         notes: '',
         force: false,
       });
@@ -153,6 +180,16 @@ const Payables = () => {
     },
     { key: 'dueDate', header: 'Due', render: (value) => value || '—' },
     { key: 'totalAmount', header: 'Total', render: (value) => formatNumber(value) },
+    {
+      key: 'taxAmount',
+      header: 'Tax',
+      render: (value, row) => (
+        <div>
+          <div>{formatNumber(value)}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{row.taxRateCode || 'No tax'}</div>
+        </div>
+      ),
+    },
     { key: 'balanceDue', header: 'Balance', render: (value) => <span className="font-semibold text-slate-900 dark:text-white">{formatNumber(value)}</span> },
     {
       key: 'payment',
@@ -168,6 +205,38 @@ const Payables = () => {
           </div>
         );
       },
+    },
+  ];
+
+  const agingColumns = [
+    { key: 'partyName', header: 'Party' },
+    { key: 'invoiceCount', header: 'Invoices' },
+    { key: 'totalOpenAmount', header: 'Open', render: (value) => formatNumber(value) },
+    { key: 'currentAmount', header: 'Current', render: (value, row) => agingBucketButton(row, 'current', value) },
+    { key: 'days1To30Amount', header: '1-30', render: (value, row) => agingBucketButton(row, 'days1To30', value) },
+    { key: 'days31To60Amount', header: '31-60', render: (value, row) => agingBucketButton(row, 'days31To60', value) },
+    { key: 'days61To90Amount', header: '61-90', render: (value, row) => agingBucketButton(row, 'days61To90', value) },
+    { key: 'over90Amount', header: '90+', render: (value, row) => agingBucketButton(row, 'over90', value) },
+  ];
+
+  const drilldownColumns = [
+    {
+      key: 'invoiceNumber',
+      header: 'Invoice',
+      render: (value, row) => (
+        <div>
+          <div className="font-semibold text-slate-900 dark:text-white">{value}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{row.supplierInvoiceNumber || row.purchaseOrderNumber || 'Direct AP'}</div>
+        </div>
+      ),
+    },
+    { key: 'dueDate', header: 'Due' },
+    { key: 'totalAmount', header: 'Total', render: (value) => formatNumber(value) },
+    { key: 'balanceDue', header: 'Balance', render: (value) => <span className="font-semibold text-slate-900 dark:text-white">{formatNumber(value)}</span> },
+    {
+      key: 'payments',
+      header: 'Payments',
+      render: (_, row) => `${row.payments?.length || 0} payment(s)`,
     },
   ];
 
@@ -201,6 +270,17 @@ const Payables = () => {
                 <Input type="date" label="Due date" value={apForm.dueDate} onChange={(event) => setApForm((current) => ({ ...current, dueDate: event.target.value }))} />
               </div>
               <Input type="number" step="0.000001" label="Total amount" value={apForm.totalAmount} onChange={(event) => setApForm((current) => ({ ...current, totalAmount: event.target.value }))} placeholder="0.00" />
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Tax rate
+                <select className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" value={apForm.taxRateId} onChange={(event) => setApForm((current) => ({ ...current, taxRateId: event.target.value }))}>
+                  <option value="">No tax</option>
+                  {taxRates.map((taxRate) => (
+                    <option key={taxRate.id} value={taxRate.id}>
+                      {taxRate.code} · {taxRate.name} ({Number(taxRate.rate || 0) * 100}%)
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Input label="Notes" value={apForm.notes} onChange={(event) => setApForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional AP notes" />
               <label className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-100">
                 <input
@@ -225,6 +305,18 @@ const Payables = () => {
             <Card padding="none" className="overflow-hidden" title="AP Aging" subtitle="Supplier exposure bucketed by due date">
               <DataTable columns={agingColumns} data={apAging} loading={loading} emptyMessage="No unpaid AP balances are available yet." />
             </Card>
+
+            {agingDrilldown ? (
+              <Card
+                padding="none"
+                className="overflow-hidden"
+                title={`${agingDrilldown.partyName} · ${agingDrilldown.bucket}`}
+                subtitle="Open supplier invoices in the selected aging bucket"
+                action={<Button size="sm" variant="ghost" onClick={() => setAgingDrilldown(null)}>Close</Button>}
+              >
+                <DataTable columns={drilldownColumns} data={drilldownInvoices} loading={loading} emptyMessage="No invoices in this bucket." />
+              </Card>
+            ) : null}
           </div>
         </div>
     </AccountingPage>

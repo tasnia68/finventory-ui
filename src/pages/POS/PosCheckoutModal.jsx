@@ -35,7 +35,7 @@ const createPaymentLine = () => ({
     notes: '',
 });
 
-const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pricingPreviewLoading, pricingPreviewError, cart, online, canSyncSale, onSubmit, loading }) => {
+const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, taxRates = [], summary, pricingPreviewLoading, pricingPreviewError, cart, online, canSyncSale, onSubmit, loading }) => {
     const isMixedTender = checkout.paymentMethod === 'MIXED';
     const paymentLines = Array.isArray(checkout.payments) ? checkout.payments : [];
     const allocatedAmount = paymentLines.reduce((sum, line) => sum + Number(line.amount || 0), 0);
@@ -44,6 +44,14 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pri
 
     const setTenderedAmount = (value) => {
         setCheckout((current) => ({ ...current, tenderedAmount: value }));
+    };
+    const setTaxRate = (taxRateId) => {
+        const taxRate = taxRates.find((entry) => entry.id === taxRateId);
+        setCheckout((current) => ({
+            ...current,
+            taxRateId,
+            taxRate: taxRate ? String(Number(taxRate.rate || 0) * 100) : '0',
+        }));
     };
 
     const applyExactAmount = () => {
@@ -105,7 +113,18 @@ const PosCheckoutModal = ({ isOpen, onClose, checkout, setCheckout, summary, pri
                                 </div>
                             )}
                             <Input label="Discount Amount" type="number" min="0" step="0.01" value={checkout.discountAmount} onChange={(event) => setCheckout((current) => ({ ...current, discountAmount: event.target.value }))} />
-                            <Input label="Tax Rate %" type="number" min="0" step="0.01" value={checkout.taxRate} onChange={(event) => setCheckout((current) => ({ ...current, taxRate: event.target.value }))} />
+                            <Select
+                                label="Tax Rate"
+                                value={checkout.taxRateId || ''}
+                                onChange={(event) => setTaxRate(event.target.value)}
+                                options={[
+                                    { value: '', label: 'No tax' },
+                                    ...taxRates.map((taxRate) => ({
+                                        value: taxRate.id,
+                                        label: `${taxRate.code} · ${taxRate.name} (${Number(taxRate.rate || 0) * 100}%)`,
+                                    })),
+                                ]}
+                            />
                         </div>
 
                         {isMixedTender ? (

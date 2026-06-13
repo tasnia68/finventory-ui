@@ -3,13 +3,17 @@ import { NavLink } from 'react-router-dom';
 
 const TABS = [
   { label: 'Overview',    path: '/accounting' },
+  { label: 'Setup',       path: '/accounting/setup' },
   { label: 'Accounts',    path: '/accounting/accounts' },
   { label: 'Journals',    path: '/accounting/journals' },
   { label: 'Entries',     path: '/accounting/entries' },
+  { label: 'Pending',     path: '/accounting/pending' },
   { label: 'Payables',    path: '/accounting/payables' },
   { label: 'Receivables', path: '/accounting/receivables' },
   { label: 'Treasury',    path: '/accounting/treasury' },
   { label: 'Statements',  path: '/accounting/statements' },
+  { label: 'Settings',    path: '/accounting/settings' },
+  { label: 'Audit',       path: '/accounting/audit' },
   { label: 'Guide',       path: '/accounting/guide' },
 ];
 

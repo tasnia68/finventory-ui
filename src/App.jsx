@@ -80,13 +80,18 @@ const FulfillmentShipmentDetail = lazy(() => import('./pages/Fulfillment/Shipmen
 const FulfillmentExceptions = lazy(() => import('./pages/Fulfillment/Exceptions'));
 const FulfillmentReturns = lazy(() => import('./pages/Fulfillment/Returns'));
 const Accounting = lazy(() => import('./pages/Accounting'));
+const AccountingSetup = lazy(() => import('./pages/Accounting/Setup'));
 const AccountingAccounts = lazy(() => import('./pages/Accounting/Accounts'));
+const AccountingAccountLedger = lazy(() => import('./pages/Accounting/AccountLedger'));
 const AccountingJournals = lazy(() => import('./pages/Accounting/Journals'));
 const AccountingEntries = lazy(() => import('./pages/Accounting/Entries'));
+const AccountingPending = lazy(() => import('./pages/Accounting/Pending'));
 const AccountingPayables = lazy(() => import('./pages/Accounting/Payables'));
 const AccountingReceivables = lazy(() => import('./pages/Accounting/Receivables'));
 const AccountingTreasury = lazy(() => import('./pages/Accounting/Treasury'));
 const AccountingStatements = lazy(() => import('./pages/Accounting/Statements'));
+const AccountingSettings = lazy(() => import('./pages/Accounting/Settings'));
+const AccountingAudit = lazy(() => import('./pages/Accounting/Audit'));
 const AccountingGuide = lazy(() => import('./pages/Accounting/Guide'));
 const PayrollOverview = lazy(() => import('./pages/Payroll'));
 const PayrollEmployees = lazy(() => import('./pages/Payroll/Employees'));
@@ -292,6 +297,11 @@ function App() {
               <AccountingAccounts />
             </ProtectedRoute>
           } />
+          <Route path="/accounting/accounts/:accountId" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingAccountLedger />
+            </ProtectedRoute>
+          } />
           <Route path="/accounting/journals" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
               <AccountingJournals />
@@ -300,6 +310,16 @@ function App() {
           <Route path="/accounting/entries" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
               <AccountingEntries />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/setup" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingSetup />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/pending" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingPending />
             </ProtectedRoute>
           } />
           <Route path="/accounting/payables" element={
@@ -320,6 +340,16 @@ function App() {
           <Route path="/accounting/statements" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
               <AccountingStatements />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/settings" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/accounting/audit" element={
+            <ProtectedRoute permission={PERMISSIONS.MENU_ACCOUNTING}>
+              <AccountingAudit />
             </ProtectedRoute>
           } />
           <Route path="/accounting/guide" element={

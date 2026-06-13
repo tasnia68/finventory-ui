@@ -5,32 +5,24 @@ import {
   createAccountsReceivableInvoice,
   getAccountsReceivableAging,
   getAccountsReceivableInvoices,
+  getTaxRates,
   recordAccountsReceivablePayment,
 } from '../../services/accountingService';
 import { getCustomers } from '../../services/customerService';
 import { getSalesOrders } from '../../services/salesOrderService';
 import { emptyPayment, formatNumber, toList } from './shared';
 
-const agingColumns = [
-  { key: 'partyName', header: 'Party' },
-  { key: 'invoiceCount', header: 'Invoices' },
-  { key: 'totalOpenAmount', header: 'Open', render: (value) => formatNumber(value) },
-  { key: 'currentAmount', header: 'Current', render: (value) => formatNumber(value) },
-  { key: 'days1To30Amount', header: '1-30', render: (value) => formatNumber(value) },
-  { key: 'days31To60Amount', header: '31-60', render: (value) => formatNumber(value) },
-  { key: 'days61To90Amount', header: '61-90', render: (value) => formatNumber(value) },
-  { key: 'over90Amount', header: '90+', render: (value) => formatNumber(value) },
-];
-
 const Receivables = () => {
   const [customers, setCustomers] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
+  const [taxRates, setTaxRates] = useState([]);
   const [arInvoices, setArInvoices] = useState([]);
   const [arAging, setArAging] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [alert, setAlert] = useState(null);
   const [arPaymentForms, setArPaymentForms] = useState({});
+  const [agingDrilldown, setAgingDrilldown] = useState(null);
   const [arForm, setArForm] = useState({
     customerId: '',
     salesOrderId: '',
@@ -39,20 +31,23 @@ const Receivables = () => {
     dueDate: '',
     currency: 'USD',
     totalAmount: '',
+    taxRateId: '',
     notes: '',
   });
 
   const loadReceivables = async () => {
     try {
       setLoading(true);
-      const [customersResponse, salesOrdersResponse, arInvoicesResponse, arAgingResponse] = await Promise.all([
+      const [customersResponse, salesOrdersResponse, taxRatesResponse, arInvoicesResponse, arAgingResponse] = await Promise.all([
         getCustomers(),
         getSalesOrders({ page: 0, size: 100 }),
+        getTaxRates(),
         getAccountsReceivableInvoices(),
         getAccountsReceivableAging(),
       ]);
       setCustomers(toList(customersResponse));
       setSalesOrders(toList(salesOrdersResponse));
+      setTaxRates(toList(taxRatesResponse).filter((taxRate) => taxRate.active !== false));
       setArInvoices(toList(arInvoicesResponse));
       setArAging(toList(arAgingResponse));
     } catch (error) {
@@ -67,6 +62,36 @@ const Receivables = () => {
   }, []);
 
   const activeCustomers = useMemo(() => customers.filter((customer) => customer.isActive !== false), [customers]);
+
+  const invoiceBucket = (invoice) => {
+    const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : new Date();
+    const ageDays = Math.floor((new Date() - dueDate) / 86400000);
+    if (ageDays <= 0) return 'current';
+    if (ageDays <= 30) return 'days1To30';
+    if (ageDays <= 60) return 'days31To60';
+    if (ageDays <= 90) return 'days61To90';
+    return 'over90';
+  };
+
+  const drilldownInvoices = useMemo(() => {
+    if (!agingDrilldown) return [];
+    return arInvoices.filter((invoice) => (
+      invoice.customerId === agingDrilldown.partyId
+      && Number(invoice.balanceDue || 0) > 0
+      && invoiceBucket(invoice) === agingDrilldown.bucket
+    ));
+  }, [agingDrilldown, arInvoices]);
+
+  const agingBucketButton = (row, bucket, value) => (
+    <button
+      type="button"
+      className="font-semibold text-primary hover:underline disabled:text-slate-400 disabled:no-underline"
+      disabled={Number(value || 0) <= 0}
+      onClick={() => setAgingDrilldown({ partyId: row.partyId, partyName: row.partyName, bucket })}
+    >
+      {formatNumber(value)}
+    </button>
+  );
 
   const handleSalesOrderChange = (salesOrderId) => {
     const salesOrder = salesOrders.find((entry) => entry.id === salesOrderId);
@@ -90,6 +115,7 @@ const Receivables = () => {
         dueDate: arForm.dueDate || null,
         currency: arForm.currency,
         totalAmount: arForm.totalAmount === '' ? null : Number(arForm.totalAmount),
+        taxRateId: arForm.taxRateId || null,
         notes: arForm.notes || null,
       });
       setArForm({
@@ -100,6 +126,7 @@ const Receivables = () => {
         dueDate: '',
         currency: 'USD',
         totalAmount: '',
+        taxRateId: '',
         notes: '',
       });
       setAlert({ type: 'success', message: 'Accounts receivable invoice created.' });
@@ -150,6 +177,16 @@ const Receivables = () => {
     },
     { key: 'dueDate', header: 'Due', render: (value) => value || '—' },
     { key: 'totalAmount', header: 'Total', render: (value) => formatNumber(value) },
+    {
+      key: 'taxAmount',
+      header: 'Tax',
+      render: (value, row) => (
+        <div>
+          <div>{formatNumber(value)}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{row.taxRateCode || 'No tax'}</div>
+        </div>
+      ),
+    },
     { key: 'balanceDue', header: 'Balance', render: (value) => <span className="font-semibold text-slate-900 dark:text-white">{formatNumber(value)}</span> },
     {
       key: 'receipt',
@@ -165,6 +202,38 @@ const Receivables = () => {
           </div>
         );
       },
+    },
+  ];
+
+  const agingColumns = [
+    { key: 'partyName', header: 'Party' },
+    { key: 'invoiceCount', header: 'Invoices' },
+    { key: 'totalOpenAmount', header: 'Open', render: (value) => formatNumber(value) },
+    { key: 'currentAmount', header: 'Current', render: (value, row) => agingBucketButton(row, 'current', value) },
+    { key: 'days1To30Amount', header: '1-30', render: (value, row) => agingBucketButton(row, 'days1To30', value) },
+    { key: 'days31To60Amount', header: '31-60', render: (value, row) => agingBucketButton(row, 'days31To60', value) },
+    { key: 'days61To90Amount', header: '61-90', render: (value, row) => agingBucketButton(row, 'days61To90', value) },
+    { key: 'over90Amount', header: '90+', render: (value, row) => agingBucketButton(row, 'over90', value) },
+  ];
+
+  const drilldownColumns = [
+    {
+      key: 'invoiceNumber',
+      header: 'Invoice',
+      render: (value, row) => (
+        <div>
+          <div className="font-semibold text-slate-900 dark:text-white">{value}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{row.customerInvoiceNumber || row.salesOrderNumber || 'Direct AR'}</div>
+        </div>
+      ),
+    },
+    { key: 'dueDate', header: 'Due' },
+    { key: 'totalAmount', header: 'Total', render: (value) => formatNumber(value) },
+    { key: 'balanceDue', header: 'Balance', render: (value) => <span className="font-semibold text-slate-900 dark:text-white">{formatNumber(value)}</span> },
+    {
+      key: 'payments',
+      header: 'Payments',
+      render: (_, row) => `${row.payments?.length || 0} receipt(s)`,
     },
   ];
 
@@ -198,6 +267,17 @@ const Receivables = () => {
                 <Input type="date" label="Due date" value={arForm.dueDate} onChange={(event) => setArForm((current) => ({ ...current, dueDate: event.target.value }))} />
               </div>
               <Input type="number" step="0.000001" label="Total amount" value={arForm.totalAmount} onChange={(event) => setArForm((current) => ({ ...current, totalAmount: event.target.value }))} placeholder="0.00" />
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Tax rate
+                <select className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" value={arForm.taxRateId} onChange={(event) => setArForm((current) => ({ ...current, taxRateId: event.target.value }))}>
+                  <option value="">No tax</option>
+                  {taxRates.map((taxRate) => (
+                    <option key={taxRate.id} value={taxRate.id}>
+                      {taxRate.code} · {taxRate.name} ({Number(taxRate.rate || 0) * 100}%)
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Input label="Notes" value={arForm.notes} onChange={(event) => setArForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Optional AR notes" />
               <Button className="w-full" icon="request_quote" loading={submitting} onClick={handleCreateArInvoice}>Create AR invoice</Button>
             </div>
@@ -211,6 +291,18 @@ const Receivables = () => {
             <Card padding="none" className="overflow-hidden" title="AR Aging" subtitle="Customer exposure bucketed by due date">
               <DataTable columns={agingColumns} data={arAging} loading={loading} emptyMessage="No unpaid AR balances are available yet." />
             </Card>
+
+            {agingDrilldown ? (
+              <Card
+                padding="none"
+                className="overflow-hidden"
+                title={`${agingDrilldown.partyName} · ${agingDrilldown.bucket}`}
+                subtitle="Open customer invoices in the selected aging bucket"
+                action={<Button size="sm" variant="ghost" onClick={() => setAgingDrilldown(null)}>Close</Button>}
+              >
+                <DataTable columns={drilldownColumns} data={drilldownInvoices} loading={loading} emptyMessage="No invoices in this bucket." />
+              </Card>
+            ) : null}
           </div>
         </div>
     </AccountingPage>

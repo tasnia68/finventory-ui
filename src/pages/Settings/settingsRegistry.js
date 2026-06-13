@@ -663,6 +663,16 @@ export const SETTINGS_SECTIONS = [
                         ],
                         defaultValue: 'PENDING_ONLY',
                     },
+                    {
+                        key: 'accounting.auto_post_events',
+                        label: 'Auto-post financial events',
+                        helpText: 'Automatically create posted journal entries after operational financial events are recorded.',
+                        type: 'BOOLEAN',
+                        category: 'accounting',
+                        control: 'boolean',
+                        defaultValue: false,
+                        risk: 'critical',
+                    },
                 ],
             },
             {

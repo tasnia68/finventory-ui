@@ -148,13 +148,17 @@ const MENU_ITEMS = [
     permission: PERMISSIONS.MENU_ACCOUNTING,
     submenu: [
       { titleKey: 'navigation.accountingOverview', path: '/accounting' },
+      { titleKey: 'navigation.accountingSetup', path: '/accounting/setup' },
       { titleKey: 'navigation.accountingAccounts', path: '/accounting/accounts' },
       { titleKey: 'navigation.accountingJournals', path: '/accounting/journals' },
       { titleKey: 'navigation.accountingEntries', path: '/accounting/entries' },
+      { titleKey: 'navigation.accountingPending', path: '/accounting/pending' },
       { titleKey: 'navigation.accountingPayables', path: '/accounting/payables' },
       { titleKey: 'navigation.accountingReceivables', path: '/accounting/receivables' },
       { titleKey: 'navigation.accountingTreasury', path: '/accounting/treasury' },
       { titleKey: 'navigation.accountingStatements', path: '/accounting/statements' },
+      { titleKey: 'navigation.accountingSettings', path: '/accounting/settings' },
+      { titleKey: 'navigation.accountingAudit', path: '/accounting/audit' },
       { titleKey: 'navigation.accountingGuide', path: '/accounting/guide' },
     ]
   },

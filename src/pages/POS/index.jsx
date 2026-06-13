@@ -4,6 +4,7 @@ import { Alert, Badge, Button, Card, Input, Select } from '../../components/comm
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { createCustomer } from '../../services/customerService';
+import { getTaxRates } from '../../services/accountingService';
 import {
     addCartLine,
     fetchCurrentPosShift,
@@ -31,13 +32,13 @@ import PosCheckoutModal from './PosCheckoutModal';
 import PosInvoiceModal from './PosInvoiceModal';
 import PosProductGrid from './PosProductGrid';
 import PosQuickCustomerModal from './PosQuickCustomerModal';
-import { formatCurrency } from './utils';
 
 const DEFAULT_CHECKOUT = {
     paymentMethod: 'CASH',
     tenderedAmount: '',
     discountAmount: '',
     couponCodes: '',
+    taxRateId: '',
     taxRate: '0',
     notes: '',
     currency: 'USD',
@@ -61,6 +62,7 @@ const PosTerminal = () => {
     const [alert, setAlert] = useState(null);
     const [online, setOnline] = useState(navigator.onLine);
     const [bootstrap, setBootstrap] = useState({ terminals: [], warehouses: [], customers: [], categories: [], activeShift: null });
+    const [taxRates, setTaxRates] = useState([]);
     const [catalog, setCatalog] = useState([]);
     const [query, setQuery] = useState('');
     const [barcode, setBarcode] = useState('');
@@ -104,8 +106,12 @@ const PosTerminal = () => {
         const loadBootstrap = async () => {
             try {
                 setLoading(true);
-                const data = await getPosBootstrap();
+                const [data, taxRatesResponse] = await Promise.all([
+                    getPosBootstrap(),
+                    getTaxRates(),
+                ]);
                 setBootstrap(data);
+                setTaxRates((Array.isArray(taxRatesResponse) ? taxRatesResponse : []).filter((taxRate) => taxRate.active !== false));
                 const initialTerminalId = data.activeShift?.terminalId || data.terminals?.[0]?.id || '';
                 const initialWarehouseId = data.terminals?.find((terminal) => terminal.id === initialTerminalId)?.warehouseId || data.warehouses[0]?.id || '';
 
@@ -241,7 +247,7 @@ const PosTerminal = () => {
                 if (isMounted) {
                     setKpis(data);
                 }
-            } catch (error) {
+            } catch {
                 if (isMounted) {
                     setKpis({ gross: 0, tickets: 0, units: 0, averageTicket: 0, offlineQueued: 0 });
                 }
@@ -461,6 +467,7 @@ const PosTerminal = () => {
                 discountAmount: String(Number(sale.manualDiscountAmount || 0)),
                 couponCodes: Array.isArray(sale.couponCodes) ? sale.couponCodes.join(', ') : '',
                 taxRate: derivedTaxRate ? String(derivedTaxRate.toFixed(2)) : '0',
+                taxRateId: sale.taxRateId || '',
                 notes: sale.notes || '',
                 suspendedSaleId: sale.id,
             });
@@ -672,6 +679,7 @@ const PosTerminal = () => {
                 onClose={() => setShowCheckout(false)}
                 checkout={checkout}
                 setCheckout={setCheckout}
+                taxRates={taxRates}
                 summary={summary}
                         pricingPreviewLoading={pricingPreviewLoading}
                         pricingPreviewError={pricingPreviewError}

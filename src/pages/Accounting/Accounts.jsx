@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Alert, Badge, Button, Card, DataTable, Input } from '../../components/common';
 import { createAccount, getAccounts } from '../../services/accountingService';
 import { toList } from './shared';
 import { AccountingPage } from './AccountingShell';
-
-const accountColumns = [
-  { key: 'accountCode', header: 'Code', render: (value) => <span className="font-semibold text-slate-900 dark:text-white">{value}</span> },
-  { key: 'accountName', header: 'Account' },
-  { key: 'accountType', header: 'Type', render: (value) => <Badge variant="primary">{value}</Badge> },
-  { key: 'allowManualPosting', header: 'Manual', render: (value) => <Badge variant={value ? 'success' : 'default'}>{value ? 'Allowed' : 'System'}</Badge> },
-  { key: 'active', header: 'State', render: (value) => <Badge variant={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Badge> },
-];
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
@@ -53,6 +46,31 @@ const Accounts = () => {
       setSubmitting(false);
     }
   };
+
+  const accountColumns = [
+    {
+      key: 'accountCode',
+      header: 'Code',
+      render: (value, row) => (
+        <Link className="font-semibold text-primary hover:underline" to={`/accounting/accounts/${row.id}`}>
+          {value}
+        </Link>
+      ),
+    },
+    { key: 'accountName', header: 'Account' },
+    { key: 'accountType', header: 'Type', render: (value) => <Badge variant="primary">{value}</Badge> },
+    { key: 'allowManualPosting', header: 'Manual', render: (value) => <Badge variant={value ? 'success' : 'default'}>{value ? 'Allowed' : 'System'}</Badge> },
+    { key: 'active', header: 'State', render: (value) => <Badge variant={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Badge> },
+    {
+      key: 'ledger',
+      header: 'Ledger',
+      render: (_, row) => (
+        <Link className="text-sm font-medium text-primary hover:underline" to={`/accounting/accounts/${row.id}`}>
+          View
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <AccountingPage title="Chart of Accounts" subtitle="Native chart accounts used for journal posting and trial balance reporting.">
