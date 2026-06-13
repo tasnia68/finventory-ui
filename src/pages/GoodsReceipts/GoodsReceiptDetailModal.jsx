@@ -10,8 +10,20 @@ import {
 } from '../../services/goodsReceiptNoteService';
 import { formatCurrency, formatDateTime, getGoodsReceiptStatusVariant, getSupplierReturnStatusVariant } from '../Procurement/utils';
 
+const parseSerialList = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    return String(raw)
+        .split(/[\n,]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+};
+
+const formatSerialList = (list) => (Array.isArray(list) ? list.join('\n') : (list || ''));
+
 const GoodsReceiptDetailModal = ({ goodsReceipt, isOpen, onClose, onRefresh }) => {
     const [workingItems, setWorkingItems] = useState([]);
+    const [expandedItemIds, setExpandedItemIds] = useState({});
     const [supplierReturns, setSupplierReturns] = useState([]);
     const [alert, setAlert] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -19,9 +31,13 @@ const GoodsReceiptDetailModal = ({ goodsReceipt, isOpen, onClose, onRefresh }) =
 
     useEffect(() => {
         if (goodsReceipt) {
-            setWorkingItems((goodsReceipt.items || []).map((item) => ({ ...item })));
+            setWorkingItems((goodsReceipt.items || []).map((item) => ({
+                ...item,
+                serialNumbersText: formatSerialList(item.serialNumbers),
+            })));
             loadReturns(goodsReceipt.id);
             setReturnForm({ goodsReceiptNoteItemId: '', quantity: '', reason: '', notes: '' });
+            setExpandedItemIds({});
         }
     }, [goodsReceipt]);
 
@@ -40,6 +56,10 @@ const GoodsReceiptDetailModal = ({ goodsReceipt, isOpen, onClose, onRefresh }) =
         setWorkingItems((current) => current.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
     };
 
+    const toggleExpanded = (id) => {
+        setExpandedItemIds((current) => ({ ...current, [id]: !current[id] }));
+    };
+
     const persistItems = async () => {
         try {
             setSaving(true);
@@ -49,6 +69,10 @@ const GoodsReceiptDetailModal = ({ goodsReceipt, isOpen, onClose, onRefresh }) =
                 acceptedQuantity: Number(item.acceptedQuantity),
                 rejectedQuantity: Number(item.rejectedQuantity),
                 rejectionReason: item.rejectionReason || null,
+                batchNumber: item.batchTracked ? (item.batchNumber || null) : null,
+                manufacturingDate: item.batchTracked ? (item.manufacturingDate || null) : null,
+                expiryDate: item.batchTracked ? (item.expiryDate || null) : null,
+                serialNumbers: item.serialTracked ? parseSerialList(item.serialNumbersText) : null,
             })));
             showAlert('success', 'GRN item balances saved');
             onRefresh();
@@ -98,6 +122,81 @@ const GoodsReceiptDetailModal = ({ goodsReceipt, isOpen, onClose, onRefresh }) =
         .filter((item) => Number(item.acceptedQuantity || 0) > Number(item.returnedQuantity || 0))
         .map((item) => ({ value: item.id, label: `${item.productVariantSku} (${Number(item.acceptedQuantity || 0) - Number(item.returnedQuantity || 0)} available)` })), [workingItems]);
 
+    const isDraft = goodsReceipt?.status === 'DRAFT';
+
+    const renderTrackingBadges = (row) => {
+        if (!row.batchTracked && !row.serialTracked) return null;
+        const labels = [];
+        if (row.batchTracked) labels.push('Batch');
+        if (row.serialTracked) labels.push('Serial');
+        return (
+            <button
+                type="button"
+                onClick={() => toggleExpanded(row.id)}
+                className="ml-2 inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-900/40 dark:text-amber-200"
+                title="Toggle batch / serial details"
+            >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>inventory_2</span>
+                {labels.join(' + ')}
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                    {expandedItemIds[row.id] ? 'expand_less' : 'expand_more'}
+                </span>
+            </button>
+        );
+    };
+
+    const renderTrackingDetails = (row) => {
+        if (!expandedItemIds[row.id]) return null;
+        if (!row.batchTracked && !row.serialTracked) return null;
+        return (
+            <div className="my-2 grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/40 md:grid-cols-3">
+                {row.batchTracked ? (
+                    <>
+                        <Input
+                            label="Batch number *"
+                            value={row.batchNumber || ''}
+                            onChange={(e) => updateItem(row.id, 'batchNumber', e.target.value)}
+                            disabled={!isDraft}
+                            placeholder="e.g. LOT-2026-A"
+                        />
+                        <Input
+                            label="Manufacture date"
+                            type="date"
+                            value={row.manufacturingDate || ''}
+                            onChange={(e) => updateItem(row.id, 'manufacturingDate', e.target.value)}
+                            disabled={!isDraft}
+                        />
+                        <Input
+                            label="Expiry date"
+                            type="date"
+                            value={row.expiryDate || ''}
+                            onChange={(e) => updateItem(row.id, 'expiryDate', e.target.value)}
+                            disabled={!isDraft}
+                        />
+                    </>
+                ) : null}
+                {row.serialTracked ? (
+                    <div className={row.batchTracked ? 'md:col-span-3' : 'md:col-span-3'}>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Serial numbers * <span className="text-xs text-slate-500">(one per line, must match accepted qty)</span>
+                        </label>
+                        <textarea
+                            rows={Math.min(8, Math.max(3, Number(row.acceptedQuantity) || 3))}
+                            value={row.serialNumbersText || ''}
+                            onChange={(e) => updateItem(row.id, 'serialNumbersText', e.target.value)}
+                            disabled={!isDraft}
+                            placeholder={`SN-001\nSN-002\nSN-003`}
+                            className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm dark:border-slate-700 dark:bg-slate-800"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">
+                            {parseSerialList(row.serialNumbersText).length} / {row.acceptedQuantity || 0}
+                        </p>
+                    </div>
+                ) : null}
+            </div>
+        );
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={goodsReceipt?.grnNumber || 'Goods Receipt'} size="xl">
             {goodsReceipt ? (
@@ -114,24 +213,61 @@ const GoodsReceiptDetailModal = ({ goodsReceipt, isOpen, onClose, onRefresh }) =
                             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Received {formatDateTime(goodsReceipt.receivedDate)}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {goodsReceipt.status === 'DRAFT' ? <Button onClick={persistItems} loading={saving}>Save Items</Button> : null}
-                            {goodsReceipt.status === 'DRAFT' ? <Button variant="secondary" onClick={() => moveReceipt('verify')} loading={saving}>Verify</Button> : null}
+                            {isDraft ? <Button onClick={persistItems} loading={saving}>Save Items</Button> : null}
+                            {isDraft ? <Button variant="secondary" onClick={() => moveReceipt('verify')} loading={saving}>Verify</Button> : null}
                             {goodsReceipt.status === 'VERIFIED' ? <Button onClick={() => moveReceipt('confirm')} loading={saving}>Confirm Receipt</Button> : null}
                         </div>
                     </div>
 
-                    <Card padding="none" className="overflow-hidden" title="Receipt Lines" subtitle="Balance accepted and rejected units before warehouse confirmation">
-                        <DataTable
-                            columns={[
-                                { key: 'productVariantSku', header: 'Variant', render: (value, row) => <div><div className="font-semibold text-slate-900 dark:text-white">{value}</div><div className="text-xs text-slate-500 dark:text-slate-400">PO line {row.purchaseOrderItemId}</div></div> },
-                                { key: 'receivedQuantity', header: 'Received', render: (value, row) => goodsReceipt.status === 'DRAFT' ? <input type="number" min="0" value={row.receivedQuantity} onChange={(event) => updateItem(row.id, 'receivedQuantity', event.target.value)} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800" /> : value },
-                                { key: 'acceptedQuantity', header: 'Accepted', render: (value, row) => goodsReceipt.status === 'DRAFT' ? <input type="number" min="0" value={row.acceptedQuantity} onChange={(event) => updateItem(row.id, 'acceptedQuantity', event.target.value)} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800" /> : value },
-                                { key: 'rejectedQuantity', header: 'Rejected', render: (value, row) => goodsReceipt.status === 'DRAFT' ? <input type="number" min="0" value={row.rejectedQuantity} onChange={(event) => updateItem(row.id, 'rejectedQuantity', event.target.value)} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800" /> : value },
-                                { key: 'returnedQuantity', header: 'Returned' },
-                            ]}
-                            data={workingItems}
-                            emptyMessage="No receipt items available."
-                        />
+                    <Card padding="none" className="overflow-hidden" title="Receipt Lines" subtitle="Balance accepted and rejected units, capture batch + expiry for tracked products">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                <thead className="bg-slate-50 dark:bg-slate-800">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Variant</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Received</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Accepted</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Rejected</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Returned</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+                                    {workingItems.length === 0 ? (
+                                        <tr><td colSpan={5} className="py-6 text-center text-sm text-slate-500">No receipt items available.</td></tr>
+                                    ) : null}
+                                    {workingItems.map((row) => (
+                                        <React.Fragment key={row.id}>
+                                            <tr>
+                                                <td className="px-4 py-2 align-top">
+                                                    <div className="flex items-start">
+                                                        <div>
+                                                            <div className="font-semibold text-slate-900 dark:text-white">{row.productVariantSku}</div>
+                                                            <div className="text-xs text-slate-500 dark:text-slate-400">PO line {row.purchaseOrderItemId}</div>
+                                                        </div>
+                                                        {renderTrackingBadges(row)}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-2 align-top">
+                                                    {isDraft ? <input type="number" min="0" value={row.receivedQuantity} onChange={(e) => updateItem(row.id, 'receivedQuantity', e.target.value)} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800" /> : row.receivedQuantity}
+                                                </td>
+                                                <td className="px-4 py-2 align-top">
+                                                    {isDraft ? <input type="number" min="0" value={row.acceptedQuantity} onChange={(e) => updateItem(row.id, 'acceptedQuantity', e.target.value)} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800" /> : row.acceptedQuantity}
+                                                </td>
+                                                <td className="px-4 py-2 align-top">
+                                                    {isDraft ? <input type="number" min="0" value={row.rejectedQuantity} onChange={(e) => updateItem(row.id, 'rejectedQuantity', e.target.value)} className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800" /> : row.rejectedQuantity}
+                                                </td>
+                                                <td className="px-4 py-2 align-top">{row.returnedQuantity}</td>
+                                            </tr>
+                                            {(row.batchTracked || row.serialTracked) && expandedItemIds[row.id] ? (
+                                                <tr>
+                                                    <td colSpan={5} className="px-4 pb-3">{renderTrackingDetails(row)}</td>
+                                                </tr>
+                                            ) : null}
+                                        </React.Fragment>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </Card>
 
                     {goodsReceipt.status === 'COMPLETED' ? (

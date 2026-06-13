@@ -2,7 +2,21 @@ import React from 'react';
 import { Badge, Button, Card } from '../../components/common';
 import { formatCurrency } from './utils';
 
-const PosCartPanel = ({ cart, summary, currency, customerName, terminalName, warehouseName, appliedCouponCodes = [], checkoutDisabled, holdDisabled, onQuantityChange, onPriceChange, onRemove, onClear, onCheckout, onHold }) => {
+const formatExpiry = (date) => {
+    if (!date) return null;
+    try {
+        return new Date(date).toLocaleDateString();
+    } catch (_) {
+        return date;
+    }
+};
+
+const PosCartPanel = ({
+    cart, summary, currency, customerName, terminalName, warehouseName,
+    appliedCouponCodes = [], checkoutDisabled, holdDisabled,
+    onQuantityChange, onPriceChange, onRemove, onClear, onCheckout, onHold,
+    onBatchChange, onSerialsChange,
+}) => {
     return (
         <Card className="sticky top-6 rounded-[30px] border border-slate-200 bg-white/95 dark:border-slate-700 dark:bg-slate-800/95">
             <div className="flex items-start justify-between gap-4">
@@ -32,39 +46,90 @@ const PosCartPanel = ({ cart, summary, currency, customerName, terminalName, war
                             <span />
                         </div>
                         <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {cart.map((line) => (
-                                <div key={line.id} className="grid grid-cols-[minmax(0,1.5fr)_74px_108px_108px_40px] items-center gap-3 px-4 py-3">
-                                    <div className="min-w-0">
-                                        <p className="truncate font-semibold text-slate-900 dark:text-white">{line.sku}</p>
-                                        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{line.description}</p>
-                                        {line.onHand !== null && line.onHand !== undefined ? (
-                                            <p className={`mt-1 text-[11px] font-medium ${line.quantity > line.onHand ? 'text-rose-500' : 'text-slate-400'}`}>
-                                                {line.quantity > line.onHand ? `Exceeds stock (${line.onHand})` : `${line.onHand} on hand`}
-                                            </p>
+                            {cart.map((line) => {
+                                const batches = Array.isArray(line.availableBatches) ? line.availableBatches : [];
+                                const expiry = formatExpiry(line.batchExpiryDate);
+                                const serialsNeeded = Number(line.quantity || 0);
+                                const serialsEntered = Array.isArray(line.serialNumbers) ? line.serialNumbers.length : 0;
+                                const serialsOk = !line.serialTracked || serialsEntered === serialsNeeded;
+                                return (
+                                    <div key={line.id} className="px-4 py-3">
+                                        <div className="grid grid-cols-[minmax(0,1.5fr)_74px_108px_108px_40px] items-center gap-3">
+                                            <div className="min-w-0">
+                                                <p className="truncate font-semibold text-slate-900 dark:text-white">{line.sku}</p>
+                                                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{line.description}</p>
+                                                {line.onHand !== null && line.onHand !== undefined ? (
+                                                    <p className={`mt-1 text-[11px] font-medium ${line.quantity > line.onHand ? 'text-rose-500' : 'text-slate-400'}`}>
+                                                        {line.quantity > line.onHand ? `Exceeds stock (${line.onHand})` : `${line.onHand} on hand`}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                step="1"
+                                                value={line.quantity}
+                                                onChange={(event) => onQuantityChange(line.id, event.target.value)}
+                                                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                            />
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={line.unitPrice}
+                                                onChange={(event) => onPriceChange(line.id, event.target.value)}
+                                                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                            />
+                                            <div className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(line.lineTotal, currency)}</div>
+                                            <button onClick={() => onRemove(line.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-slate-700">
+                                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                                            </button>
+                                        </div>
+                                        {line.batchTracked || line.serialTracked ? (
+                                            <div className="mt-3 grid grid-cols-1 gap-2 rounded-2xl bg-amber-50 px-3 py-2 dark:bg-amber-900/20">
+                                                {line.batchTracked ? (
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Batch (FEFO)</span>
+                                                        {batches.length === 0 ? (
+                                                            <span className="text-xs font-medium text-rose-600">No available batches</span>
+                                                        ) : (
+                                                            <select
+                                                                value={line.batchId || ''}
+                                                                onChange={(e) => onBatchChange && onBatchChange(line.id, e.target.value)}
+                                                                className="rounded-md border border-amber-200 bg-white px-2 py-1 text-xs dark:border-amber-700 dark:bg-slate-800"
+                                                            >
+                                                                {batches.map((b) => (
+                                                                    <option key={b.id} value={b.id}>
+                                                                        {b.batchNumber}{b.expiryDate ? ` · exp ${formatExpiry(b.expiryDate)}` : ''} · {b.availableQuantity} avail
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        )}
+                                                        {expiry ? <span className="text-[11px] text-amber-700 dark:text-amber-300">Expires {expiry}</span> : null}
+                                                    </div>
+                                                ) : null}
+                                                {line.serialTracked ? (
+                                                    <div>
+                                                        <div className="mb-1 flex items-center justify-between">
+                                                            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Serial numbers</span>
+                                                            <span className={`text-[11px] font-medium ${serialsOk ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                                                {serialsEntered} / {serialsNeeded}
+                                                            </span>
+                                                        </div>
+                                                        <textarea
+                                                            rows={Math.min(6, Math.max(2, serialsNeeded))}
+                                                            value={(line.serialNumbers || []).join('\n')}
+                                                            onChange={(e) => onSerialsChange && onSerialsChange(line.id, e.target.value)}
+                                                            placeholder={`Scan or paste serial numbers, one per line\nSN-001\nSN-002`}
+                                                            className="block w-full rounded-md border border-amber-200 bg-white px-2 py-1 font-mono text-xs dark:border-amber-700 dark:bg-slate-800"
+                                                        />
+                                                    </div>
+                                                ) : null}
+                                            </div>
                                         ) : null}
                                     </div>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        value={line.quantity}
-                                        onChange={(event) => onQuantityChange(line.id, event.target.value)}
-                                        className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                    />
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={line.unitPrice}
-                                        onChange={(event) => onPriceChange(line.id, event.target.value)}
-                                        className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                                    />
-                                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(line.lineTotal, currency)}</div>
-                                    <button onClick={() => onRemove(line.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-slate-700">
-                                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}

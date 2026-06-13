@@ -23,6 +23,8 @@ import {
     syncQueuedPosSales,
     updateCartPrice,
     updateCartQuantity,
+    updateCartBatch,
+    updateCartSerials,
     removeCartLine,
     cancelSuspendedPosSale,
 } from '../../services/posService';
@@ -658,6 +660,8 @@ const PosTerminal = () => {
                             holdDisabled={!selectedTerminalId || syncing || !online}
                             onQuantityChange={(lineId, quantity) => setCart((current) => updateCartQuantity(current, lineId, quantity))}
                             onPriceChange={(lineId, price) => setCart((current) => updateCartPrice(current, lineId, price))}
+                            onBatchChange={(lineId, batchId) => setCart((current) => updateCartBatch(current, lineId, batchId))}
+                            onSerialsChange={(lineId, serials) => setCart((current) => updateCartSerials(current, lineId, serials))}
                             onRemove={(lineId) => setCart((current) => removeCartLine(current, lineId))}
                             onClear={() => setCart([])}
                             onHold={handleHoldSale}

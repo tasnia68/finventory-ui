@@ -53,6 +53,14 @@ const normalizeCatalogItem = (item) => ({
     imageUrl: item.imageUrl || null,
     description: item.description || item.name || 'POS item',
     onHand: item.onHand === null || item.onHand === undefined ? null : Number(item.onHand || 0),
+    batchTracked: Boolean(item.batchTracked),
+    serialTracked: Boolean(item.serialTracked),
+    availableBatches: Array.isArray(item.availableBatches) ? item.availableBatches.map((b) => ({
+        id: b.id,
+        batchNumber: b.batchNumber,
+        expiryDate: b.expiryDate || null,
+        availableQuantity: Number(b.availableQuantity || 0),
+    })) : [],
 });
 
 const mergeCatalogCache = (items) => {
@@ -293,6 +301,8 @@ const buildBackendSalePayload = (sale) => ({
         quantity: Number(item.quantity),
         unitPrice: Number(item.unitPrice),
         lineDiscount: Number(item.lineDiscount || 0),
+        batchId: item.batchId || null,
+        serialNumbers: Array.isArray(item.serialNumbers) && item.serialNumbers.length > 0 ? item.serialNumbers : null,
     })),
 });
 
@@ -517,22 +527,38 @@ export const scanPosBarcode = async (barcode, { warehouseId = '' } = {}) => {
 
 import { generateUUID } from '../utils/uuid';
 
-export const createCartLine = (product, quantity = 1) => ({
-    id: generateUUID(),
-    productVariantId: product.id,
-    sku: product.sku,
-    barcode: product.barcode,
-    description: product.description,
-    unitPrice: Number(product.price || 0),
-    quantity: Number(quantity || 1),
-    onHand: product.onHand,
-    lineDiscount: 0,
-    lineTotal: Number(product.price || 0) * Number(quantity || 1),
-});
+export const createCartLine = (product, quantity = 1) => {
+    const batchTracked = Boolean(product.batchTracked);
+    const availableBatches = Array.isArray(product.availableBatches) ? product.availableBatches : [];
+    // FEFO default: pick the first batch (already sorted by expiry asc on the backend)
+    const defaultBatch = batchTracked && availableBatches.length > 0 ? availableBatches[0] : null;
+    return {
+        id: generateUUID(),
+        productVariantId: product.id,
+        sku: product.sku,
+        barcode: product.barcode,
+        description: product.description,
+        unitPrice: Number(product.price || 0),
+        quantity: Number(quantity || 1),
+        onHand: product.onHand,
+        lineDiscount: 0,
+        lineTotal: Number(product.price || 0) * Number(quantity || 1),
+        batchTracked,
+        serialTracked: Boolean(product.serialTracked),
+        availableBatches,
+        batchId: defaultBatch ? defaultBatch.id : null,
+        batchNumber: defaultBatch ? defaultBatch.batchNumber : null,
+        batchExpiryDate: defaultBatch ? defaultBatch.expiryDate : null,
+        serialNumbers: [],
+    };
+};
 
 export const addCartLine = (cart, product) => {
+    const tracksUniquely = Boolean(product.batchTracked) || Boolean(product.serialTracked);
     const existing = cart.find((line) => line.productVariantId === product.id);
-    if (!existing) {
+    // Always add a separate line for batch/serial tracked items so the cashier
+    // can pick a batch / scan serials per line independently.
+    if (!existing || tracksUniquely) {
         return [...cart, createCartLine(product)];
     }
 
@@ -540,6 +566,25 @@ export const addCartLine = (cart, product) => {
         ? { ...line, quantity: line.quantity + 1, lineTotal: (line.quantity + 1) * line.unitPrice }
         : line);
 };
+
+export const updateCartBatch = (cart, lineId, batchId) => cart.map((line) => {
+    if (line.id !== lineId) return line;
+    const batch = (line.availableBatches || []).find((b) => b.id === batchId);
+    return {
+        ...line,
+        batchId: batch ? batch.id : null,
+        batchNumber: batch ? batch.batchNumber : null,
+        batchExpiryDate: batch ? batch.expiryDate : null,
+    };
+});
+
+export const updateCartSerials = (cart, lineId, serialNumbers) => cart.map((line) => {
+    if (line.id !== lineId) return line;
+    const cleaned = (Array.isArray(serialNumbers) ? serialNumbers : String(serialNumbers || '').split(/[\n,]/))
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    return { ...line, serialNumbers: cleaned };
+});
 
 export const updateCartQuantity = (cart, lineId, quantity) => {
     const parsed = Math.max(1, Number(quantity || 1));
