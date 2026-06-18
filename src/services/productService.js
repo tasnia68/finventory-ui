@@ -69,6 +69,14 @@ export const getProductImages = (templateId) => {
     return unwrap(request(`/product-templates/${templateId}/images`));
 };
 
+// Browser-renderable URL for an image's binary. ProductImageDto.url holds the MinIO
+// object key (not a browsable URL), so <img src> must always go through the /file
+// endpoint by id. Same base as every other API call so dev + prod both resolve.
+export const productImageUrl = (imageId) => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+    return `${API_BASE_URL}/product-images/${imageId}/file`;
+};
+
 export const getProductImageFile = async (imageId) => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 

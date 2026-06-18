@@ -9,6 +9,7 @@ import {
   uploadProductImage,
   deleteProductImage,
   setMainImage,
+  productImageUrl,
 } from '../../services/productService';
 import { getCategoryTree } from '../../services/categoryService';
 import { getWarehouses } from '../../services/warehouseService';
@@ -491,7 +492,7 @@ const ProductEditor = () => {
               >
                 {serverImages.map((img) => (
                   <div key={img.id} className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                    <img src={img.url || `/api/v1/product-images/${img.id}/file`} alt="" className="aspect-square w-full object-cover" />
+                    <img src={productImageUrl(img.id)} alt="" className="aspect-square w-full object-cover" />
                     {img.isMain ? (
                       <span className="absolute left-1 top-1 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">Main</span>
                     ) : null}
