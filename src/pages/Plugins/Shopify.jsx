@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, Card, Input } from '../../components/common';
 import {
+  enqueueShopifyRun,
   getShopifyConnection,
+  listShopifyRuns,
+  processShopifyRunPage,
   pushShopifyCatalog,
   pushShopifyInventory,
+  resumeShopifyRun,
   saveShopifyConnection,
   startShopifyOAuth,
-  syncShopifyInventory,
-  syncShopifyLocations,
-  syncShopifyOrders,
-  syncShopifyProducts,
+  startShopifyRun,
   testShopifyConnection,
 } from '../../services/shopifyIntegrationService';
 
@@ -44,13 +45,15 @@ const ShopifyPluginPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [orderSyncing, setOrderSyncing] = useState(false);
-  const [locationSyncing, setLocationSyncing] = useState(false);
-  const [inventorySyncing, setInventorySyncing] = useState(false);
   const [catalogPushing, setCatalogPushing] = useState(false);
   const [inventoryPushing, setInventoryPushing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
+  const [incremental, setIncremental] = useState(true);
+  const [background, setBackground] = useState(false);
+  const [activeRun, setActiveRun] = useState(null);
+  const [runningType, setRunningType] = useState(null);
+  const [runLog, setRunLog] = useState([]);
+  const [runs, setRuns] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -161,39 +164,153 @@ const ShopifyPluginPage = () => {
     }
   };
 
-  const handleProductSync = async () => {
-    setSyncing(true);
-    setAlert(null);
-    setSyncResult(null);
+  const appendLog = (line) => setRunLog((prev) => [...prev.slice(-200), line]);
+
+  const refreshRuns = async () => {
     try {
-      const result = await syncShopifyProducts();
-      setSyncResult(result);
-      const next = await getShopifyConnection();
-      applyConnection(next);
-      setAlert({ type: result.success ? 'success' : 'error', message: result.message || 'Shopify sync finished.' });
-    } catch (error) {
-      setAlert({ type: 'error', message: error.message || 'Shopify product sync failed.' });
-    } finally {
-      setSyncing(false);
+      setRuns(await listShopifyRuns());
+    } catch {
+      /* non-fatal */
     }
   };
 
-  const handleOrderSync = async () => {
-    setOrderSyncing(true);
-    setAlert(null);
-    setSyncResult(null);
-    try {
-      const result = await syncShopifyOrders();
-      setSyncResult(result);
-      const next = await getShopifyConnection();
-      applyConnection(next);
-      setAlert({ type: result.success ? 'success' : 'error', message: result.message || 'Shopify order sync finished.' });
-    } catch (error) {
-      setAlert({ type: 'error', message: error.message || 'Shopify order sync failed.' });
-    } finally {
-      setOrderSyncing(false);
+  useEffect(() => {
+    refreshRuns();
+  }, []);
+
+  const summarizeRun = (run) => {
+    const r = run?.result || {};
+    switch (run?.syncType) {
+      case 'PRODUCTS':
+        return `seen ${r.productsSeen || 0} · +${r.productsCreated || 0}/~${r.productsUpdated || 0} products · ${r.variantsCreated || 0} variants · ${r.imagesImported || 0} imgs`;
+      case 'ORDERS':
+        return `seen ${r.ordersSeen || 0} · imported ${r.ordersImported || 0} · dup ${r.ordersDuplicate || 0}`;
+      case 'INVENTORY':
+        return `stock levels ${r.stockLevelsApplied || 0}/${r.stockLevelsSeen || 0}`;
+      case 'LOCATIONS':
+        return `+${r.locationsCreated || 0}/~${r.locationsMatched || 0} of ${r.locationsSeen || 0}`;
+      default:
+        return '';
     }
   };
+
+  // Drive a run page-by-page until it leaves RUNNING. Each page is one short request,
+  // so thousands of products stream in without a single long-lived call timing out.
+  const drivePages = async (run) => {
+    let current = run;
+    let guard = 0;
+    while (current.status === 'RUNNING' && guard < 100000) {
+      guard += 1;
+      // eslint-disable-next-line no-await-in-loop
+      current = await processShopifyRunPage(current.id);
+      setActiveRun(current);
+      appendLog(`page ${current.pagesProcessed}: ${summarizeRun(current)}`);
+      if (current.status === 'FAILED') {
+        appendLog(`FAILED: ${current.message || 'unknown error'} (resume from the runs list)`);
+      }
+    }
+    return current;
+  };
+
+  // Background mode: the RabbitMQ worker drives the run server-side; we just poll the
+  // journal for progress. The browser can be closed — the run continues regardless.
+  const pollUntilDone = async (runId) => {
+    let last = null;
+    let guard = 0;
+    while (guard < 100000) {
+      guard += 1;
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      // eslint-disable-next-line no-await-in-loop
+      const list = await listShopifyRuns();
+      setRuns(list);
+      const found = list.find((r) => r.id === runId);
+      if (found) {
+        setActiveRun(found);
+        if (!last || found.pagesProcessed !== last.pagesProcessed || found.status !== last.status) {
+          appendLog(`page ${found.pagesProcessed}: ${summarizeRun(found)} [${found.status}]`);
+        }
+        last = found;
+        if (found.status !== 'RUNNING') {
+          return found;
+        }
+      }
+    }
+    return last;
+  };
+
+  const driveRun = async (type) => {
+    if (runningType) return;
+    setRunningType(type);
+    setAlert(null);
+    setSyncResult(null);
+    setRunLog([]);
+    try {
+      let run;
+      if (background) {
+        run = await enqueueShopifyRun(type, incremental);
+        setActiveRun(run);
+        appendLog(`Queued ${type} ${run.incremental ? '(incremental)' : '(full)'} — run ${(run.id || '').slice(0, 8)} -> worker`);
+        if (run.status === 'RUNNING') {
+          run = await pollUntilDone(run.id);
+        }
+      } else {
+        run = await startShopifyRun(type, incremental);
+        setActiveRun(run);
+        appendLog(`Started ${type} ${run.incremental ? '(incremental)' : '(full)'} — run ${(run.id || '').slice(0, 8)}`);
+        run = await drivePages(run);
+      }
+      setActiveRun(run);
+      setSyncResult(run.result);
+      await refreshRuns();
+      const next = await getShopifyConnection();
+      applyConnection(next);
+      setAlert({
+        type: run.status === 'COMPLETED' ? 'success' : (run.status === 'RUNNING' ? 'info' : 'error'),
+        message: run.status === 'COMPLETED'
+          ? `${type} sync complete in ${run.pagesProcessed} page(s).`
+          : run.status === 'RUNNING'
+            ? `${type} sync still running in background — safe to leave this page.`
+            : `${type} sync failed: ${run.message || 'unknown error'}. Use Resume in the runs list to continue from where it stopped.`,
+      });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.message || `${type} sync failed.` });
+      await refreshRuns();
+    } finally {
+      setRunningType(null);
+    }
+  };
+
+  const resumeRunLoop = async (run) => {
+    if (runningType) return;
+    setRunningType(run.syncType);
+    setAlert(null);
+    setRunLog([`Resuming ${run.syncType} run ${(run.id || '').slice(0, 8)} from cursor`]);
+    try {
+      let resumed = await resumeShopifyRun(run.id);
+      setActiveRun(resumed);
+      resumed = await drivePages(resumed);
+      setActiveRun(resumed);
+      setSyncResult(resumed.result);
+      await refreshRuns();
+      setAlert({
+        type: resumed.status === 'COMPLETED' ? 'success' : 'error',
+        message: resumed.status === 'COMPLETED'
+          ? `${resumed.syncType} sync complete.`
+          : `Still failing: ${resumed.message || 'unknown error'}`,
+      });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.message || 'Resume failed.' });
+      await refreshRuns();
+    } finally {
+      setRunningType(null);
+    }
+  };
+
+  const handleProductSync = () => driveRun('PRODUCTS');
+  const handleOrderSync = () => driveRun('ORDERS');
+  const handleLocationSync = () => driveRun('LOCATIONS');
+  const handleInventorySync = () => driveRun('INVENTORY');
 
   const runJob = async (apiCall, setBusy, defaultMessage) => {
     setBusy(true);
@@ -212,8 +329,6 @@ const ShopifyPluginPage = () => {
     }
   };
 
-  const handleLocationSync = () => runJob(syncShopifyLocations, setLocationSyncing, 'Shopify location sync failed.');
-  const handleInventorySync = () => runJob(syncShopifyInventory, setInventorySyncing, 'Shopify inventory sync failed.');
   const handleCatalogPush = () => runJob(pushShopifyCatalog, setCatalogPushing, 'Shopify catalog push failed.');
   const handleInventoryPush = () => runJob(pushShopifyInventory, setInventoryPushing, 'Shopify inventory push failed.');
 
@@ -390,22 +505,39 @@ const ShopifyPluginPage = () => {
           </div>
         </Card>
 
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">Sync mode</div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Incremental pulls only products/orders changed since the last completed sync (Shopify updated_at). Turn off for a full re-pull. Each sync runs page-by-page and can be resumed from where it stopped.</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <input type="checkbox" checked={incremental} onChange={(e) => setIncremental(e.target.checked)} disabled={Boolean(runningType)} />
+              Incremental (changed only)
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <input type="checkbox" checked={background} onChange={(e) => setBackground(e.target.checked)} disabled={Boolean(runningType)} />
+              Run in background (queue worker)
+            </label>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <Card title="Catalog sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls products, variants, options, images, vendor, type, tags, and status via GraphQL.</p>
-            <Button className="mt-5 w-full" onClick={handleProductSync} loading={syncing}>Sync products now</Button>
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls products, variants, options, images, vendor, type, tags, and status via GraphQL. Paginated 25/page, resumable.</p>
+            <Button className="mt-5 w-full" onClick={handleProductSync} loading={runningType === 'PRODUCTS'} disabled={Boolean(runningType)}>Sync products now</Button>
           </Card>
           <Card title="Order sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls orders with customers and line items into inbound webhook events. Real-time orders also arrive via the orders/create webhook.</p>
-            <Button className="mt-5 w-full" onClick={handleOrderSync} loading={orderSyncing}>Sync orders now</Button>
+            <Button className="mt-5 w-full" onClick={handleOrderSync} loading={runningType === 'ORDERS'} disabled={Boolean(runningType)}>Sync orders now</Button>
           </Card>
           <Card title="Locations sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls Shopify locations and maps them to local warehouses. Run before inventory sync.</p>
-            <Button className="mt-5 w-full" onClick={handleLocationSync} loading={locationSyncing}>Sync locations now</Button>
+            <Button className="mt-5 w-full" onClick={handleLocationSync} loading={runningType === 'LOCATIONS'} disabled={Boolean(runningType)}>Sync locations now</Button>
           </Card>
           <Card title="Inventory sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls on-hand quantities per location/variant and reconciles local stock via stock movements (target - current = delta).</p>
-            <Button className="mt-5 w-full" onClick={handleInventorySync} loading={inventorySyncing}>Sync inventory now</Button>
+            <Button className="mt-5 w-full" onClick={handleInventorySync} loading={runningType === 'INVENTORY'} disabled={Boolean(runningType)}>Sync inventory now</Button>
           </Card>
           <Card title="Push catalog" subtitle="Push here -> Shopify" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Creates Shopify products (title, description, handle, vendor, type, tags, status) plus variants (price, sku, barcode) for any published local product not yet pushed.</p>
@@ -416,6 +548,62 @@ const ShopifyPluginPage = () => {
             <Button className="mt-5 w-full" onClick={handleInventoryPush} loading={inventoryPushing}>Push inventory now</Button>
           </Card>
         </div>
+
+        {(activeRun || runLog.length > 0) ? (
+          <Card title="Live sync progress" subtitle={activeRun ? `${activeRun.syncType} · ${activeRun.status} · page ${activeRun.pagesProcessed}` : 'Idle'} className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            {activeRun ? (
+              <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <span className={`inline-flex rounded-full px-3 py-1 ring-1 ${signalTone[activeRun.status === 'COMPLETED' ? 'CONNECTED' : activeRun.status === 'FAILED' ? 'MISSING_CREDENTIALS' : 'CONFIGURED']}`}>{activeRun.status}</span>
+                <span className="text-slate-500 dark:text-slate-400">{summarizeRun(activeRun)}</span>
+              </div>
+            ) : null}
+            <div className="max-h-64 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100 dark:border-slate-700">
+              {runLog.length === 0 ? <div className="text-slate-500">No log lines yet.</div> : runLog.map((line, i) => (
+                <div key={i} className={line.startsWith('FAILED') ? 'text-red-400' : ''}>{line}</div>
+              ))}
+            </div>
+          </Card>
+        ) : null}
+
+        {runs.length > 0 ? (
+          <Card title="Sync runs" subtitle="Recent runs for this tenant — resume any that failed" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:border-slate-700">
+                    <th className="py-2 pr-3">Type</th>
+                    <th className="py-2 pr-3">Status</th>
+                    <th className="py-2 pr-3">Pages</th>
+                    <th className="py-2 pr-3">Result</th>
+                    <th className="py-2 pr-3">Started</th>
+                    <th className="py-2 pr-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {runs.map((run) => (
+                    <tr key={run.id} className="border-b border-slate-100 align-top dark:border-slate-800">
+                      <td className="py-2 pr-3 font-semibold text-slate-700 dark:text-slate-200">{run.syncType}{run.incremental ? ' ·inc' : ''}</td>
+                      <td className="py-2 pr-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${signalTone[run.status === 'COMPLETED' ? 'CONNECTED' : run.status === 'FAILED' ? 'MISSING_CREDENTIALS' : 'CONFIGURED']}`}>{run.status}</span>
+                      </td>
+                      <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{run.pagesProcessed}</td>
+                      <td className="py-2 pr-3 text-xs text-slate-500 dark:text-slate-400">
+                        {summarizeRun(run)}
+                        {run.message ? <div className="mt-1 text-red-500">{run.message}</div> : null}
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-slate-500 dark:text-slate-400">{run.startedAt ? new Date(run.startedAt).toLocaleString() : '-'}</td>
+                      <td className="py-2 pr-3">
+                        {run.status === 'FAILED' ? (
+                          <Button variant="secondary" onClick={() => resumeRunLoop(run)} loading={runningType === run.syncType} disabled={Boolean(runningType)}>Resume</Button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : null}
 
         {syncResult ? (
           <Card title="Last product sync" subtitle="Shopify import result for this tenant" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">

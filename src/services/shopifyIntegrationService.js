@@ -40,3 +40,25 @@ export const pushShopifyCatalog = () => unwrap(request('/integrations/shopify/pu
 export const pushShopifyInventory = () => unwrap(request('/integrations/shopify/push/inventory', {
   method: 'POST',
 }));
+
+// Chunked, resumable sync runs (one page per call).
+export const startShopifyRun = (type, incremental = false) => unwrap(request(
+  `/integrations/shopify/runs?type=${encodeURIComponent(type)}&incremental=${incremental ? 'true' : 'false'}`,
+  { method: 'POST' },
+));
+
+// Queue a run to be driven server-side by the RabbitMQ worker (browser can close).
+export const enqueueShopifyRun = (type, incremental = false) => unwrap(request(
+  `/integrations/shopify/runs/async?type=${encodeURIComponent(type)}&incremental=${incremental ? 'true' : 'false'}`,
+  { method: 'POST' },
+));
+
+export const processShopifyRunPage = (runId) => unwrap(request(`/integrations/shopify/runs/${runId}/page`, {
+  method: 'POST',
+}));
+
+export const resumeShopifyRun = (runId) => unwrap(request(`/integrations/shopify/runs/${runId}/resume`, {
+  method: 'POST',
+}));
+
+export const listShopifyRuns = () => unwrap(request('/integrations/shopify/runs'));
