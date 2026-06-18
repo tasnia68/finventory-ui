@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Button, Card, Input } from '../../components/common';
 import {
   getShopifyConnection,
+  pushShopifyCatalog,
+  pushShopifyInventory,
   saveShopifyConnection,
   startShopifyOAuth,
+  syncShopifyInventory,
+  syncShopifyLocations,
   syncShopifyOrders,
   syncShopifyProducts,
   testShopifyConnection,
@@ -42,6 +46,10 @@ const ShopifyPluginPage = () => {
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [orderSyncing, setOrderSyncing] = useState(false);
+  const [locationSyncing, setLocationSyncing] = useState(false);
+  const [inventorySyncing, setInventorySyncing] = useState(false);
+  const [catalogPushing, setCatalogPushing] = useState(false);
+  const [inventoryPushing, setInventoryPushing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
 
   useEffect(() => {
@@ -186,6 +194,28 @@ const ShopifyPluginPage = () => {
       setOrderSyncing(false);
     }
   };
+
+  const runJob = async (apiCall, setBusy, defaultMessage) => {
+    setBusy(true);
+    setAlert(null);
+    setSyncResult(null);
+    try {
+      const result = await apiCall();
+      setSyncResult(result);
+      const next = await getShopifyConnection();
+      applyConnection(next);
+      setAlert({ type: result.success ? 'success' : 'error', message: result.message || defaultMessage });
+    } catch (error) {
+      setAlert({ type: 'error', message: error.message || defaultMessage });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleLocationSync = () => runJob(syncShopifyLocations, setLocationSyncing, 'Shopify location sync failed.');
+  const handleInventorySync = () => runJob(syncShopifyInventory, setInventorySyncing, 'Shopify inventory sync failed.');
+  const handleCatalogPush = () => runJob(pushShopifyCatalog, setCatalogPushing, 'Shopify catalog push failed.');
+  const handleInventoryPush = () => runJob(pushShopifyInventory, setInventoryPushing, 'Shopify inventory push failed.');
 
   const health = connection?.health || 'NOT_CONFIGURED';
   const canInstall = Boolean(form.storeDomain) && (Boolean(form.clientId) || Boolean(connection?.clientIdConfigured)) && (Boolean(form.clientSecret) || Boolean(connection?.clientSecretConfigured));
@@ -351,8 +381,8 @@ const ShopifyPluginPage = () => {
               </div>
               <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Shopify event</div>
               <div className="mt-3 rounded-xl bg-white/10 p-3 font-mono text-xs text-slate-100">orders/create</div>
-              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Admin API version</div>
-              <div className="mt-3 rounded-xl bg-white/10 p-3 font-mono text-xs text-slate-100">2026-04</div>
+              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Admin API</div>
+              <div className="mt-3 rounded-xl bg-white/10 p-3 font-mono text-xs text-slate-100">GraphQL / 2024-10</div>
               <p className="mt-5 text-sm leading-6 text-slate-300">
                 When a Shopify order is created, the backend verifies the HMAC signature, stores the payload as an inbound webhook event, and the operations team can materialize it into a sales order with SKU auto-mapping.
               </p>
@@ -361,17 +391,29 @@ const ShopifyPluginPage = () => {
         </Card>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <Card title="Catalog sync" subtitle="Frontend trigger for product and catalog exchange" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pull Shopify products, descriptions, product types, variants, prices, barcodes, and image URLs into the internal catalog and publish them to the storefront.</p>
+          <Card title="Catalog sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls products, variants, options, images, vendor, type, tags, and status via GraphQL.</p>
             <Button className="mt-5 w-full" onClick={handleProductSync} loading={syncing}>Sync products now</Button>
           </Card>
-          <Card title="Order sync" subtitle="Frontend trigger for Shopify order ingestion" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pull Shopify orders into inbound webhook events. New real-time sales still enter automatically through the orders/create webhook.</p>
+          <Card title="Order sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls orders with customers and line items into inbound webhook events. Real-time orders also arrive via the orders/create webhook.</p>
             <Button className="mt-5 w-full" onClick={handleOrderSync} loading={orderSyncing}>Sync orders now</Button>
           </Card>
-          <Card title="Inventory push" subtitle="Frontend trigger for availability and stock updates" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">The connector stores this preference now. The next backend step is outbound inventory-level publication to Shopify inventory locations.</p>
-            <Button className="mt-5 w-full" variant="secondary" disabled>Coming next</Button>
+          <Card title="Locations sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls Shopify locations and maps them to local warehouses. Run before inventory sync.</p>
+            <Button className="mt-5 w-full" onClick={handleLocationSync} loading={locationSyncing}>Sync locations now</Button>
+          </Card>
+          <Card title="Inventory sync" subtitle="Pull Shopify -> here" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pulls on-hand quantities per location/variant and reconciles local stock via stock movements (target - current = delta).</p>
+            <Button className="mt-5 w-full" onClick={handleInventorySync} loading={inventorySyncing}>Sync inventory now</Button>
+          </Card>
+          <Card title="Push catalog" subtitle="Push here -> Shopify" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Creates Shopify products (title, description, handle, vendor, type, tags, status) plus variants (price, sku, barcode) for any published local product not yet pushed.</p>
+            <Button className="mt-5 w-full" onClick={handleCatalogPush} loading={catalogPushing}>Push catalog now</Button>
+          </Card>
+          <Card title="Push inventory" subtitle="Push here -> Shopify" className="rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">Pushes local on-hand quantities per warehouse to the mapped Shopify location via inventorySetOnHandQuantities.</p>
+            <Button className="mt-5 w-full" onClick={handleInventoryPush} loading={inventoryPushing}>Push inventory now</Button>
           </Card>
         </div>
 
@@ -389,6 +431,14 @@ const ShopifyPluginPage = () => {
                 ['Orders seen', syncResult.ordersSeen],
                 ['Orders imported', syncResult.ordersImported],
                 ['Orders duplicate', syncResult.ordersDuplicate],
+                ['Locations seen', syncResult.locationsSeen],
+                ['Locations created', syncResult.locationsCreated],
+                ['Locations matched', syncResult.locationsMatched],
+                ['Stock levels seen', syncResult.stockLevelsSeen],
+                ['Stock levels applied', syncResult.stockLevelsApplied],
+                ['Products pushed', syncResult.productsPushed],
+                ['Variants pushed', syncResult.variantsPushed],
+                ['Inventory adjustments pushed', syncResult.inventoryAdjustmentsPushed],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/40">
                   <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">{label}</div>

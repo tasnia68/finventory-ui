@@ -24,3 +24,19 @@ export const syncShopifyProducts = () => unwrap(request('/integrations/shopify/s
 export const syncShopifyOrders = () => unwrap(request('/integrations/shopify/sync/orders', {
   method: 'POST',
 }));
+
+export const syncShopifyLocations = () => unwrap(request('/integrations/shopify/sync/locations', {
+  method: 'POST',
+}));
+
+export const syncShopifyInventory = () => unwrap(request('/integrations/shopify/sync/inventory', {
+  method: 'POST',
+}));
+
+export const pushShopifyCatalog = () => unwrap(request('/integrations/shopify/push/catalog', {
+  method: 'POST',
+}));
+
+export const pushShopifyInventory = () => unwrap(request('/integrations/shopify/push/inventory', {
+  method: 'POST',
+}));
