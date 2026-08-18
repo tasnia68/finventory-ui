@@ -59,7 +59,7 @@ const defaultState = {
             ctaHref: '/products',
             secondaryCtaLabel: 'View collections',
             secondaryCtaHref: '/collections',
-            imageUrl: 'https://marlandmanor.store/cdn/shop/files/Black_And_Gold_Elegant_Fashion_Logo_Facebook_Cover_1.png?v=1769370822&width=3840',
+            imageUrl: '',
           },
         },
         {

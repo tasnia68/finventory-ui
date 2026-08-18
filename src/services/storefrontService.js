@@ -87,6 +87,28 @@ export const saveStorefrontConfig = async (state) => {
   return toWorkbenchState(config);
 };
 
+// Theme settings store asset URLs relative (e.g. /api/v1/storefront/assets/file?path=…) so a
+// published snapshot stays portable across environments. Browsers resolve those against the app
+// origin (5173), not the API, so every <img src> must run through this first.
+// Mirrors productImageUrl() in productService.js.
+export const resolveStorefrontAssetUrl = (url) => {
+  if (!url || /^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+  const { origin } = new URL(apiBaseUrl, window.location.origin);
+  return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
+export const listStorefrontAssets = async (assetType) => unwrap(request(
+  assetType ? `/storefront/assets?assetType=${encodeURIComponent(assetType)}` : '/storefront/assets',
+));
+
+export const deleteStorefrontAsset = async (path) => unwrap(request(
+  `/storefront/assets?path=${encodeURIComponent(path)}`,
+  { method: 'DELETE' },
+));
+
 export const uploadStorefrontAsset = async (file, assetType = 'misc') => {
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
   const formData = new FormData();

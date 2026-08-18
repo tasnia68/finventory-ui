@@ -1,5 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { uploadStorefrontAsset } from '../../services/storefrontService';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  deleteStorefrontAsset,
+  listStorefrontAssets,
+  resolveStorefrontAssetUrl,
+  uploadStorefrontAsset,
+} from '../../services/storefrontService';
 
 const RECENT_KEY = 'sf-asset-picker-recents';
 const MAX_RECENTS = 24;
@@ -29,14 +34,31 @@ const AssetPicker = ({ open, onClose, onSelect, assetType = 'misc', initialValue
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [manualUrl, setManualUrl] = useState(initialValue);
+  const [library, setLibrary] = useState([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryError, setLibraryError] = useState('');
+
+  const loadLibrary = useCallback(async () => {
+    setLibraryLoading(true);
+    setLibraryError('');
+    try {
+      const assets = await listStorefrontAssets();
+      setLibrary(Array.isArray(assets) ? assets : []);
+    } catch (err) {
+      setLibraryError(err.message || 'Could not load the media library.');
+    } finally {
+      setLibraryLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (open) {
       setRecents(loadRecents());
       setManualUrl(initialValue);
       setError('');
+      loadLibrary();
     }
-  }, [open, initialValue]);
+  }, [open, initialValue, loadLibrary]);
 
   if (!open) return null;
 
@@ -56,14 +78,29 @@ const AssetPicker = ({ open, onClose, onSelect, assetType = 'misc', initialValue
     setError('');
     try {
       const result = await uploadStorefrontAsset(file, assetType);
-      const url = result?.url || result?.assetUrl || result?.path || '';
+      // StorefrontAssetUploadDto: { assetType, filename, storagePath, publicUrl }
+      const url = result?.publicUrl || result?.url || result?.assetUrl || result?.path || '';
       if (!url) throw new Error('Upload succeeded but no URL returned.');
+      loadLibrary();
       handleSelect(url);
     } catch (err) {
       setError(err.message || 'Upload failed.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async (asset) => {
+    const confirmed = window.confirm(
+      `Delete ${asset.filename}? Sections still using this image will show a broken image.`,
+    );
+    if (!confirmed) return;
+    try {
+      await deleteStorefrontAsset(asset.storagePath);
+      loadLibrary();
+    } catch (err) {
+      setLibraryError(err.message || 'Could not delete the asset.');
     }
   };
 
@@ -128,10 +165,74 @@ const AssetPicker = ({ open, onClose, onSelect, assetType = 'misc', initialValue
           {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
         </div>
 
+        <div className="mb-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500">Media library</h3>
+            <button
+              type="button"
+              onClick={loadLibrary}
+              disabled={libraryLoading}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-900 disabled:opacity-40 dark:hover:text-white"
+            >
+              {libraryLoading ? 'Loading…' : 'Refresh'}
+            </button>
+          </div>
+
+          {libraryError ? <p className="mb-2 text-sm text-red-600">{libraryError}</p> : null}
+
+          {libraryLoading && library.length === 0 ? (
+            <p className="text-sm text-slate-500">Loading your uploaded assets…</p>
+          ) : null}
+
+          {!libraryLoading && library.length === 0 && !libraryError ? (
+            <p className="text-sm text-slate-500">
+              Nothing uploaded yet — upload a file above and it will appear here.
+            </p>
+          ) : null}
+
+          {library.length > 0 ? (
+            <div className="grid max-h-72 grid-cols-4 gap-3 overflow-y-auto">
+              {library.map((asset) => (
+                <div
+                  key={asset.storagePath}
+                  className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(asset.publicUrl)}
+                    className="block w-full text-left hover:opacity-90"
+                    title={asset.filename}
+                  >
+                    <img
+                      src={resolveStorefrontAssetUrl(asset.publicUrl)}
+                      alt=""
+                      className="h-24 w-full object-cover"
+                    />
+                    <span className="block truncate px-2 py-1 text-[11px] text-slate-600 dark:text-slate-300">
+                      {asset.filename}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDelete(asset);
+                    }}
+                    className="absolute right-1 top-1 hidden rounded-full bg-white/90 px-2 py-1 text-xs text-slate-600 shadow hover:text-red-600 group-hover:block dark:bg-slate-900/90 dark:text-slate-300"
+                    aria-label={`Delete ${asset.filename}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
         {recents.length > 0 ? (
           <div>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Recently used</h3>
-            <div className="grid max-h-72 grid-cols-4 gap-3 overflow-y-auto">
+            <div className="grid max-h-40 grid-cols-6 gap-2 overflow-y-auto">
               {recents.map((url) => (
                 <button
                   key={url}
@@ -139,14 +240,12 @@ const AssetPicker = ({ open, onClose, onSelect, assetType = 'misc', initialValue
                   onClick={() => handleSelect(url)}
                   className="overflow-hidden rounded-2xl border border-slate-200 hover:border-slate-500 dark:border-slate-700"
                 >
-                  <img src={url} alt="" className="h-24 w-full object-cover" />
+                  <img src={resolveStorefrontAssetUrl(url)} alt="" className="h-16 w-full object-cover" />
                 </button>
               ))}
             </div>
           </div>
-        ) : (
-          <p className="text-sm text-slate-500">No recent assets yet — upload one or paste a URL above.</p>
-        )}
+        ) : null}
       </div>
     </div>
   );

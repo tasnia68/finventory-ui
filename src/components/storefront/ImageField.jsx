@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AssetPicker from './AssetPicker';
+import { resolveStorefrontAssetUrl } from '../../services/storefrontService';
 
 const ImageField = ({ value, onChange, placeholder = 'No image selected' }) => {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -9,7 +10,7 @@ const ImageField = ({ value, onChange, placeholder = 'No image selected' }) => {
       <div className="flex items-center gap-3">
         <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
           {value ? (
-            <img src={value} alt="" className="h-full w-full object-cover" />
+            <img src={resolveStorefrontAssetUrl(value)} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">—</div>
           )}

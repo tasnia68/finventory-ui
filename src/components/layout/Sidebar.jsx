@@ -184,7 +184,7 @@ const MENU_ITEMS = [
     submenu: [
       { titleKey: 'navigation.storefrontOverview', path: '/storefront' },
       { titleKey: 'navigation.storefrontThemes', path: '/storefront/themes' },
-      { titleKey: 'navigation.storefrontTheme', path: '/storefront/theme' },
+      { titleKey: 'navigation.storefrontTheme', path: '/storefront/pages' },
       { titleKey: 'navigation.storefrontPages', path: '/storefront/pages' },
       { titleKey: 'navigation.storefrontPagesManager', path: '/storefront/pages-manager' },
       { titleKey: 'navigation.storefrontNavigation', path: '/storefront/menus' },

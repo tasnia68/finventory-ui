@@ -86,7 +86,7 @@ const StorefrontOverview = () => {
 
   const workstreams = [
     { title: 'Theme settings', href: '/storefront/pages', description: 'Control brand, tokens, shell behavior, and shared storefront settings from the schema-driven editor.' },
-    { title: 'Header and navigation', href: '/storefront/navigation', description: 'Edit announcement, navigation blocks, drawer labels, and header structure in the new theme editor.' },
+    { title: 'Header and navigation', href: '/storefront/menus', description: 'Edit announcement, navigation blocks, drawer labels, and header structure in the new theme editor.' },
     { title: 'Home and footer', href: '/storefront/pages?template=home', description: 'Manage sections, blocks, dynamic sources, and footer content with the real iframe preview.' },
     { title: 'Revision center', href: '/storefront/publish', description: 'Publish immutable revisions and restore previous storefront states from the theme workflow.' },
   ];

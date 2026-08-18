@@ -143,6 +143,8 @@ const Pages = () => {
   const [dragBlockId, setDragBlockId] = React.useState('');
   const [viewport, setViewport] = React.useState('desktop');
   const [status, setStatus] = React.useState('Loading theme editor…');
+  const [publishedDocument, setPublishedDocument] = React.useState(null);
+  const [publishing, setPublishing] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -158,6 +160,7 @@ const Pages = () => {
       setDraft(editor.draftThemeDocument);
       setSchema(editor.schema || {});
       setRevisions(editor.revisions || []);
+      setPublishedDocument(editor.publishedThemeDocument || null);
       setPreviewConfig(preview);
       setProductOptions(
         templates.map((template) => ({
@@ -495,11 +498,24 @@ const Pages = () => {
   }
 
   const handlePublish = async () => {
-    const published = await publishStorefrontTheme({ note: 'Published from theme editor' });
-    const next = await getStorefrontThemeEditor();
-    setRevisions(next.revisions || []);
-    setStatus(`Published ${published.label}.`);
+    setPublishing(true);
+    try {
+      const published = await publishStorefrontTheme({ note: 'Published from theme editor' });
+      const next = await getStorefrontThemeEditor();
+      setRevisions(next.revisions || []);
+      setPublishedDocument(next.publishedThemeDocument || null);
+      setStatus(`Published ${published.label}.`);
+    } catch (error) {
+      setStatus(error.message || 'Publish failed.');
+    } finally {
+      setPublishing(false);
+    }
   };
+
+  const themeLabel = draft?.templateKey
+    ? draft.templateKey.charAt(0).toUpperCase() + draft.templateKey.slice(1)
+    : 'Theme';
+  const isPublished = Boolean(publishedDocument);
 
   const activePageLabel = templateTree.find((n) => n.id === selectedTemplateId)?.label || 'Theme settings';
 
@@ -508,8 +524,12 @@ const Pages = () => {
       {/* Top bar — Shopify-style: theme name + page selector + viewport + undo/redo + Save */}
       <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <span className="text-sm font-semibold text-slate-900 dark:text-white">Boutique</span>
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">Live</span>
+          <span className="text-sm font-semibold text-slate-900 dark:text-white">{themeLabel}</span>
+          {isPublished ? (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">Live</span>
+          ) : (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300">Not published</span>
+          )}
           {status ? <span className="truncate text-xs text-slate-500 dark:text-slate-400">{status}</span> : null}
         </div>
         <div className="hidden md:flex items-center gap-2">
@@ -535,8 +555,10 @@ const Pages = () => {
           <button
             type="button"
             onClick={handlePublish}
-            className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-          >Save</button>
+            disabled={publishing}
+            title="Publish the current draft to the live storefront (edits autosave as you go)"
+            className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+          >{publishing ? 'Publishing…' : 'Publish'}</button>
         </div>
       </header>
 
@@ -705,6 +727,20 @@ const Pages = () => {
                       <FieldLabel>Section label</FieldLabel>
                       <input value={currentSection.label || ''} onChange={(event) => updateSection(selectedTemplateId, currentSection.id, (section) => ({ ...section, label: event.target.value }))} className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950" />
                     </label>
+                    {(sectionDefinitions[currentSection.type]?.variants || []).length > 0 ? (
+                      <label className="block">
+                        <FieldLabel>Layout</FieldLabel>
+                        <select
+                          value={currentSection.variant || 'default'}
+                          onChange={(event) => updateSection(selectedTemplateId, currentSection.id, (section) => ({ ...section, variant: event.target.value }))}
+                          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                        >
+                          {sectionDefinitions[currentSection.type].variants.map((variant) => (
+                            <option key={variant.value} value={variant.value}>{variant.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : null}
                     {(sectionDefinitions[currentSection.type]?.settings || []).map((field) => (
                       <label key={field.id} className="block">
                         <FieldLabel>{field.label}</FieldLabel>

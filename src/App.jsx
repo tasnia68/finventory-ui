@@ -101,9 +101,7 @@ const PayrollRuns = lazy(() => import('./pages/Payroll/Runs'));
 const PayrollPayslips = lazy(() => import('./pages/Payroll/Payslips'));
 const PayrollSettings = lazy(() => import('./pages/Payroll/Settings'));
 const StorefrontOverview = lazy(() => import('./pages/Storefront'));
-const StorefrontTheme = lazy(() => import('./pages/Storefront/Theme'));
 const StorefrontPages = lazy(() => import('./pages/Storefront/Pages'));
-const StorefrontNavigation = lazy(() => import('./pages/Storefront/Navigation'));
 const StorefrontPublish = lazy(() => import('./pages/Storefront/Publish'));
 const StorefrontCustomers = lazy(() => import('./pages/Storefront/Customers'));
 const StorefrontMenus = lazy(() => import('./pages/Storefront/Menus'));
@@ -404,13 +402,8 @@ function App() {
               </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
-          <Route path="/storefront/theme" element={
-            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontModuleRoute>
-                <StorefrontTheme />
-              </StorefrontModuleRoute>
-            </ProtectedRoute>
-          } />
+          {/* Legacy URL — the theme editor lives at /storefront/pages. */}
+          <Route path="/storefront/theme" element={<Navigate to="/storefront/pages" replace />} />
           <Route path="/storefront/pages" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <StorefrontModuleRoute>
@@ -425,13 +418,8 @@ function App() {
               </StorefrontModuleRoute>
             </ProtectedRoute>
           } />
-          <Route path="/storefront/navigation" element={
-            <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
-              <StorefrontModuleRoute>
-                <StorefrontNavigation />
-              </StorefrontModuleRoute>
-            </ProtectedRoute>
-          } />
+          {/* Legacy URL — header/navigation editing lives at /storefront/menus. */}
+          <Route path="/storefront/navigation" element={<Navigate to="/storefront/menus" replace />} />
           <Route path="/storefront/menus" element={
             <ProtectedRoute permission={PERMISSIONS.MENU_ANALYTICS}>
               <StorefrontModuleRoute>
